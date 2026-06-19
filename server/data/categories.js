@@ -1,0 +1,42 @@
+export const defaultCategories = [
+  {
+    name: 'Beauty',
+    title: 'Beauty & Skincare',
+    image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&q=80',
+    description: 'Skincare, makeup, and wellness essentials',
+    sortOrder: 1,
+    showOnHome: true,
+  },
+  {
+    name: 'Home',
+    title: 'Home Decor',
+    image: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=400&q=80',
+    description: 'Decor, furniture, and lifestyle for your space',
+    sortOrder: 2,
+    showOnHome: true,
+  },
+  {
+    name: 'Electronics',
+    title: 'Electronics',
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
+    description: 'Gadgets, audio, and smart tech',
+    sortOrder: 3,
+    showOnHome: true,
+  },
+  {
+    name: 'Food',
+    title: 'Food & Gourmet',
+    image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400&q=80',
+    description: 'Premium food, tea, and gourmet gifts',
+    sortOrder: 4,
+    showOnHome: true,
+  },
+  {
+    name: 'Fashion',
+    title: 'Fashion',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80',
+    description: 'Clothing, bags, and accessories',
+    sortOrder: 5,
+    showOnHome: true,
+  },
+];

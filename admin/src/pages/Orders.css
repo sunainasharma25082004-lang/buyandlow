@@ -1,0 +1,248 @@
+.orders-page .orders-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.orders-page .stat-pill {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.orders-page .stat-pill span {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+}
+
+.orders-page .stat-pill strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 20px;
+  color: var(--brown);
+}
+
+.order-detail-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.order-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.order-detail-header:hover {
+  background: #fdfaf4;
+}
+
+.order-detail-header .order-main-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-detail-header .order-id-line {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brown);
+}
+
+.order-detail-header .order-meta-line {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.order-detail-header .order-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.order-detail-header .order-total {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brown-mid);
+  white-space: nowrap;
+}
+
+.order-detail-header .expand-icon {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.order-detail-body {
+  border-top: 1px solid var(--card-border);
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+}
+
+.order-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.order-info-block h4 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.order-info-block p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.order-items-section h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brown);
+  margin-bottom: 12px;
+}
+
+.order-item-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0ebe0;
+}
+
+.order-item-line:last-child {
+  border-bottom: none;
+}
+
+.order-item-line img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--cream);
+}
+
+.order-item-line .item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.order-item-line .item-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.order-item-line .item-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.order-item-line .item-total {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.order-admin-panel {
+  background: #fdfaf4;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.order-admin-panel h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brown);
+  margin-bottom: 14px;
+}
+
+.order-admin-panel .form-group {
+  margin-bottom: 12px;
+}
+
+.order-admin-panel .form-group label {
+  font-size: 11px;
+}
+
+.order-admin-panel .form-group input,
+.order-admin-panel .form-group select,
+.order-admin-panel .form-group textarea {
+  font-size: 13px;
+  padding: 9px 12px;
+}
+
+.order-admin-panel textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.order-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.delivery-preview {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(201, 168, 76, 0.1);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--brown-mid);
+  line-height: 1.5;
+}
+
+.payment-detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  color: var(--text-muted);
+}
+
+.payment-detail-row strong {
+  color: var(--text);
+}
+
+@media (max-width: 900px) {
+  .order-detail-body {
+    grid-template-columns: 1fr;
+  }
+
+  .order-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .order-detail-header {
+    flex-wrap: wrap;
+  }
+
+  .order-detail-header .order-total {
+    width: 100%;
+  }
+}

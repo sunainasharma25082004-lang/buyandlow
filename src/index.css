@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+
+:root {
+  --brown-dark: #2C1A0E;
+  --brown-mid: #4A2C17;
+  --brown-light: #7B4A2D;
+  --gold: #C9A84C;
+  --gold-light: #E2C47A;
+  --cream: #F5ECD7;
+  --cream-light: #FDF6E9;
+  --green-dark: #2D4A2D;
+  --text-dark: #1a1a1a;
+  --text-mid: #4a4a4a;
+  --text-light: #888;
+  --white: #ffffff;
+  --border: #e8dcc8;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--cream-light);
+  color: var(--text-dark);
+  overflow-x: hidden;
+}
+
+.app {
+  max-width: 100%;
+}
+
+.site-header {
+  position: relative;
+  z-index: 200;
+}
+
+.site-main {
+  position: relative;
+  z-index: 1;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--gold);
+  color: var(--brown-dark);
+  border: none;
+  padding: 10px 24px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary:hover {
+  background-color: var(--gold-light);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--brown-dark);
+  border: 1.5px solid var(--brown-mid);
+  padding: 10px 24px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-outline:hover {
+  background-color: var(--brown-dark);
+  color: var(--cream);
+  border-color: var(--brown-dark);
+}
+
+.btn-dark {
+  background-color: var(--brown-dark);
+  color: var(--cream);
+  border: none;
+  padding: 10px 24px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-dark:hover {
+  background-color: var(--brown-mid);
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--brown-dark);
+}
+
+.view-all-link-btn {
+  background: none;
+  border: none;
+  color: var(--brown-light);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.view-all-link-btn:hover {
+  color: var(--gold);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.view-all-link {
+  color: var(--brown-light);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.view-all-link:hover {
+  color: var(--gold);
+}
+
+/* Star rating */
+.stars {
+  color: var(--gold);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.rating-count {
+  color: var(--text-light);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+/* Badge */
+.badge {
+  background-color: var(--gold);
+  color: var(--brown-dark);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-new {
+  background-color: #3a7d44;
+  color: white;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--brown-light);
+  border-radius: 3px;
+}
+
+/* Global Responsiveness */
+@media (max-width: 992px) {
+  .container {
+    padding: 0 20px;
+  }
+
+  .section-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 20px;
+  }
+
+  .view-all-link-btn {
+    display: none;
+  }
+
+  .btn-primary,
+  .btn-outline,
+  .btn-dark {
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
+}

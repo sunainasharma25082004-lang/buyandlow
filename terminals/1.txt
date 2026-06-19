@@ -1,0 +1,515 @@
+---
+pid: 15612
+cwd: "C:\Users\hi\OneDrive\Desktop\all web\tradilian"
+command: "cd \"C:\\Users\\hi\\OneDrive\\Desktop\\all web\\tradilian\"; npm run server"
+started_at: 2026-06-08T11:21:56.873Z
+running_for_ms: 4795012  
+---
+
+> truemart@1.0.0 server
+> npm run dev --prefix server
+
+
+> truemart-server@1.0.0 dev
+> nodemon server.js
+
+[nodemon] 3.1.14
+[nodemon] to restart at any time, enter `rs`
+[nodemon] watching path(s): *.*
+[nodemon] watching extensions: js,mjs,cjs,json
+[nodemon] starting `node server.js`
+✅ MongoDB Connected: ac-xwbzipn-shard-00-00.jf5mksj.mongodb.net
+
+uncaughtException received. Shutting down gracefully...
+HTTP server closed
+[nodemon] clean exit - waiting for changes before restart
+Uncaught Exception: Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at app.listen (C:\Users\hi\OneDrive\Desktop\all web\tradilian\server\node_modules\express\lib\application.js:635:24)
+    at startServer (file:///C:/Users/hi/OneDrive/Desktop/all%20web/tradilian/server/server.js:86:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+[nodemon] restarting due to changes...
+[nodemon] starting `node server.js`
+✅ MongoDB Connected: ac-xwbzipn-shard-00-00.jf5mksj.mongodb.net
+Uncaught Exception: Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at app.listen (C:\Users\hi\OneDrive\Desktop\all web\tradilian\server\node_modules\express\lib\application.js:635:24)
+    at startServer (file:///C:/Users/hi/OneDrive/Desktop/all%20web/tradilian/server/server.js:86:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+
+uncaughtException received. Shutting down gracefully...
+HTTP server closed
+[nodemon] clean exit - waiting for changes before restart
+[nodemon] restarting due to changes...
+[nodemon] starting `node server.js`
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] starting `node server.js`
+✅ MongoDB Connected: ac-xwbzipn-shard-00-00.jf5mksj.mongodb.net
+🚀 Truemart API running on port 5000 [development]
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] starting `node server.js`
+✅ MongoDB Connected: ac-xwbzipn-shard-00-00.jf5mksj.mongodb.net
+Uncaught Exception: Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at app.listen (C:\Users\hi\OneDrive\Desktop\all web\tradilian\server\node_modules\express\lib\application.js:635:24)
+    at startServer (file:///C:/Users/hi/OneDrive/Desktop/all%20web/tradilian/server/server.js:88:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+
+uncaughtException received. Shutting down gracefully...
+HTTP server closed
+[nodemon] clean exit - waiting for changes before restart
+[nodemon] restarting due to changes...
+[nodemon] starting `node server.js`
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] starting `node server.js`
+✅ MongoDB Connected: ac-xwbzipn-shard-00-00.jf5mksj.mongodb.net
+
+uncaughtException received. Shutting down gracefully...
+HTTP server closed
+[nodemon] clean exit - waiting for changes before restart
+Uncaught Exception: Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at app.listen (C:\Users\hi\OneDrive\Desktop\all web\tradilian\server\node_modules\express\lib\application.js:635:24)
+    at startServer (file:///C:/Users/hi/OneDrive/Desktop/all%20web/tradilian/server/server.js:88:22)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+[nodemon] restarting due to changes...
+[nodemon] starting `node server.js`
+[nodemon] restarting due to changes...
+[nodemon] restarting due to changes...
+[nodemon] starting `node server.js`
+✅ MongoDB Connected: ac-xwbzipn-shard-00-00.jf5mksj.mongodb.net
+✅ Default categories seeded
+🚀 Truemart API running on port 5000 [development]
+GET /api/categories?home=true 200 84.568 ms - 1977
+GET /api/admin/products 304 138.725 ms - -
+GET /api/admin/products 304 87.170 ms - -
+GET /api/admin/categories 200 93.924 ms - -
+GET /api/admin/categories 304 83.282 ms - -
+GET /api/admin/categories 304 78.994 ms - -
+GET /api/admin/categories 304 99.376 ms - -
+GET /api/admin/categories 304 74.674 ms - -
+GET /api/admin/categories 304 74.708 ms - -
+GET /api/auth/profile 200 132.442 ms - -
+GET /api/auth/profile 200 152.808 ms - -
+PUT /api/auth/cart 200 566.185 ms - -
+PUT /api/auth/wishlist 200 659.876 ms - -
+PUT /api/auth/cart 200 250.605 ms - 2
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 122.957 ms - -
+PUT /api/auth/cart 200 364.140 ms - -
+GET /api/categories 200 144.991 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 52.069 ms - -
+PUT /api/auth/wishlist 200 516.576 ms - -
+GET /api/categories 304 85.469 ms - -
+GET /api/products?page=1&limit=8&sort=Newest&category=Fashion 304 391.371 ms - -
+GET /api/products?page=1&limit=8&sort=Newest&category=Food 200 39.624 ms - 827
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 45.151 ms - -
+GET /api/products?page=1&limit=8&sort=Newest&category=Fashion 304 50.008 ms - -
+GET /api/categories 304 91.155 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 44.115 ms - -
+GET /api/categories 304 74.956 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=Fashion 200 47.580 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=Fashion 304 39.057 ms - -
+GET /api/products?limit=8&sort=Newest 304 65.362 ms - -
+GET /api/categories 304 108.597 ms - -
+GET /api/categories?home=true 200 114.626 ms - -
+GET /api/products?limit=8&sort=Newest 304 73.119 ms - -
+GET /api/categories 304 77.463 ms - -
+GET /api/categories?home=true 304 77.686 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 54.435 ms - -
+GET /api/categories 304 69.780 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 53.815 ms - -
+GET /api/categories 304 71.184 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 515.934 ms - -
+GET /api/categories 304 527.441 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 57.935 ms - -
+GET /api/categories 304 85.078 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 200 88.721 ms - -
+GET /api/categories 200 83.787 ms - -
+GET /api/categories 200 93.070 ms - -
+GET /api/auth/profile 200 158.180 ms - -
+PUT /api/auth/cart 200 478.778 ms - -
+PUT /api/auth/wishlist 200 533.814 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 200 729.078 ms - -
+GET /api/auth/profile 200 753.808 ms - -
+PUT /api/auth/cart 200 315.607 ms - 2
+PUT /api/auth/cart 200 401.503 ms - -
+PUT /api/auth/wishlist 200 446.427 ms - -
+GET /api/products?limit=8&sort=Newest 304 46.050 ms - -
+GET /api/categories?home=true 304 89.455 ms - -
+GET /api/categories 304 84.272 ms - -
+GET /api/products?limit=8&sort=Newest 304 66.437 ms - -
+GET /api/categories?home=true 304 72.786 ms - -
+GET /api/categories 304 78.860 ms - -
+GET /api/categories?home=true 200 93.422 ms - -
+GET /api/products?limit=8&sort=Newest 200 81.772 ms - -
+GET /api/products?limit=8&sort=Newest 200 79.325 ms - -
+GET /api/categories?home=true 200 128.283 ms - -
+GET /api/categories 200 135.296 ms - -
+GET /api/categories 200 134.396 ms - -
+GET /api/auth/profile 200 126.295 ms - -
+GET /api/auth/profile 200 155.624 ms - -
+PUT /api/auth/cart 200 410.552 ms - -
+PUT /api/auth/wishlist 200 468.509 ms - -
+PUT /api/auth/cart 200 448.548 ms - -
+PUT /api/auth/wishlist 200 415.098 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 48.632 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=Fashion 304 52.006 ms - -
+GET /api/categories 304 100.433 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 107.804 ms - -
+GET /api/categories 304 74.437 ms - -
+GET /api/products?limit=8&sort=Newest 304 50.472 ms - -
+GET /api/categories?home=true 304 78.225 ms - -
+GET /api/categories 304 77.685 ms - -
+GET /api/products?limit=8&sort=Newest 304 64.059 ms - -
+GET /api/categories 304 85.719 ms - -
+GET /api/categories?home=true 304 98.689 ms - -
+GET /api/admin/categories 304 109.268 ms - -
+GET /api/admin/categories 304 98.994 ms - -
+GET /api/products?limit=8&sort=Newest 304 43.833 ms - -
+GET /api/categories 304 94.535 ms - -
+GET /api/categories?home=true 304 103.507 ms - -
+GET /api/products?limit=8&sort=Newest 304 74.809 ms - -
+GET /api/auth/profile 200 122.488 ms - -
+GET /api/categories?home=true 304 72.023 ms - -
+GET /api/categories 304 98.379 ms - -
+GET /api/auth/profile 304 157.272 ms - -
+PUT /api/auth/cart 200 423.223 ms - -
+PUT /api/auth/wishlist 200 483.077 ms - -
+PUT /api/auth/wishlist 200 476.332 ms - -
+PUT /api/auth/cart 200 563.463 ms - -
+GET /api/admin/categories 304 96.590 ms - -
+GET /api/admin/categories 304 99.275 ms - -
+GET /api/products?limit=8&sort=Newest 200 74.698 ms - -
+GET /api/categories 200 132.079 ms - -
+GET /api/categories 200 143.265 ms - -
+GET /api/categories?home=true 200 136.979 ms - -
+GET /api/categories?home=true 200 162.403 ms - -
+GET /api/products?limit=8&sort=Newest 200 69.017 ms - -
+GET /api/auth/profile 200 183.528 ms - -
+GET /api/auth/profile 200 171.963 ms - -
+PUT /api/auth/wishlist 200 435.382 ms - -
+PUT /api/auth/cart 200 471.364 ms - -
+PUT /api/auth/wishlist 200 370.518 ms - -
+PUT /api/auth/cart 200 457.878 ms - -
+GET /api/categories 304 83.601 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 99.726 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 51.234 ms - -
+GET /api/categories 304 93.576 ms - -
+GET /api/categories?home=true 304 95.265 ms - -
+GET /api/products?limit=8&sort=Newest 304 100.293 ms - -
+GET /api/categories 304 102.932 ms - -
+GET /api/products?limit=8&sort=Newest 304 45.707 ms - -
+GET /api/categories 304 78.770 ms - -
+GET /api/categories?home=true 304 130.712 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 47.518 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 63.120 ms - -
+GET /api/categories 304 120.240 ms - -
+GET /api/categories 304 123.641 ms - -
+PUT /api/auth/wishlist 200 321.954 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 73.770 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 50.361 ms - -
+GET /api/categories 304 170.835 ms - -
+GET /api/categories 304 98.525 ms - -
+PUT /api/auth/wishlist 200 337.853 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 200 41.818 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 200 52.031 ms - -
+GET /api/categories 200 71.446 ms - -
+GET /api/categories 200 101.656 ms - -
+GET /api/auth/profile 200 142.091 ms - -
+GET /api/auth/profile 200 149.671 ms - -
+PUT /api/auth/wishlist 200 496.381 ms - -
+PUT /api/auth/cart 200 545.211 ms - -
+PUT /api/auth/wishlist 200 345.330 ms - -
+PUT /api/auth/cart 200 382.868 ms - -
+GET /api/products?limit=8&sort=Newest 304 84.204 ms - -
+GET /api/categories 304 115.095 ms - -
+GET /api/categories?home=true 304 127.894 ms - -
+GET /api/products?limit=8&sort=Newest 304 45.740 ms - -
+GET /api/categories 304 99.357 ms - -
+GET /api/categories?home=true 304 92.728 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=Beauty 200 54.031 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 53.191 ms - -
+GET /api/categories 304 72.156 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 50.194 ms - -
+GET /api/categories 304 71.729 ms - -
+GET /api/categories?home=true 304 72.073 ms - -
+GET /api/categories 304 105.288 ms - -
+GET /api/products?limit=8&sort=Newest 304 110.825 ms - -
+GET /api/categories?home=true 304 77.613 ms - -
+GET /api/products?limit=8&sort=Newest 304 57.871 ms - -
+GET /api/categories 304 102.736 ms - -
+GET /api/admin/products 304 181.239 ms - -
+GET /api/admin/products 304 169.516 ms - -
+GET /api/admin/categories 304 105.439 ms - -
+GET /api/admin/categories 304 114.946 ms - -
+GET /api/admin/categories 304 98.433 ms - -
+GET /api/admin/categories 304 98.859 ms - -
+POST /api/admin/categories 201 141.165 ms - -
+GET /api/admin/categories 200 121.056 ms - -
+GET /api/admin/categories 304 125.757 ms - -
+GET /api/admin/products 304 112.606 ms - -
+GET /api/admin/products 304 136.301 ms - -
+GET /api/admin/categories 304 135.663 ms - -
+GET /api/admin/categories 304 72.484 ms - -
+POST /api/admin/products 201 124.237 ms - 550
+GET /api/admin/products 200 119.237 ms - -
+GET /api/admin/products 304 111.328 ms - -
+GET /api/products?limit=8&sort=Newest 200 42.649 ms - -
+GET /api/categories?home=true 200 113.805 ms - -
+GET /api/products?limit=8&sort=Newest 200 43.947 ms - -
+GET /api/categories 200 115.702 ms - -
+GET /api/categories?home=true 200 136.302 ms - -
+GET /api/categories 200 127.979 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd 200 38.995 ms - 550
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 200 76.227 ms - 102
+GET /api/products/6a26af33b2263df0c3a8d7bd 304 36.923 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 304 78.599 ms - -
+GET /api/admin/orders 304 116.097 ms - -
+GET /api/admin/orders 304 139.251 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd 200 39.993 ms - 550
+GET /api/products/6a26af33b2263df0c3a8d7bd 200 40.122 ms - 550
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 200 73.071 ms - 102
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 200 69.988 ms - 102
+GET /api/products?limit=8&sort=Newest 304 46.122 ms - -
+GET /api/products?limit=8&sort=Newest 304 48.902 ms - -
+GET /api/categories 304 107.170 ms - -
+GET /api/categories?home=true 304 110.029 ms - -
+GET /api/categories 304 72.369 ms - -
+GET /api/categories?home=true 304 100.832 ms - -
+GET /api/products?limit=8&sort=Newest 200 58.125 ms - -
+GET /api/categories?home=true 200 135.704 ms - -
+GET /api/categories 200 133.888 ms - -
+GET /api/categories 200 83.210 ms - -
+GET /api/categories?home=true 200 109.671 ms - -
+GET /api/products?limit=8&sort=Newest 200 45.355 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 200 46.067 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 44.458 ms - -
+GET /api/categories 304 139.879 ms - -
+GET /api/categories 304 97.746 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd 304 42.591 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 304 76.303 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd 304 41.904 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 304 79.363 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 43.222 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 46.243 ms - -
+GET /api/categories 304 118.979 ms - -
+GET /api/categories 304 84.533 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd 304 37.983 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 304 80.006 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd 304 49.307 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 304 78.849 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 45.607 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 46.961 ms - -
+GET /api/categories 304 106.045 ms - -
+GET /api/categories 304 75.628 ms - -
+GET /api/products?limit=8&sort=Newest 304 41.783 ms - -
+GET /api/categories?home=true 304 79.724 ms - -
+GET /api/products?limit=8&sort=Newest 304 44.638 ms - -
+GET /api/categories 304 119.986 ms - -
+GET /api/categories?home=true 304 77.773 ms - -
+GET /api/categories 304 82.754 ms - -
+GET /api/admin/products 304 125.769 ms - -
+GET /api/admin/products 304 93.966 ms - -
+DELETE /api/admin/products/6a26951579d98df0c12eed8a 200 214.703 ms - 44
+GET /api/admin/products 200 155.969 ms - -
+GET /api/admin/products 304 87.287 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 200 47.664 ms - -
+GET /api/categories 200 119.894 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 49.637 ms - -
+GET /api/categories 304 81.370 ms - -
+GET /api/products?limit=8&sort=Newest 200 43.766 ms - -
+GET /api/products?limit=8&sort=Newest 304 43.587 ms - -
+GET /api/categories 304 111.093 ms - -
+GET /api/categories?home=true 200 120.040 ms - -
+GET /api/categories 304 79.754 ms - -
+GET /api/categories?home=true 304 77.338 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 47.407 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 48.270 ms - -
+GET /api/categories 304 109.715 ms - -
+GET /api/categories 304 76.203 ms - -
+GET /api/products?limit=8&sort=Newest 304 45.005 ms - -
+GET /api/categories?home=true 304 120.817 ms - -
+GET /api/products?limit=8&sort=Newest 304 44.852 ms - -
+GET /api/categories 304 129.372 ms - -
+GET /api/categories?home=true 304 90.469 ms - -
+GET /api/categories 304 123.303 ms - -
+GET /api/products?limit=8&sort=Newest 200 118.473 ms - -
+GET /api/categories?home=true 200 264.209 ms - -
+GET /api/categories 200 259.362 ms - -
+GET /api/categories?home=true 200 212.086 ms - -
+GET /api/categories 200 258.037 ms - -
+GET /api/products?limit=8&sort=Newest 200 50.734 ms - -
+GET /api/admin/categories 304 148.168 ms - -
+GET /api/admin/categories 304 103.667 ms - -
+GET /api/admin/products 304 151.224 ms - -
+GET /api/admin/products 304 104.774 ms - -
+GET /api/admin/categories 304 178.462 ms - -
+GET /api/admin/categories 304 104.519 ms - -
+POST /api/admin/upload 201 71.969 ms - 127
+GET /uploads/products/1780920766609-845324913.jpeg 200 5.508 ms - 478326
+POST /api/admin/upload 201 56.977 ms - 127
+GET /uploads/products/1780920784867-384326586.jpeg 200 0.902 ms - 478326
+GET /api/admin/products 304 483.248 ms - -
+GET /api/admin/products 304 148.276 ms - -
+GET /api/admin/categories 304 162.911 ms - -
+GET /api/admin/categories 304 144.359 ms - -
+GET /api/admin/products 304 154.022 ms - -
+GET /api/admin/products 304 151.059 ms - -
+GET /api/products?limit=8&sort=Newest 200 54.408 ms - -
+GET /api/categories 200 111.744 ms - -
+GET /api/categories?home=true 200 112.569 ms - -
+GET /api/categories?home=true 200 148.359 ms - -
+GET /api/categories 200 121.316 ms - -
+GET /api/products?limit=8&sort=Newest 200 57.168 ms - -
+GET /api/products?limit=8&sort=Newest 200 45.831 ms - -
+GET /api/products?limit=8&sort=Newest 200 46.973 ms - -
+GET /api/categories 200 113.431 ms - -
+GET /api/categories 200 122.649 ms - -
+GET /api/categories?home=true 200 120.531 ms - -
+GET /api/categories?home=true 200 149.906 ms - -
+GET /api/products?limit=8&sort=Newest 304 48.462 ms - -
+GET /api/categories 304 115.833 ms - -
+GET /api/categories?home=true 304 144.744 ms - -
+GET /api/products?limit=8&sort=Newest 304 49.955 ms - -
+GET /api/categories?home=true 304 78.344 ms - -
+GET /api/categories 304 118.403 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 60.657 ms - -
+GET /api/categories 304 121.077 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 53.414 ms - -
+GET /api/categories 304 152.505 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 58.037 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 48.097 ms - -
+GET /api/categories 304 178.204 ms - -
+GET /api/categories 304 102.265 ms - -
+GET /api/admin/products 304 159.537 ms - -
+GET /api/admin/products 304 162.107 ms - -
+GET /api/products?limit=8&sort=Newest 304 45.773 ms - -
+GET /api/categories 304 117.706 ms - -
+GET /api/products?limit=8&sort=Newest 304 47.722 ms - -
+GET /api/categories?home=true 304 156.632 ms - -
+GET /api/categories 304 78.241 ms - -
+GET /api/categories?home=true 304 106.269 ms - -
+GET /api/products?limit=8&sort=Newest 304 42.002 ms - -
+GET /api/categories 304 152.082 ms - -
+GET /api/admin/products 304 171.937 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 45.523 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=Home 200 45.723 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 46.746 ms - -
+GET /api/categories 304 157.140 ms - -
+GET /api/categories 304 102.589 ms - -
+GET /api/products?limit=8&sort=Newest 304 42.554 ms - -
+GET /api/products?limit=8&sort=Newest 304 46.038 ms - -
+GET /api/categories 304 119.657 ms - -
+GET /api/categories?home=true 304 155.446 ms - -
+GET /api/categories 304 87.800 ms - -
+GET /api/categories?home=true 304 110.336 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 45.805 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 53.247 ms - -
+GET /api/categories 304 160.943 ms - -
+GET /api/categories 304 102.019 ms - -
+GET /api/products?limit=8&sort=Newest 304 46.923 ms - -
+GET /api/products?limit=8&sort=Newest 304 45.077 ms - -
+GET /api/categories 304 120.774 ms - -
+GET /api/categories?home=true 304 156.353 ms - -
+GET /api/categories 304 81.121 ms - -
+GET /api/categories?home=true 304 106.326 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 42.266 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 41.370 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 200 108.337 ms - 104
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 101.144 ms - -
+GET /api/products?limit=8&sort=Newest 304 43.295 ms - -
+GET /api/products?limit=8&sort=Newest 304 47.440 ms - -
+GET /api/categories 304 118.102 ms - -
+GET /api/categories?home=true 304 164.095 ms - -
+GET /api/categories 304 91.735 ms - -
+GET /api/categories?home=true 304 116.457 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 52.259 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 79.482 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 52.499 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 82.430 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 432.097 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 431.602 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 61.388 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 110.317 ms - -
+GET /api/products/6a26951579d98df0c12eed94 200 43.779 ms - -
+GET /api/products/6a26951579d98df0c12eed94 200 40.859 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 200 73.531 ms - 104
+GET /api/products/6a26951579d98df0c12eed94/reviews 200 103.773 ms - 104
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 42.810 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 44.549 ms - -
+GET /api/categories 304 164.771 ms - -
+GET /api/categories 304 105.433 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 54.387 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 86.718 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 55.591 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 105.690 ms - -
+GET /api/products?limit=8&sort=Newest 304 47.082 ms - -
+GET /api/products?limit=8&sort=Newest 304 41.780 ms - -
+GET /api/categories 304 115.726 ms - -
+GET /api/categories?home=true 304 153.700 ms - -
+GET /api/categories 304 78.427 ms - -
+GET /api/categories?home=true 304 103.234 ms - -
+GET /api/products?limit=8&sort=Newest 304 46.728 ms - -
+GET /api/categories 304 152.938 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd 304 52.602 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 304 82.047 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd 304 52.257 ms - -
+GET /api/products/6a26af33b2263df0c3a8d7bd/reviews 304 103.265 ms - -
+GET /api/products?limit=8&sort=Newest 304 49.985 ms - -
+GET /api/categories 304 116.457 ms - -
+GET /api/categories?home=true 304 153.850 ms - -
+GET /api/products?limit=8&sort=Newest 304 53.138 ms - -
+GET /api/categories 304 104.313 ms - -
+GET /api/categories?home=true 304 79.462 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 63.612 ms - -
+GET /api/categories 304 125.760 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 58.403 ms - -
+GET /api/categories 304 152.913 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 60.041 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 81.933 ms - -
+GET /api/products/6a26951579d98df0c12eed94 304 54.330 ms - -
+GET /api/products/6a26951579d98df0c12eed94/reviews 304 103.775 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 48.445 ms - -
+GET /api/products?page=1&limit=8&sort=Featured&category=All 304 48.389 ms - -
+GET /api/categories 304 155.403 ms - -
+GET /api/categories 304 106.137 ms - -

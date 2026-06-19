@@ -1,0 +1,46 @@
+.brand-logo-wrap {
+  display: flex;
+  align-items: center;
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.brand-logo-img {
+  height: 92px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  border-radius: 6px;
+}
+
+.brand-logo-wrap.size-sm .brand-logo-img {
+  height: 72px;
+}
+
+.brand-logo-wrap.size-lg .brand-logo-img {
+  height: 108px;
+}
+
+.footer-logo .brand-logo-img {
+  height: 100px;
+}
+
+@media (max-width: 768px) {
+  .brand-logo-img {
+    height: 74px;
+  }
+
+  .footer-logo .brand-logo-img {
+    height: 86px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-logo-img {
+    height: 60px;
+  }
+
+  .footer-logo .brand-logo-img {
+    height: 72px;
+  }
+}
