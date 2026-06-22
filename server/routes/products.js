@@ -7,13 +7,15 @@ import { products as staticProducts } from '../data/products.js';
 import { protect, getJwtSecret } from '../middleware/authMiddleware.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { clampPagination } from '../utils/validators.js';
-import { userHasDeliveredProduct, recalculateProductRating } from '../utils/reviews.js';
+import { recalculateProductRating } from '../utils/reviews.js';
 import { isProduction } from '../config/env.js';
 
 const router = express.Router();
 
+const isOnSale = (p) => p.oldPrice != null && Number(p.oldPrice) > Number(p.price);
+
 const filterStaticProducts = (queryOptions) => {
-  const { keyword, category, minPrice, maxPrice, rating, sort } = queryOptions;
+  const { keyword, category, minPrice, maxPrice, rating, sort, sale } = queryOptions;
   const { page, limit } = clampPagination(queryOptions.page, queryOptions.limit);
 
   const adminAdded = (global.adminProducts || []).map((p) => ({ ...p }));
@@ -35,6 +37,10 @@ const filterStaticProducts = (queryOptions) => {
     list = list.filter((p) => p.category.toLowerCase() === category.toLowerCase());
   }
 
+  if (sale === 'true') {
+    list = list.filter(isOnSale);
+  }
+
   if (minPrice) list = list.filter((p) => p.price >= Number(minPrice));
   if (maxPrice) list = list.filter((p) => p.price <= Number(maxPrice));
   if (rating) list = list.filter((p) => p.rating >= Number(rating));
@@ -42,6 +48,7 @@ const filterStaticProducts = (queryOptions) => {
   if (sort === 'Price: Low to High') list.sort((a, b) => a.price - b.price);
   else if (sort === 'Price: High to Low') list.sort((a, b) => b.price - a.price);
   else if (sort === 'Best Rating') list.sort((a, b) => b.rating - a.rating);
+  else if (sort === 'Popular') list.sort((a, b) => (b.reviews || 0) - (a.reviews || 0) || b.rating - a.rating);
   else if (sort === 'Newest') list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   const total = list.length;
@@ -61,7 +68,7 @@ router.get('/', asyncHandler(async (req, res) => {
     return res.json(filterStaticProducts(req.query));
   }
 
-  const { keyword, category, minPrice, maxPrice, rating, sort } = req.query;
+  const { keyword, category, minPrice, maxPrice, rating, sort, sale } = req.query;
   const { page, limit } = clampPagination(req.query.page, req.query.limit);
   const query = {};
 
@@ -73,6 +80,11 @@ router.get('/', asyncHandler(async (req, res) => {
   }
 
   if (category && category !== 'All') query.category = category;
+
+  if (sale === 'true') {
+    query.oldPrice = { $ne: null, $gt: 0 };
+    query.$expr = { $gt: ['$oldPrice', '$price'] };
+  }
 
   if (minPrice || maxPrice) {
     query.price = {};
@@ -86,6 +98,7 @@ router.get('/', asyncHandler(async (req, res) => {
     'Price: Low to High': { price: 1 },
     'Price: High to Low': { price: -1 },
     'Best Rating': { rating: -1 },
+    'Popular': { reviews: -1, rating: -1 },
     'Newest': { createdAt: -1 },
   }[sort] || { createdAt: -1 };
 
@@ -128,6 +141,43 @@ const findProductById = async (id) => {
   return Product.findOne({ sku: id });
 };
 
+router.get('/reviews/recent', asyncHandler(async (req, res) => {
+  const limit = Math.min(Math.max(1, Number(req.query.limit) || 6), 12);
+
+  if (!global.isDbConnected) {
+    const recent = [...(global.mockReviews || [])]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, limit)
+      .map((r) => {
+        const product = staticProducts.find(
+          (p) => `static_id_${p.id}` === String(r.product)
+        ) || (global.adminProducts || []).find((p) => String(p._id) === String(r.product));
+        return {
+          ...r,
+          productName: product?.name || 'Product',
+        };
+      });
+    return res.json({ success: true, reviews: recent });
+  }
+
+  const reviews = await Review.find()
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .populate('product', 'name');
+
+  res.json({
+    success: true,
+    reviews: reviews.map((r) => ({
+      _id: r._id,
+      userName: r.userName,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      productName: r.product?.name || 'Product',
+    })),
+  });
+}));
+
 router.get('/:id/reviews', asyncHandler(async (req, res) => {
   const { id } = req.params;
   const product = await findProductById(id);
@@ -153,7 +203,7 @@ router.get('/:id/reviews', asyncHandler(async (req, res) => {
         const userId = decoded.id;
 
         userReview = reviews.find((r) => r.user === userId) || null;
-        canReview = await userHasDeliveredProduct(userId, productId);
+        canReview = true;
       } catch {
         // ignore invalid token for public reviews list
       }
@@ -170,7 +220,7 @@ router.get('/:id/reviews', asyncHandler(async (req, res) => {
         const user = await User.findById(decoded.id).select('name');
         if (user) {
           userReview = await Review.findOne({ user: user._id, product: productId });
-          canReview = await userHasDeliveredProduct(user._id, productId);
+          canReview = true;
         }
       } catch {
         // ignore
@@ -206,14 +256,6 @@ router.post('/:id/reviews', protect, asyncHandler(async (req, res) => {
   }
 
   const productId = product._id;
-  const eligible = await userHasDeliveredProduct(req.user._id, productId);
-
-  if (!eligible) {
-    return res.status(403).json({
-      success: false,
-      message: 'You can only rate products from delivered orders',
-    });
-  }
 
   if (!global.isDbConnected) {
     if (isProduction) {
@@ -250,7 +292,8 @@ router.post('/:id/reviews', protect, asyncHandler(async (req, res) => {
     });
   }
 
-  if (!productId.match(/^[0-9a-fA-F]{24}$/)) {
+  const productIdStr = String(productId);
+  if (!productIdStr.match(/^[0-9a-fA-F]{24}$/)) {
     return res.status(400).json({ success: false, message: 'Reviews require a database product' });
   }
 

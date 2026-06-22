@@ -10,6 +10,12 @@ const validateEnv = () => {
     if (!process.env.MONGODB_URI) {
       missing.push('MONGODB_URI');
     }
+    if (!process.env.CLIENT_URL) {
+      missing.push('CLIENT_URL');
+    }
+    if (!process.env.API_BASE_URL) {
+      missing.push('API_BASE_URL');
+    }
   }
 
   if (missing.length > 0) {
@@ -19,10 +25,6 @@ const validateEnv = () => {
 
   if (isProduction && process.env.JWT_SECRET?.length < 32) {
     console.warn('⚠️  JWT_SECRET should be at least 32 characters in production');
-  }
-
-  if (isProduction && !process.env.CLIENT_URL) {
-    console.warn('⚠️  CLIENT_URL not set — all origins allowed. Set comma-separated frontend URLs for production.');
   }
 };
 

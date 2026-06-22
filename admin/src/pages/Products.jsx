@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts, deleteProduct } from '../api';
 import { formatINR } from '../utils/currency';
+import { resolveMediaUrl } from '../config/api';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -46,7 +47,7 @@ const Products = () => {
             <div className="loading-state">Loading products...</div>
           ) : products.length === 0 ? (
             <div className="empty-state">
-              No products yet. <Link to="/products/new" style={{ color: '#c9a84c' }}>Add your first product</Link>
+              No products yet. <Link to="/products/new" className="text-gold">Add your first product</Link>
             </div>
           ) : (
             <div className="table-wrap">
@@ -67,17 +68,17 @@ const Products = () => {
                     <tr key={p._id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={p.image} alt={p.name} className="product-thumb" />
+                          <img src={resolveMediaUrl(p.image)} alt={p.name} className="product-thumb" />
                           <div>
                             <strong style={{ fontSize: '13px' }}>{p.name}</strong>
-                            <div style={{ fontSize: '11px', color: '#999' }}>{p.sku}</div>
+                            <div className="text-sub">{p.sku}</div>
                           </div>
                         </div>
                       </td>
                       <td><span className="badge badge-gold">{p.category}</span></td>
                       <td>
                         <strong>{formatINR(p.price)}</strong>
-                        {p.oldPrice && <div style={{ fontSize: '11px', color: '#bbb', textDecoration: 'line-through' }}>{formatINR(p.oldPrice)}</div>}
+                        {p.oldPrice && <div className="text-strike">{formatINR(p.oldPrice)}</div>}
                       </td>
                       <td>{p.stock ?? '—'}</td>
                       <td>★ {p.rating} ({p.reviews})</td>

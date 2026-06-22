@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getOrders, updateOrder } from '../api';
 import { formatINR } from '../utils/currency';
+import { resolveMediaUrl } from '../config/api';
 import './Orders.css';
 
 const STATUS_OPTIONS = [
@@ -221,7 +222,7 @@ const Orders = () => {
                       <h4>Items ({order.orderItems?.length || 0})</h4>
                       {order.orderItems?.map((item, i) => (
                         <div key={i} className="order-item-line">
-                          {item.image && <img src={item.image} alt="" />}
+                          {item.image && <img src={resolveMediaUrl(item.image)} alt="" />}
                           <div className="item-text">
                             <div className="item-name">{item.name}</div>
                             <div className="item-sub">
@@ -250,7 +251,7 @@ const Orders = () => {
                         ))}
                       </select>
                       {POST_SHIPPING.includes(status) && (
-                        <p style={{ fontSize: '11px', color: '#999', marginTop: '6px' }}>
+                        <p className="text-sub" style={{ marginTop: '6px' }}>
                           Orders cannot be cancelled after shipping has started.
                         </p>
                       )}

@@ -1,0 +1,90 @@
+.summer-collection {
+  padding: 70px 0;
+  background: linear-gradient(180deg, var(--cream-light) 0%, var(--white) 100%);
+}
+
+.sale-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.sale-section-sub {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-top: 6px;
+}
+
+.sale-view-btn {
+  flex-shrink: 0;
+}
+
+.sale-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.sale-card-wrap {
+  position: relative;
+}
+
+.sale-discount-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+}
+
+.sale-loading,
+.sale-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 14px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+@media (max-width: 1100px) {
+  .sale-products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .summer-collection {
+    padding: 44px 0;
+  }
+
+  .sale-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sale-view-btn {
+    width: 100%;
+  }
+
+  .sale-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sale-products-grid {
+    grid-template-columns: 1fr;
+  }
+}

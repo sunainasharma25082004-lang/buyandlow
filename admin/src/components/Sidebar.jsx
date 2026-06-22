@@ -9,6 +9,7 @@ const links = [
   { to: '/categories', label: 'Categories', icon: '🏷️' },
   { to: '/products', label: 'Products', icon: '📦' },
   { to: '/orders', label: 'Orders & Transactions', icon: '💳' },
+  { to: '/reviews', label: 'Reviews', icon: '⭐' },
 ];
 
 const Sidebar = () => {
@@ -47,7 +48,7 @@ const Sidebar = () => {
             <div className="admin-email">{admin?.email}</div>
           </div>
         </div>
-        <button className="btn btn-outline btn-sm" style={{ width: '100%', color: '#f5ecd7', borderColor: 'rgba(245,236,215,0.2)' }} onClick={logout}>
+        <button className="btn btn-outline btn-sm sidebar-logout" onClick={logout}>
           Sign Out
         </button>
       </div>

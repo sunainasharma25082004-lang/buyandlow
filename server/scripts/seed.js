@@ -7,6 +7,7 @@ import Category from '../models/Category.js';
 import User from '../models/User.js';
 import { products } from '../data/products.js';
 import { defaultCategories } from '../data/categories.js';
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../config/adminCredentials.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,20 +44,20 @@ const seedDB = async () => {
     console.log('Successfully seeded database with default products and categories!');
 
     // Create or update admin user
-    const adminEmail = 'admin@truemart.com';
-    let adminUser = await User.findOne({ email: adminEmail });
+    let adminUser = await User.findOne({ email: ADMIN_EMAIL });
     if (!adminUser) {
       adminUser = await User.create({
         name: 'Admin',
-        email: adminEmail,
-        password: 'admin123',
+        email: ADMIN_EMAIL,
+        password: ADMIN_PASSWORD,
         role: 'admin',
       });
-      console.log('Admin user created: admin@truemart.com / admin123');
+      console.log(`Admin user created: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
     } else {
       adminUser.role = 'admin';
+      adminUser.password = ADMIN_PASSWORD;
       await adminUser.save();
-      console.log('Admin user already exists: admin@truemart.com');
+      console.log(`Admin user updated: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}`);
     }
     
     await mongoose.disconnect();

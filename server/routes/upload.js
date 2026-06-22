@@ -50,9 +50,7 @@ router.post('/', protect, admin, uploadLimiter, (req, res) => {
       return res.status(400).json({ success: false, message: 'No image file provided' });
     }
 
-    const imageUrl = process.env.API_BASE_URL
-      ? `${getPublicBaseUrl(req)}/uploads/products/${req.file.filename}`
-      : `/uploads/products/${req.file.filename}`;
+    const imageUrl = `${getPublicBaseUrl(req)}/uploads/products/${req.file.filename}`;
 
     res.status(201).json({
       success: true,

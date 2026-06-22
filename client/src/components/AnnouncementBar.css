@@ -1,0 +1,102 @@
+.announcement-bar {
+  background: linear-gradient(90deg, var(--brown-dark) 0%, var(--brown-mid) 50%, var(--brown-dark) 100%);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 9px 24px;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  border-bottom: 2px solid var(--gold);
+  position: relative;
+}
+
+.announcement-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 40px,
+    rgba(255, 193, 7, 0.04) 40px,
+    rgba(255, 193, 7, 0.04) 41px
+  );
+  pointer-events: none;
+}
+
+.ann-text {
+  text-align: center;
+  min-width: 340px;
+  position: relative;
+  z-index: 1;
+}
+
+.ann-text strong,
+.ann-text em {
+  color: var(--gold-light);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ann-arrow {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  color: var(--gold-light);
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.ann-arrow:hover {
+  background: var(--gold);
+  color: var(--brown-dark);
+  border-color: var(--gold);
+}
+
+@media (max-width: 768px) {
+  .announcement-bar {
+    padding: 8px 12px;
+    gap: 8px;
+    font-size: 11.5px;
+  }
+
+  .ann-text {
+    min-width: 0;
+    flex: 1;
+    font-size: 11px;
+  }
+
+  .ann-arrow {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .announcement-bar {
+    padding: 7px 10px;
+  }
+
+  .ann-arrow {
+    display: none;
+  }
+
+  .ann-text {
+    font-size: 10.5px;
+    line-height: 1.4;
+  }
+}

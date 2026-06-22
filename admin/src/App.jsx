@@ -10,6 +10,7 @@ import ProductForm from './pages/ProductForm';
 import Categories from './pages/Categories';
 import CategoryForm from './pages/CategoryForm';
 import Orders from './pages/Orders';
+import Reviews from './pages/Reviews';
 
 const ProtectedRoute = ({ children }) => {
   const { admin, loading } = useContext(AuthContext);
@@ -39,6 +40,7 @@ const App = () => {
       <Route path="/categories/new" element={<ProtectedRoute><CategoryForm /></ProtectedRoute>} />
       <Route path="/categories/edit/:id" element={<ProtectedRoute><CategoryForm /></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+      <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

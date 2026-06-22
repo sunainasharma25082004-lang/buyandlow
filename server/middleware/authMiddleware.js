@@ -11,7 +11,7 @@ const getJwtSecret = () => {
 
 const MOCK_USERS = {
   mock_user_id_12345: { _id: 'mock_user_id_12345', name: 'Demo User', email: 'demo@truemart.com', role: 'user' },
-  mock_admin_id: { _id: 'mock_admin_id', name: 'Admin', email: 'admin@truemart.com', role: 'admin' },
+  mock_admin_id: { _id: 'mock_admin_id', name: 'Admin', email: 'admin@buylow.store', role: 'admin' },
 };
 
 const protect = async (req, res, next) => {

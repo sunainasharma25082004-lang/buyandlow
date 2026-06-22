@@ -33,7 +33,7 @@ const Dashboard = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Overview of your Truemart store</p>
+          <p className="page-subtitle">Overview of your BuyLow store</p>
         </div>
       </div>
 

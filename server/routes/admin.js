@@ -3,6 +3,8 @@ import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
+import Review from '../models/Review.js';
+import { recalculateProductRating } from '../utils/reviews.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import { products as staticProducts } from '../data/products.js';
 import asyncHandler from '../utils/asyncHandler.js';
@@ -57,7 +59,7 @@ const MOCK_USERS = [
   {
     _id: 'mock_admin_id',
     name: 'Admin',
-    email: 'admin@truemart.com',
+    email: 'admin@buylow.store',
     role: 'admin',
     createdAt: new Date().toISOString(),
   },
@@ -486,6 +488,97 @@ router.delete('/categories/:id', protect, admin, asyncHandler(async (req, res) =
 
   await category.deleteOne();
   res.json({ success: true, message: 'Category removed' });
+}));
+
+router.get('/reviews', protect, admin, asyncHandler(async (req, res) => {
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const reviews = [...(global.mockReviews || [])].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    return res.json(reviews);
+  }
+
+  const reviews = await Review.find()
+    .sort({ createdAt: -1 })
+    .populate('product', 'name image')
+    .populate('user', 'name email');
+
+  res.json(reviews);
+}));
+
+router.put('/reviews/:id', protect, admin, asyncHandler(async (req, res) => {
+  const { rating, comment, userName } = req.body;
+
+  if (rating != null && (rating < 1 || rating > 5)) {
+    return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
+  }
+
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const idx = global.mockReviews.findIndex((r) => r._id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+    global.mockReviews[idx] = {
+      ...global.mockReviews[idx],
+      rating: rating != null ? Number(rating) : global.mockReviews[idx].rating,
+      comment: comment !== undefined ? String(comment).trim().slice(0, 500) : global.mockReviews[idx].comment,
+      userName: userName?.trim() || global.mockReviews[idx].userName,
+      updatedAt: new Date().toISOString(),
+    };
+    await recalculateProductRating(global.mockReviews[idx].product);
+    return res.json(global.mockReviews[idx]);
+  }
+
+  const review = await Review.findById(req.params.id);
+  if (!review) {
+    return res.status(404).json({ success: false, message: 'Review not found' });
+  }
+
+  if (rating != null) review.rating = Number(rating);
+  if (comment !== undefined) review.comment = String(comment).trim().slice(0, 500);
+  if (userName?.trim()) review.userName = userName.trim();
+
+  await review.save();
+  await recalculateProductRating(review.product);
+
+  const populated = await Review.findById(review._id)
+    .populate('product', 'name image')
+    .populate('user', 'name email');
+
+  res.json(populated);
+}));
+
+router.delete('/reviews/:id', protect, admin, asyncHandler(async (req, res) => {
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const idx = global.mockReviews.findIndex((r) => r._id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+    const productId = global.mockReviews[idx].product;
+    global.mockReviews.splice(idx, 1);
+    await recalculateProductRating(productId);
+    return res.json({ success: true, message: 'Review deleted' });
+  }
+
+  const review = await Review.findById(req.params.id);
+  if (!review) {
+    return res.status(404).json({ success: false, message: 'Review not found' });
+  }
+
+  const productId = review.product;
+  await review.deleteOne();
+  await recalculateProductRating(productId);
+
+  res.json({ success: true, message: 'Review deleted' });
 }));
 
 router.delete('/products/:id', protect, admin, asyncHandler(async (req, res) => {

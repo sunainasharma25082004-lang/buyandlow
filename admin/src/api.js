@@ -31,6 +31,10 @@ export const createCategory = (data) => API.post('/admin/categories', data);
 export const updateCategory = (id, data) => API.put(`/admin/categories/${id}`, data);
 export const deleteCategory = (id) => API.delete(`/admin/categories/${id}`);
 
+export const getReviews = () => API.get('/admin/reviews');
+export const updateReview = (id, data) => API.put(`/admin/reviews/${id}`, data);
+export const deleteReview = (id) => API.delete(`/admin/reviews/${id}`);
+
 export const uploadImage = (file) => {
   const formData = new FormData();
   formData.append('image', file);

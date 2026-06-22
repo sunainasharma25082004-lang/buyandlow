@@ -4,11 +4,16 @@
   "private": true,
   "type": "module",
   "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "start": "node server.js",
     "start:prod": "node --env-file=.env server.js",
     "dev": "npx nodemon server.js",
-    "seed": "node scripts/seed.js"
+    "seed": "node scripts/seed.js",
+    "reset-admin": "node scripts/resetAdmin.js",
+    "add-products": "node scripts/addProducts.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,6 +22,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^8.5.2",
+    "google-auth-library": "^10.7.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.1",

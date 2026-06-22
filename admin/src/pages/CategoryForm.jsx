@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getCategories, createCategory, updateCategory, uploadImage } from '../api';
+import { resolveMediaUrl } from '../config/api';
 
 const emptyForm = {
   name: '',
@@ -145,7 +146,7 @@ const CategoryForm = () => {
                 required
                 placeholder="Electronics"
               />
-              <small style={{ color: '#8a7a6a' }}>Used when assigning products to this category</small>
+              <small className="text-muted">Used when assigning products to this category</small>
             </div>
             <div className="form-group">
               <label>Display Title</label>
@@ -245,7 +246,7 @@ const CategoryForm = () => {
 
             {form.image && (
               <div className="image-preview-wrap">
-                <img src={form.image} alt="Preview" className="image-preview" />
+                <img src={resolveMediaUrl(form.image)} alt="Preview" className="image-preview" />
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"

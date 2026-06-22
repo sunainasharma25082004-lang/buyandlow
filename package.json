@@ -1,27 +1,26 @@
 {
-  "name": "truemart",
+  "name": "buylow",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run admin\"",
-    "client": "vite",
+    "client": "npm run dev --prefix client",
     "admin": "npm run dev --prefix admin",
     "server": "npm run dev --prefix server",
-    "seed": "node server/scripts/seed.js",
-    "build": "npm install --include=dev && npm install --prefix server --omit=dev && npx vite build",
-    "start": "node server/server.js",
-    "preview": "vite preview"
+    "seed": "npm run seed --prefix server",
+    "build": "npm run build:client && npm run build:admin && npm run build:server",
+    "build:client": "npm install --prefix client --include=dev && npm run build --prefix client",
+    "build:admin": "npm install --prefix admin --include=dev && npm run build --prefix admin",
+    "build:server": "npm install --prefix server --omit=dev",
+    "start": "npm run start --prefix server",
+    "preview:client": "npm run preview --prefix client",
+    "preview:admin": "npm run preview --prefix admin"
   },
-  "dependencies": {
-    "axios": "^1.7.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^7.17.0"
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "concurrently": "^8.2.2",
-    "vite": "^5.4.2"
+    "concurrently": "^8.2.2"
   }
 }

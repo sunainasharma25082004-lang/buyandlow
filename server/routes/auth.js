@@ -11,6 +11,8 @@ import {
   validateLoginInput,
 } from '../utils/validators.js';
 import { isProduction } from '../config/env.js';
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../config/adminCredentials.js';
+import { verifyGoogleCredential, isGoogleAuthEnabled } from '../utils/googleAuth.js';
 
 const router = express.Router();
 
@@ -70,12 +72,13 @@ router.post('/login', authLimiter, asyncHandler(async (req, res) => {
 
   const email = normalizeEmail(req.body.email);
   const { password } = req.body;
+  const configuredAdminEmail = normalizeEmail(ADMIN_EMAIL);
 
   if (!global.isDbConnected) {
     if (isProduction) {
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
-    const isAdmin = email === 'admin@truemart.com' && password === 'admin123';
+    const isAdmin = email === configuredAdminEmail && password === ADMIN_PASSWORD;
     return sendUserResponse(res, {
       _id: isAdmin ? 'mock_admin_id' : 'mock_user_id_12345',
       name: isAdmin ? 'Admin' : 'Demo User',
@@ -86,12 +89,113 @@ router.post('/login', authLimiter, asyncHandler(async (req, res) => {
     });
   }
 
+  if (email === configuredAdminEmail && password === ADMIN_PASSWORD) {
+    let adminUser = await User.findOne({ email: configuredAdminEmail });
+
+    if (!adminUser) {
+      adminUser = await User.create({
+        name: 'Admin',
+        email: configuredAdminEmail,
+        password: ADMIN_PASSWORD,
+        role: 'admin',
+      });
+    } else {
+      let shouldSave = false;
+
+      if (adminUser.role !== 'admin') {
+        adminUser.role = 'admin';
+        shouldSave = true;
+      }
+
+      if (!(await adminUser.matchPassword(ADMIN_PASSWORD))) {
+        adminUser.password = ADMIN_PASSWORD;
+        shouldSave = true;
+      }
+
+      if (shouldSave) {
+        await adminUser.save();
+      }
+    }
+
+    const populatedAdmin = await User.findById(adminUser._id).populate('cart.product').populate('wishlist');
+    return sendUserResponse(res, populatedAdmin);
+  }
+
   const user = await User.findOne({ email }).populate('cart.product').populate('wishlist');
   if (!user || !(await user.matchPassword(password))) {
     return res.status(401).json({ success: false, message: 'Invalid email or password' });
   }
 
   sendUserResponse(res, user);
+}));
+
+router.post('/google', authLimiter, asyncHandler(async (req, res) => {
+  const { credential } = req.body;
+
+  if (!credential) {
+    return res.status(400).json({ success: false, message: 'Google credential is required' });
+  }
+
+  if (!isGoogleAuthEnabled()) {
+    return res.status(503).json({ success: false, message: 'Google sign-in is not configured' });
+  }
+
+  let googleUser;
+  try {
+    googleUser = await verifyGoogleCredential(credential);
+  } catch (err) {
+    return res.status(401).json({ success: false, message: err.message || 'Google sign-in failed' });
+  }
+
+  if (!googleUser.emailVerified) {
+    return res.status(400).json({ success: false, message: 'Please verify your Google email first' });
+  }
+
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    return sendUserResponse(res, {
+      _id: 'mock_google_user',
+      name: googleUser.name,
+      email: googleUser.email,
+      role: 'user',
+      cart: [],
+      wishlist: [],
+    });
+  }
+
+  let user = await User.findOne({
+    $or: [{ googleId: googleUser.googleId }, { email: googleUser.email }],
+  });
+
+  if (user) {
+    let shouldSave = false;
+
+    if (!user.googleId) {
+      user.googleId = googleUser.googleId;
+      shouldSave = true;
+    }
+
+    if (googleUser.avatar && !user.avatar) {
+      user.avatar = googleUser.avatar;
+      shouldSave = true;
+    }
+
+    if (!user.name && googleUser.name) {
+      user.name = googleUser.name;
+      shouldSave = true;
+    }
+
+    if (shouldSave) {
+      await user.save();
+    }
+  } else {
+    user = await User.createGoogleUser(googleUser);
+  }
+
+  const populated = await User.findById(user._id).populate('cart.product').populate('wishlist');
+  sendUserResponse(res, populated);
 }));
 
 router.get('/profile', protect, asyncHandler(async (req, res) => {

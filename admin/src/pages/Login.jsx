@@ -6,7 +6,7 @@ import Logo from '../components/Logo';
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [email, setEmail] = useState('admin@truemart.com');
+  const [email, setEmail] = useState('admin@buylow.store');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ const Login = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@truemart.com"
+              placeholder="admin@buylow.store"
               required
             />
           </div>
@@ -61,8 +61,8 @@ const Login = () => {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: '#999' }}>
-          Default: admin@truemart.com / admin123
+        <p className="login-hint">
+          Default: admin@buylow.store / BuylowAdmin2026
         </p>
       </div>
     </div>

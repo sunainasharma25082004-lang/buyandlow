@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getCategories, deleteCategory } from '../api';
+import { resolveMediaUrl } from '../config/api';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -46,7 +47,7 @@ const Categories = () => {
           ) : categories.length === 0 ? (
             <div className="empty-state">
               No categories yet.{' '}
-              <Link to="/categories/new" style={{ color: '#c9a84c' }}>Add your first category</Link>
+              <Link to="/categories/new" className="text-gold">Add your first category</Link>
             </div>
           ) : (
             <div className="table-wrap">
@@ -67,14 +68,14 @@ const Categories = () => {
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <img
-                            src={cat.image}
+                            src={resolveMediaUrl(cat.image)}
                             alt={cat.name}
                             style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }}
                           />
                           <div>
                             <div style={{ fontWeight: 600 }}>{cat.title || cat.name}</div>
                             {cat.description && (
-                              <div style={{ fontSize: 12, color: '#8a7a6a', marginTop: 2 }}>
+                              <div className="text-sub">
                                 {cat.description.slice(0, 60)}
                                 {cat.description.length > 60 ? '...' : ''}
                               </div>
@@ -94,8 +95,7 @@ const Categories = () => {
                         <div style={{ display: 'flex', gap: 8 }}>
                           <Link to={`/categories/edit/${cat._id}`} className="btn btn-outline btn-sm">Edit</Link>
                           <button
-                            className="btn btn-outline btn-sm"
-                            style={{ color: '#c0392b', borderColor: '#c0392b' }}
+                            className="btn btn-danger btn-sm"
                             disabled={deleting === cat._id}
                             onClick={() => handleDelete(cat._id, cat.title || cat.name)}
                           >

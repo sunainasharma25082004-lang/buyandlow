@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getProducts, getCategories, createProduct, updateProduct, uploadImage } from '../api';
+import { resolveMediaUrl } from '../config/api';
 const BADGES = ['', 'SALE', 'NEW', 'HOT'];
 
 const emptyForm = {
@@ -202,8 +203,8 @@ const ProductForm = () => {
                 ))}
               </select>
               {!categoriesLoading && categories.length === 0 && (
-                <small style={{ color: '#c0392b' }}>
-                  No categories found. <Link to="/categories/new" style={{ color: '#c9a84c' }}>Add a category first</Link>
+                <small className="text-danger">
+                  No categories found. <Link to="/categories/new" className="text-gold">Add a category first</Link>
                 </small>
               )}
             </div>
@@ -294,7 +295,7 @@ const ProductForm = () => {
 
             {form.image && (
               <div className="image-preview-wrap">
-                <img src={form.image} alt="Preview" className="image-preview" />
+                <img src={resolveMediaUrl(form.image)} alt="Preview" className="image-preview" />
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"

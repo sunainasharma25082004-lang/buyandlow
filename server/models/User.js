@@ -1,64 +1,85 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const cartItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
-    required: true
+    required: true,
   },
   quantity: {
     type: Number,
     required: true,
-    default: 1
+    default: 1,
   },
   color: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
   },
   email: {
     type: String,
     required: true,
     unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
   },
   password: {
     type: String,
-    required: true
+    required: function requiredPassword() {
+      return !this.googleId;
+    },
+  },
+  googleId: {
+    type: String,
+    sparse: true,
+    unique: true,
+  },
+  avatar: {
+    type: String,
   },
   role: {
     type: String,
     required: true,
-    default: 'user'
+    default: 'user',
   },
   cart: [cartItemSchema],
   wishlist: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product'
-  }]
+    ref: 'Product',
+  }],
 }, {
-  timestamps: true
+  timestamps: true,
 });
 
-// Password hashing middleware
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    next();
+userSchema.pre('save', async function () {
+  if (!this.isModified('password') || !this.password) {
+    return;
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Compare password method
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  if (!this.password) return false;
+  return bcrypt.compare(enteredPassword, this.password);
+};
+
+userSchema.statics.createGoogleUser = async function ({ googleId, email, name, avatar }) {
+  return this.create({
+    name: name?.trim() || email.split('@')[0],
+    email,
+    googleId,
+    avatar,
+    password: crypto.randomBytes(32).toString('hex'),
+    role: 'user',
+  });
 };
 
 const User = mongoose.model('User', userSchema);

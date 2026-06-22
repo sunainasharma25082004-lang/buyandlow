@@ -78,16 +78,10 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/upload', uploadRoutes);
 
-// Serve the built frontend (dist/) as static files in production.
-// Also provide SPA fallback so React Router (BrowserRouter) client routes work
-// on direct navigation, deep links, or page refresh.
-// This is required for single-service full-stack deployment on Render.
-// - Static assets (JS/CSS/images from Vite build) are served first.
-// - Unknown paths that are not /api/* or /uploads/* fall back to index.html.
-// - API 404s still reach notFound + errorHandler and return proper JSON errors.
-// Only active when NODE_ENV=production (Render sets this automatically).
-if (isProduction) {
-  const distPath = path.join(__dirname, '../dist');
+// Optional: serve client build from the same service (single-service deploy).
+// For Render 3-service setup keep SERVE_CLIENT=false (default).
+if (isProduction && process.env.SERVE_CLIENT === 'true') {
+  const distPath = path.join(__dirname, '../client/dist');
   app.use(express.static(distPath, { maxAge: '1d' }));
 
   app.get('*', (req, res, next) => {
@@ -108,7 +102,7 @@ const startServer = async () => {
   await seedCategoriesIfEmpty();
 
   const server = app.listen(PORT, () => {
-    console.log(`🚀 Truemart API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+    console.log(`🚀 BuyLow API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
   });
 
   const shutdown = (signal) => {
