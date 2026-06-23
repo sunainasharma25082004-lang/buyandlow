@@ -82,9 +82,3 @@
     gap: 14px;
   }
 }
-
-@media (max-width: 480px) {
-  .sale-products-grid {
-    grid-template-columns: 1fr;
-  }
-}

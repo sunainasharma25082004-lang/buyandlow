@@ -28,9 +28,23 @@ const validateEnv = () => {
   }
 };
 
+const normalizeOrigin = (url) => {
+  let origin = String(url).trim();
+  if (!origin) return '';
+
+  if (!/^https?:\/\//i.test(origin)) {
+    origin = `https://${origin}`;
+  }
+
+  return origin.replace(/\/+$/, '');
+};
+
 const getCorsOrigins = () => {
   if (process.env.CLIENT_URL) {
-    return process.env.CLIENT_URL.split(',').map((o) => o.trim()).filter(Boolean);
+    return process.env.CLIENT_URL
+      .split(',')
+      .map(normalizeOrigin)
+      .filter(Boolean);
   }
   if (isProduction) {
     return [];

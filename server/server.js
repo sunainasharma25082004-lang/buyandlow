@@ -37,12 +37,17 @@ app.use(helmet({
 }));
 
 const corsOrigins = getCorsOrigins();
+if (isProduction && corsOrigins.length) {
+  console.log(`🌐 CORS allowed origins: ${corsOrigins.join(', ')}`);
+}
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || corsOrigins.length === 0 || corsOrigins.includes(origin)) {
+    const normalized = origin ? origin.replace(/\/+$/, '') : origin;
+    if (!normalized || corsOrigins.length === 0 || corsOrigins.includes(normalized)) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS blocked for origin: ${origin}`));
+      console.warn(`⚠️  CORS blocked for origin: ${normalized}`);
+      callback(null, false);
     }
   },
   credentials: true,
