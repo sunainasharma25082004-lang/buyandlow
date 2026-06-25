@@ -231,7 +231,9 @@ router.get('/profile', protect, asyncHandler(async (req, res) => {
 }));
 
 router.put('/cart', protect, asyncHandler(async (req, res) => {
-  if (!Array.isArray(req.body.cart)) {
+  const cartPayload = req.body.cart ?? req.body.cartItems;
+
+  if (!Array.isArray(cartPayload)) {
     return res.status(400).json({ success: false, message: 'Cart must be an array' });
   }
 
@@ -239,7 +241,7 @@ router.put('/cart', protect, asyncHandler(async (req, res) => {
     if (isProduction) {
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
-    return res.json(req.body.cart);
+    return res.json(cartPayload);
   }
 
   const user = await User.findById(req.user._id);
@@ -247,7 +249,7 @@ router.put('/cart', protect, asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'User not found' });
   }
 
-  user.cart = req.body.cart;
+  user.cart = cartPayload;
   await user.save();
   const populated = await User.findById(user._id).populate('cart.product');
   res.json(populated.cart);

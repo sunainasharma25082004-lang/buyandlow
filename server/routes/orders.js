@@ -49,7 +49,10 @@ router.get('/myorders', protect, asyncHandler(async (req, res) => {
 }));
 
 router.post('/', protect, asyncHandler(async (req, res) => {
-  const { orderItems, shippingAddress, itemsPrice, shippingPrice, totalPrice } = req.body;
+  const { orderItems, shippingAddress, itemsPrice, shippingPrice, totalPrice, paymentMethod } = req.body;
+  const resolvedPaymentMethod = paymentMethod || 'Razorpay';
+  const isCod = resolvedPaymentMethod.toLowerCase().includes('cod') ||
+    resolvedPaymentMethod.toLowerCase().includes('cash');
 
   const itemsError = validateOrderItems(orderItems);
   if (itemsError) {
@@ -65,10 +68,12 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid order total' });
   }
 
-  const razorpay = getRazorpayInstance();
+  const razorpay = isCod ? null : getRazorpayInstance();
   let razorpayOrderId;
 
-  if (razorpay) {
+  if (isCod) {
+    razorpayOrderId = undefined;
+  } else if (razorpay) {
     const rzpOrder = await razorpay.orders.create({
       amount: Math.round(Number(totalPrice) * 100),
       currency: 'INR',
@@ -89,13 +94,14 @@ router.post('/', protect, asyncHandler(async (req, res) => {
       user: req.user._id,
       orderItems,
       shippingAddress,
-      paymentMethod: 'Razorpay',
+      paymentMethod: resolvedPaymentMethod,
       razorpayOrderId,
       itemsPrice,
       shippingPrice,
       totalPrice: Number(totalPrice),
       isPaid: false,
       isDelivered: false,
+      orderStatus: 'placed',
       createdAt: new Date().toISOString(),
     };
 
@@ -116,11 +122,13 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     user: req.user._id,
     orderItems,
     shippingAddress,
+    paymentMethod: resolvedPaymentMethod,
     itemsPrice: Number(itemsPrice),
     shippingPrice: Number(shippingPrice),
     totalPrice: Number(totalPrice),
     razorpayOrderId,
     isPaid: false,
+    orderStatus: 'placed',
   });
 
   res.status(201).json({

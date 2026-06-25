@@ -1,0 +1,1 @@
+// Static demo data removed — categories and products now load from the backend API.
