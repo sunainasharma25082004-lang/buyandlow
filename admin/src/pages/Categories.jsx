@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getCategories, deleteCategory } from '../api';
 import AdminImage from '../components/AdminImage';
+import Pagination from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -22,6 +24,16 @@ const Categories = () => {
 
   useEffect(() => { fetchCategories(); }, []);
 
+  const {
+    page,
+    setPage,
+    totalPages,
+    paginatedItems: paginatedCategories,
+    totalItems: categoryCount,
+    rangeStart,
+    rangeEnd,
+  } = usePagination(categories, 20);
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete category "${name}"?`)) return;
     setDeleting(id);
@@ -40,7 +52,7 @@ const Categories = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Categories</h1>
-          <p className="page-subtitle">Manage shop categories shown on the store</p>
+          <p className="page-subtitle">{categories.length} categories — showing 20 per page</p>
         </div>
         <Link to="/categories/new" className="btn btn-gold">+ Add Category</Link>
       </div>
@@ -72,7 +84,7 @@ const Categories = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {categories.map((cat) => (
+                  {paginatedCategories.map((cat) => (
                     <tr key={cat._id}>
                       <td className="td-product-main" data-label="">
                         <div className="product-cell">
@@ -119,6 +131,16 @@ const Categories = () => {
               </table>
             </div>
           )}
+          {!loading && categories.length > 0 ? (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              totalItems={categoryCount}
+            />
+          ) : null}
         </div>
       </div>
     </div>

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getReviews, updateReview, deleteReview } from '../api';
 import AdminImage from '../components/AdminImage';
 import { resolveMediaUrl } from '../config/api';
+import Pagination from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 const getProductId = (product) => {
   if (!product) return '';
@@ -92,6 +94,16 @@ const Reviews = () => {
     [reviews, search],
   );
 
+  const {
+    page,
+    setPage,
+    totalPages,
+    paginatedItems: paginatedReviews,
+    totalItems: filteredCount,
+    rangeStart,
+    rangeEnd,
+  } = usePagination(filteredReviews, 20, search);
+
   const openEdit = (review) => {
     setEditing(review._id);
     setForm({
@@ -141,7 +153,7 @@ const Reviews = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Reviews</h1>
-          <p className="page-subtitle">{reviews.length} reviews — search by review ID, product ID or customer</p>
+          <p className="page-subtitle">{reviews.length} reviews — 20 per page, search by ID or customer</p>
         </div>
       </div>
 
@@ -194,7 +206,7 @@ const Reviews = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredReviews.map((r) => (
+                  {paginatedReviews.map((r) => (
                     <tr key={r._id}>
                       {editing === r._id ? (
                         <td colSpan={8} className="td-full-row">
@@ -290,6 +302,16 @@ const Reviews = () => {
               </table>
             </div>
           )}
+          {!loading && filteredReviews.length > 0 ? (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              totalItems={filteredCount}
+            />
+          ) : null}
         </div>
       </div>
     </div>

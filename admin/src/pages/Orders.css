@@ -1,3 +1,14 @@
+.orders-page .search-toolbar {
+  margin-bottom: 16px;
+}
+
+.orders-page .pagination-bar {
+  margin-top: 8px;
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
 .orders-page .orders-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

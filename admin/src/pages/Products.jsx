@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { getProducts, deleteProduct } from '../api';
 import { formatINR } from '../utils/currency';
 import AdminImage from '../components/AdminImage';
+import Pagination from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 const matchesProductSearch = (product, query) => {
   const term = query.trim().toLowerCase();
@@ -46,6 +48,16 @@ const Products = () => {
     [products, search],
   );
 
+  const {
+    page,
+    setPage,
+    totalPages,
+    paginatedItems: paginatedProducts,
+    totalItems: filteredCount,
+    rangeStart,
+    rangeEnd,
+  } = usePagination(filteredProducts, 20, search);
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"?`)) return;
     setDeleting(id);
@@ -64,7 +76,7 @@ const Products = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Products</h1>
-          <p className="page-subtitle">{products.length} products in store</p>
+          <p className="page-subtitle">{products.length} products — showing 20 per page</p>
         </div>
         <Link to="/products/new" className="btn btn-gold">+ Add Product</Link>
       </div>
@@ -123,7 +135,7 @@ const Products = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((p) => (
+                  {paginatedProducts.map((p) => (
                     <tr key={p._id}>
                       <td className="td-product-main" data-label="">
                         <div className="product-cell">
@@ -162,6 +174,16 @@ const Products = () => {
               </table>
             </div>
           )}
+          {!loading && filteredProducts.length > 0 ? (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              totalItems={filteredCount}
+            />
+          ) : null}
         </div>
       </div>
     </div>

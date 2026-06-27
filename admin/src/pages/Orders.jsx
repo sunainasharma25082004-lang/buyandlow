@@ -1,8 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getOrders, updateOrder } from '../api';
 import { formatINR } from '../utils/currency';
 import AdminImage from '../components/AdminImage';
+import Pagination from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 import './Orders.css';
+
+const matchesOrderSearch = (order, query) => {
+  const term = query.trim().toLowerCase();
+  if (!term) return true;
+
+  const orderId = String(order._id || '').toLowerCase();
+  const customerName = (order.user?.name || '').toLowerCase();
+  const customerEmail = (order.user?.email || '').toLowerCase();
+  const phone = (order.shippingAddress?.phone || '').toLowerCase();
+  const paymentId = (order.razorpayPaymentId || '').toLowerCase();
+  const status = (order.orderStatus || '').toLowerCase();
+  const itemNames = (order.orderItems || [])
+    .map((item) => (item.name || '').toLowerCase())
+    .join(' ');
+
+  return (
+    orderId.includes(term)
+    || customerName.includes(term)
+    || customerEmail.includes(term)
+    || phone.includes(term)
+    || paymentId.includes(term)
+    || status.includes(term)
+    || itemNames.includes(term)
+  );
+};
 
 const STATUS_OPTIONS = [
   { value: 'placed', label: 'Order Placed' },
@@ -60,12 +87,28 @@ const Orders = () => {
   const [updating, setUpdating] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [edits, setEdits] = useState({});
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     getOrders()
       .then((res) => setOrders(res.data))
       .finally(() => setLoading(false));
   }, []);
+
+  const filteredOrders = useMemo(
+    () => orders.filter((o) => matchesOrderSearch(o, search)),
+    [orders, search],
+  );
+
+  const {
+    page,
+    setPage,
+    totalPages,
+    paginatedItems: paginatedOrders,
+    totalItems: filteredCount,
+    rangeStart,
+    rangeEnd,
+  } = usePagination(filteredOrders, 20, search);
 
   const initEdit = (order) => ({
     orderStatus: order.orderStatus || (order.isDelivered ? 'delivered' : order.isPaid ? 'confirmed' : 'placed'),
@@ -134,9 +177,32 @@ const Orders = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Orders & Transactions</h1>
-          <p className="page-subtitle">Manage orders, set delivery dates & track shipments</p>
+          <p className="page-subtitle">{orders.length} orders — 20 per page, search by ID or name</p>
         </div>
       </div>
+
+      {!loading && orders.length > 0 ? (
+        <div className="search-toolbar">
+          <input
+            type="search"
+            className="search-input"
+            placeholder="Search by order ID, customer name, email or phone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search orders"
+          />
+          {search ? (
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setSearch('')}>
+              Clear
+            </button>
+          ) : null}
+          {search ? (
+            <span className="search-count">
+              {filteredOrders.length} of {orders.length}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="orders-stats">
         <div className="stat-pill"><span>Total Orders</span><strong>{orders.length}</strong></div>
@@ -149,8 +215,15 @@ const Orders = () => {
         <div className="card"><div className="card-body loading-state">Loading orders...</div></div>
       ) : orders.length === 0 ? (
         <div className="card"><div className="card-body empty-state">No orders yet</div></div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="card">
+          <div className="card-body empty-state">
+            No orders match &quot;{search}&quot;. Try order ID or customer name.
+          </div>
+        </div>
       ) : (
-        orders.map((order) => {
+        <>
+        {paginatedOrders.map((order) => {
           const isOpen = expandedId === order._id;
           const edit = edits[order._id] || initEdit(order);
           const status = order.orderStatus || (order.isDelivered ? 'delivered' : 'placed');
@@ -162,6 +235,7 @@ const Orders = () => {
                   <div className="order-id-line">
                     Order #{order._id?.slice(-8)} · {order.user?.name || 'Guest'}
                   </div>
+                  <div className="text-sub product-id-line">ID: {order._id}</div>
                   <div className="order-meta-line">
                     {formatDate(order.createdAt)} · {order.orderItems?.length || 0} items · {order.user?.email}
                     {order.expectedDeliveryDate && (
@@ -306,7 +380,16 @@ const Orders = () => {
               )}
             </div>
           );
-        })
+        })}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          rangeStart={rangeStart}
+          rangeEnd={rangeEnd}
+          totalItems={filteredCount}
+        />
+        </>
       )}
     </div>
   );
