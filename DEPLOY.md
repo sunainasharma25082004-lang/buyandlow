@@ -76,11 +76,27 @@ MONGODB_URI="your-atlas-uri" npm run seed
 MONGODB_URI="your-atlas-uri" npm run reset-admin
 ```
 
-## 6. Verify
+## 6. Fix "Not Found" on page reload (SPA routing)
+
+If refreshing `/products`, `/orders`, etc. shows **Not Found**, add a rewrite rule on **each static site** (store + admin):
+
+1. Render Dashboard → open **buylow-store** or **buylow-admin**
+2. Go to **Redirects / Rewrites**
+3. Add rule:
+   - **Source:** `/*`
+   - **Destination:** `/index.html`
+   - **Action:** `Rewrite` (not Redirect)
+
+If you deployed via **Blueprint**, sync the repo so `render.yaml` routes apply automatically.
+
+The build also copies `index.html` → `404.html` as a fallback. Production apps use hash routing (`/#/orders`) so reload works even without dashboard rules.
+
+## 7. Verify
 
 - API health: `https://buylow-api.onrender.com/health`
 - Store loads products
 - Admin login: `admin@buylow.store` + your `ADMIN_PASSWORD`
+- Reload on `/orders` or `/#/orders` does **not** show Not Found
 
 ## Notes
 

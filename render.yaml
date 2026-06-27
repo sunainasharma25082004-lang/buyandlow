@@ -42,6 +42,7 @@ services:
         sync: false
 
   # ── Customer Store ───────────────────────────────────────────
+  # SPA: rewrite all paths to index.html (fixes reload 404 on /products etc.)
   - type: web
     name: buylow-store
     runtime: static
@@ -59,6 +60,7 @@ services:
         sync: false
 
   # ── Admin Panel ──────────────────────────────────────────────
+  # SPA: rewrite all paths to index.html (fixes reload 404 on /orders etc.)
   - type: web
     name: buylow-admin
     runtime: static

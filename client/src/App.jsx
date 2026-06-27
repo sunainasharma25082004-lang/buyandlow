@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import { AuthProvider } from "./context/AuthContext";
@@ -44,6 +44,7 @@ const HomePage = () => {
 };
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const Router = import.meta.env.PROD ? HashRouter : BrowserRouter;
 
 function App() {
   const app = (
