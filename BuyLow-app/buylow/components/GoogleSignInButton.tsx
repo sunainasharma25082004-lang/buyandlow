@@ -6,9 +6,11 @@ import {
   ActivityIndicator,
   Alert,
   View,
+  Platform,
 } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import {
@@ -26,18 +28,34 @@ type Props = {
   disabled?: boolean;
 };
 
+const getRedirectUri = () =>
+  makeRedirectUri({
+    scheme: 'buylow',
+    path: 'oauthredirect',
+    preferLocalhost: Platform.OS === 'web',
+  });
+
 export default function GoogleSignInButton({ onSuccess, disabled }: Props) {
   const { t } = useLanguage();
   const [busy, setBusy] = useState(false);
   const webClientId = getGoogleWebClientId();
   const androidClientId = getGoogleAndroidClientId();
   const iosClientId = getGoogleIosClientId();
+  const redirectUri = getRedirectUri();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: webClientId || undefined,
     androidClientId: androidClientId || undefined,
     iosClientId: iosClientId || undefined,
+    redirectUri,
+    scopes: ['openid', 'profile', 'email'],
   });
+
+  useEffect(() => {
+    if (__DEV__ && redirectUri) {
+      console.log('[Google OAuth] redirectUri:', redirectUri);
+    }
+  }, [redirectUri]);
 
   useEffect(() => {
     if (response?.type !== 'success') {
