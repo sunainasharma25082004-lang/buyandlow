@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getCategories, createCategory, updateCategory, uploadImage } from '../api';
-import { resolveMediaUrl } from '../config/api';
+import AdminImage from '../components/AdminImage';
 
 const emptyForm = {
   name: '',
@@ -27,25 +27,26 @@ const CategoryForm = () => {
 
   useEffect(() => {
     if (!isEdit) return;
-    getCategories().then((res) => {
-      const category = res.data.find((c) => c._id === id);
-      if (!category) {
-        setError('Category not found');
-        setLoading(false);
-        return;
-      }
-      setForm({
-        name: category.name || '',
-        title: category.title || '',
-        image: category.image || '',
-        description: category.description || '',
-        sortOrder: category.sortOrder ?? 0,
-        isActive: category.isActive !== false,
-        showOnHome: category.showOnHome !== false,
-      });
-      setImageMode(category.image?.includes('/uploads/') ? 'upload' : 'url');
-      setLoading(false);
-    });
+    getCategories()
+      .then((res) => {
+        const category = res.data.find((c) => c._id === id);
+        if (!category) {
+          setError('Category not found');
+          return;
+        }
+        setForm({
+          name: category.name || '',
+          title: category.title || '',
+          image: category.image || '',
+          description: category.description || '',
+          sortOrder: category.sortOrder ?? 0,
+          isActive: category.isActive !== false,
+          showOnHome: category.showOnHome !== false,
+        });
+        setImageMode(category.image?.includes('/uploads/') ? 'upload' : 'url');
+      })
+      .catch(() => setError('Failed to load category. Check that the backend server is running.'))
+      .finally(() => setLoading(false));
   }, [id, isEdit]);
 
   const handleChange = (e) => {
@@ -246,7 +247,7 @@ const CategoryForm = () => {
 
             {form.image && (
               <div className="image-preview-wrap">
-                <img src={resolveMediaUrl(form.image)} alt="Preview" className="image-preview" />
+                <AdminImage src={form.image} alt="Preview" className="image-preview" />
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"

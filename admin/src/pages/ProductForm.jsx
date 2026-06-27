@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { getProducts, getCategories, createProduct, updateProduct, uploadImage } from '../api';
-import { resolveMediaUrl } from '../config/api';
+import AdminImage from '../components/AdminImage';
 const BADGES = ['', 'SALE', 'NEW', 'HOT'];
 
 const emptyForm = {
@@ -50,32 +50,33 @@ const ProductForm = () => {
 
   useEffect(() => {
     if (!isEdit) return;
-    getProducts().then((res) => {
-      const product = res.data.find((p) => p._id === id);
-      if (!product) {
-        setError('Product not found');
-        setLoading(false);
-        return;
-      }
-      setForm({
-        name: product.name || '',
-        price: product.price || '',
-        oldPrice: product.oldPrice || '',
-        category: product.category || 'Electronics',
-        brand: product.brand || '',
-        sku: product.sku || '',
-        stock: product.stock ?? 10,
-        rating: product.rating ?? 4.5,
-        reviews: product.reviews ?? 0,
-        image: product.image || '',
-        description: product.description || '',
-        badge: product.badge || '',
-        colors: (product.colors || []).join(', '),
-        tags: (product.tags || []).join(', '),
-      });
-      setImageMode(product.image?.includes('/uploads/') ? 'upload' : 'url');
-      setLoading(false);
-    });
+    getProducts()
+      .then((res) => {
+        const product = res.data.find((p) => p._id === id);
+        if (!product) {
+          setError('Product not found');
+          return;
+        }
+        setForm({
+          name: product.name || '',
+          price: product.price || '',
+          oldPrice: product.oldPrice || '',
+          category: product.category || 'Electronics',
+          brand: product.brand || '',
+          sku: product.sku || '',
+          stock: product.stock ?? 10,
+          rating: product.rating ?? 4.5,
+          reviews: product.reviews ?? 0,
+          image: product.image || '',
+          description: product.description || '',
+          badge: product.badge || '',
+          colors: (product.colors || []).join(', '),
+          tags: (product.tags || []).join(', '),
+        });
+        setImageMode(product.image?.includes('/uploads/') ? 'upload' : 'url');
+      })
+      .catch(() => setError('Failed to load product. Check that the backend server is running.'))
+      .finally(() => setLoading(false));
   }, [id, isEdit]);
 
   const handleChange = (e) => {
@@ -295,7 +296,7 @@ const ProductForm = () => {
 
             {form.image && (
               <div className="image-preview-wrap">
-                <img src={resolveMediaUrl(form.image)} alt="Preview" className="image-preview" />
+                <AdminImage src={form.image} alt="Preview" className="image-preview" />
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"

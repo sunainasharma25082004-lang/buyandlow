@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getOrders, updateOrder } from '../api';
 import { formatINR } from '../utils/currency';
-import { resolveMediaUrl } from '../config/api';
+import AdminImage from '../components/AdminImage';
 import './Orders.css';
 
 const STATUS_OPTIONS = [
@@ -222,7 +222,7 @@ const Orders = () => {
                       <h4>Items ({order.orderItems?.length || 0})</h4>
                       {order.orderItems?.map((item, i) => (
                         <div key={i} className="order-item-line">
-                          {item.image && <img src={resolveMediaUrl(item.image)} alt="" />}
+                          {item.image && <AdminImage src={item.image} alt="" />}
                           <div className="item-text">
                             <div className="item-name">{item.name}</div>
                             <div className="item-sub">

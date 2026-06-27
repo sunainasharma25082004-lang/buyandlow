@@ -1,17 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getCategories, deleteCategory } from '../api';
-import { resolveMediaUrl } from '../config/api';
+import AdminImage from '../components/AdminImage';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
+  const [error, setError] = useState('');
 
   const fetchCategories = () => {
     setLoading(true);
     getCategories()
       .then((res) => setCategories(res.data))
+      .catch(() => {
+        setCategories([]);
+        setError('Could not load categories. Make sure the backend server is running on port 5000.');
+      })
       .finally(() => setLoading(false));
   };
 
@@ -46,8 +51,12 @@ const Categories = () => {
             <div className="loading-state">Loading categories...</div>
           ) : categories.length === 0 ? (
             <div className="empty-state">
-              No categories yet.{' '}
-              <Link to="/categories/new" className="text-gold">Add your first category</Link>
+              {error || (
+                <>
+                  No categories yet.{' '}
+                  <Link to="/categories/new" className="text-gold">Add your first category</Link>
+                </>
+              )}
             </div>
           ) : (
             <div className="table-wrap">
@@ -67,8 +76,8 @@ const Categories = () => {
                     <tr key={cat._id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <img
-                            src={resolveMediaUrl(cat.image)}
+                          <AdminImage
+                            src={cat.image}
                             alt={cat.name}
                             style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }}
                           />

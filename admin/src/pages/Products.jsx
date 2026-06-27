@@ -2,17 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getProducts, deleteProduct } from '../api';
 import { formatINR } from '../utils/currency';
-import { resolveMediaUrl } from '../config/api';
+import AdminImage from '../components/AdminImage';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
+  const [error, setError] = useState('');
 
   const fetchProducts = () => {
     setLoading(true);
     getProducts()
       .then((res) => setProducts(res.data))
+      .catch(() => {
+        setProducts([]);
+        setError('Could not load products. Make sure the backend server is running on port 5000.');
+      })
       .finally(() => setLoading(false));
   };
 
@@ -47,7 +52,11 @@ const Products = () => {
             <div className="loading-state">Loading products...</div>
           ) : products.length === 0 ? (
             <div className="empty-state">
-              No products yet. <Link to="/products/new" className="text-gold">Add your first product</Link>
+              {error || (
+                <>
+                  No products yet. <Link to="/products/new" className="text-gold">Add your first product</Link>
+                </>
+              )}
             </div>
           ) : (
             <div className="table-wrap">
@@ -68,7 +77,7 @@ const Products = () => {
                     <tr key={p._id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={resolveMediaUrl(p.image)} alt={p.name} className="product-thumb" />
+                          <AdminImage src={p.image} alt={p.name} className="product-thumb" />
                           <div>
                             <strong style={{ fontSize: '13px' }}>{p.name}</strong>
                             <div className="text-sub">{p.sku}</div>
