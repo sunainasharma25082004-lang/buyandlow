@@ -10,7 +10,7 @@ import {
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
-import { getGoogleClientId, isGoogleAuthConfigured } from '../config/google';
+import { getGoogleWebClientId, isGoogleAuthConfigured } from '../config/google';
 import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
@@ -21,7 +21,7 @@ type Props = {
 export default function GoogleSignInButton({ onSuccess, disabled }: Props) {
   const { t } = useLanguage();
   const [busy, setBusy] = useState(false);
-  const webClientId = getGoogleClientId();
+  const webClientId = getGoogleWebClientId();
 
   if (!isGoogleAuthConfigured()) {
     return (

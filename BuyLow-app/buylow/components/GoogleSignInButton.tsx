@@ -11,7 +11,12 @@ import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
-import { getGoogleClientId, isGoogleAuthConfigured } from '../config/google';
+import {
+  getGoogleWebClientId,
+  getGoogleAndroidClientId,
+  getGoogleIosClientId,
+  isGoogleAuthConfigured,
+} from '../config/google';
 import { useLanguage } from '../context/LanguageContext';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -24,12 +29,14 @@ type Props = {
 export default function GoogleSignInButton({ onSuccess, disabled }: Props) {
   const { t } = useLanguage();
   const [busy, setBusy] = useState(false);
-  const webClientId = getGoogleClientId();
+  const webClientId = getGoogleWebClientId();
+  const androidClientId = getGoogleAndroidClientId();
+  const iosClientId = getGoogleIosClientId();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId: webClientId || undefined,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    androidClientId: androidClientId || undefined,
+    iosClientId: iosClientId || undefined,
   });
 
   useEffect(() => {
