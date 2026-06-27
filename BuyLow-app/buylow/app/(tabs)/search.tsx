@@ -7,11 +7,13 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import storage from '../../utils/storage';
 
 import { Colors, Shadows } from '../../constants/colors';
+import { useLanguage } from '../../context/LanguageContext';
 import { formatINR, getProducts } from '../../services/api';
 import type { Product } from '../../types/api';
 
 export default function SearchScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [keyword, setKeyword] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,14 +77,14 @@ export default function SearchScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Search</Text>
+        <Text style={styles.title}>{t('search.title')}</Text>
       </View>
 
       <View style={styles.searchRow}>
         <View style={styles.inputContainer}>
           <Feather name="search" size={20} color={Colors.textLight} style={styles.searchIcon} />
           <TextInput
-            placeholder="Search for products, brands and more..."
+            placeholder={t('search.placeholder')}
             placeholderTextColor={Colors.textLight}
             style={styles.input}
             value={keyword}
@@ -107,9 +109,9 @@ export default function SearchScreen() {
           {recentSearches.length > 0 ? (
             <>
               <View style={styles.recentHeader}>
-                <Text style={styles.recentTitle}>Recent Searches</Text>
+                <Text style={styles.recentTitle}>{t('search.recentSearches')}</Text>
                 <TouchableOpacity onPress={clearRecentSearches}>
-                  <Text style={styles.clearText}>Clear</Text>
+                  <Text style={styles.clearText}>{t('common.clear')}</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.recentTags}>
@@ -128,13 +130,13 @@ export default function SearchScreen() {
           ) : (
             <View style={styles.stateBox}>
                <Feather name="search" size={48} color={Colors.border} style={{marginBottom: 16}} />
-               <Text style={styles.stateText}>Start typing to search for trendy products.</Text>
+               <Text style={styles.stateText}>{t('search.startTyping')}</Text>
             </View>
           )}
         </View>
       ) : products.length === 0 ? (
         <View style={styles.stateBox}>
-          <Text style={styles.stateText}>{`No products found for "${keyword}".`}</Text>
+          <Text style={styles.stateText}>{t('search.noResults', { keyword })}</Text>
         </View>
       ) : (
         <FlatList

@@ -5,16 +5,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../constants/colors';
 import { FEATURE_IMAGES } from '../../constants/images';
-
-const features = [
-  { icon: 'award' as const, text: 'Lowest\nPrices', image: FEATURE_IMAGES.delivery },
-  { icon: 'check-circle' as const, text: '100%\nOriginal', image: FEATURE_IMAGES.secure },
-  { icon: 'truck' as const, text: 'Fast & Free\nDelivery', image: FEATURE_IMAGES.delivery },
-  { icon: 'refresh-ccw' as const, text: 'Easy\nReturns', image: FEATURE_IMAGES.returns },
-  { icon: 'headphones' as const, text: '24x7\nSupport', image: FEATURE_IMAGES.support },
-];
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Features() {
+  const { t } = useLanguage();
+  const features = [
+    { icon: 'award' as const, text: t('home.featureLowest'), image: FEATURE_IMAGES.delivery },
+    { icon: 'check-circle' as const, text: t('home.featureOriginal'), image: FEATURE_IMAGES.secure },
+    { icon: 'truck' as const, text: t('home.featureDelivery'), image: FEATURE_IMAGES.delivery },
+    { icon: 'refresh-ccw' as const, text: t('home.featureReturns'), image: FEATURE_IMAGES.returns },
+    { icon: 'headphones' as const, text: t('home.featureSupport'), image: FEATURE_IMAGES.support },
+  ];
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>

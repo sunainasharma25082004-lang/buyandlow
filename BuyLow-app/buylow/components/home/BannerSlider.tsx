@@ -11,6 +11,7 @@ import { BANNER_SLIDES } from '../../constants/images';
 import { SCREEN_WIDTH, horizontalPadding, isTablet } from '../../utils/responsive';
 import { getAppBanners, resolveMediaUrl } from '../../services/api';
 import type { AppBanner } from '../../types/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 const bannerHeight = isTablet ? 220 : Math.min(SCREEN_WIDTH * 0.48, 200);
 
@@ -32,17 +33,43 @@ const toSlide = (banner: AppBanner): BannerSlide => ({
   route: banner.route,
 });
 
-const fallbackSlides: BannerSlide[] = BANNER_SLIDES.map((item) => ({
-  id: item.id,
-  label: item.label,
-  title: item.title,
-  subtitle: item.subtitle,
-  image: item.image,
-  route: item.route,
-}));
-
 export default function BannerSlider() {
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const fallbackSlides: BannerSlide[] = useMemo(
+    () =>
+      BANNER_SLIDES.map((item) => {
+        const key = item.id as '1' | '2' | '3';
+        const labels: Record<string, { label: string; title: string; subtitle: string }> = {
+          '1': {
+            label: t('home.banner1Label'),
+            title: t('home.banner1Title'),
+            subtitle: t('home.banner1Subtitle'),
+          },
+          '2': {
+            label: t('home.banner2Label'),
+            title: t('home.banner2Title'),
+            subtitle: t('home.banner2Subtitle'),
+          },
+          '3': {
+            label: t('home.banner3Label'),
+            title: t('home.banner3Title'),
+            subtitle: t('home.banner3Subtitle'),
+          },
+        };
+        const copy = labels[key] || labels['1'];
+        return {
+          id: item.id,
+          label: copy.label,
+          title: copy.title,
+          subtitle: copy.subtitle,
+          image: item.image,
+          route: item.route,
+        };
+      }),
+    [t],
+  );
   const [slides, setSlides] = useState<BannerSlide[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,7 +92,7 @@ export default function BannerSlider() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [fallbackSlides]);
 
   const data = useMemo(() => slides, [slides]);
 
@@ -91,7 +118,7 @@ export default function BannerSlider() {
           style={styles.button}
           onPress={() => router.push(item.route as any)}
         >
-          <Text style={styles.buttonText}>Shop Now</Text>
+          <Text style={styles.buttonText}>{t('common.shopNow')}</Text>
           <Feather name="arrow-right" size={16} color={Colors.primary} />
         </TouchableOpacity>
       </View>

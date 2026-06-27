@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
@@ -36,6 +37,7 @@ export default function SideDrawer({ visible, onClose }: Props) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { cartCount } = useCart();
+  const { t } = useLanguage();
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
 
@@ -76,18 +78,18 @@ export default function SideDrawer({ visible, onClose }: Props) {
   };
 
   const mainItems: DrawerItem[] = [
-    { icon: 'home-outline', iconFamily: 'Ionicons', label: 'Home', route: '/(tabs)' },
-    { icon: 'grid-outline', iconFamily: 'Ionicons', label: 'Categories', route: '/(tabs)/categories' },
-    { icon: 'search-outline', iconFamily: 'Ionicons', label: 'Search', route: '/(tabs)/search' },
-    { icon: 'bag-outline', iconFamily: 'Ionicons', label: 'My Orders', route: '/(tabs)/orders' },
-    { icon: 'cart-outline', iconFamily: 'Ionicons', label: 'Shopping Cart', route: '/cart', badge: cartCount },
-    { icon: 'help-circle-outline', iconFamily: 'Ionicons', label: 'Help & Support', route: '/help' },
+    { icon: 'home-outline', iconFamily: 'Ionicons', label: t('tabs.home'), route: '/(tabs)' },
+    { icon: 'grid-outline', iconFamily: 'Ionicons', label: t('tabs.categories'), route: '/(tabs)/categories' },
+    { icon: 'search-outline', iconFamily: 'Ionicons', label: t('tabs.search'), route: '/(tabs)/search' },
+    { icon: 'bag-outline', iconFamily: 'Ionicons', label: t('account.myOrders'), route: '/(tabs)/orders' },
+    { icon: 'cart-outline', iconFamily: 'Ionicons', label: t('account.shoppingCart'), route: '/cart', badge: cartCount },
+    { icon: 'help-circle-outline', iconFamily: 'Ionicons', label: t('drawer.helpSupport'), route: '/help' },
   ];
 
   const accountItems: DrawerItem[] = [
-    { icon: 'person-outline', iconFamily: 'Ionicons', label: 'My Account', route: '/(tabs)/account' },
-    { icon: 'heart-outline', iconFamily: 'Ionicons', label: 'Wishlist', route: '/wishlist' },
-    { icon: 'location-outline', iconFamily: 'Ionicons', label: 'My Addresses', route: '/account/addresses' },
+    { icon: 'person-outline', iconFamily: 'Ionicons', label: t('account.myAccount'), route: '/(tabs)/account' },
+    { icon: 'heart-outline', iconFamily: 'Ionicons', label: t('drawer.wishlist'), route: '/wishlist' },
+    { icon: 'location-outline', iconFamily: 'Ionicons', label: t('drawer.myAddresses'), route: '/account/addresses' },
   ];
 
   const renderIcon = (item: DrawerItem, color: string) => {
@@ -136,13 +138,13 @@ export default function SideDrawer({ visible, onClose }: Props) {
           </View>
         ) : (
           <View style={styles.loginSection}>
-            <Text style={styles.loginPrompt}>Hello, Guest!</Text>
+            <Text style={styles.loginPrompt}>{t('drawer.helloGuest')}</Text>
             <View style={styles.loginButtons}>
               <TouchableOpacity style={styles.loginBtn} onPress={() => navigate('/(auth)/login')}>
-                <Text style={styles.loginBtnText}>Login</Text>
+                <Text style={styles.loginBtnText}>{t('common.login')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.registerBtn} onPress={() => navigate('/(auth)/register')}>
-                <Text style={styles.registerBtnText}>Sign Up</Text>
+                <Text style={styles.registerBtnText}>{t('common.signUp')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -150,7 +152,7 @@ export default function SideDrawer({ visible, onClose }: Props) {
 
         <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
           {/* Main Nav */}
-          <Text style={styles.sectionTitle}>NAVIGATION</Text>
+          <Text style={styles.sectionTitle}>{t('drawer.navigation')}</Text>
           {mainItems.map((item) => (
             <TouchableOpacity key={item.label} style={styles.menuItem} onPress={() => navigate(item.route)}>
               <View style={styles.menuIcon}>
@@ -167,7 +169,7 @@ export default function SideDrawer({ visible, onClose }: Props) {
           ))}
 
           {/* Account */}
-          <Text style={styles.sectionTitle}>MY ACCOUNT</Text>
+          <Text style={styles.sectionTitle}>{t('drawer.myAccountSection')}</Text>
           {accountItems.map((item) => (
             <TouchableOpacity key={item.label} style={styles.menuItem} onPress={() => navigate(item.route)}>
               <View style={styles.menuIcon}>
@@ -181,7 +183,7 @@ export default function SideDrawer({ visible, onClose }: Props) {
           {/* Deals highlight */}
           <View style={styles.offerBanner}>
             <Ionicons name="pricetag" size={18} color={Colors.primary} />
-            <Text style={styles.offerText}>Exclusive deals for members!</Text>
+            <Text style={styles.offerText}>{t('drawer.exclusiveDeals')}</Text>
           </View>
 
           {/* Logout */}
@@ -194,14 +196,14 @@ export default function SideDrawer({ visible, onClose }: Props) {
               }}
             >
               <Ionicons name="log-out-outline" size={20} color={Colors.error} />
-              <Text style={styles.logoutText}>Logout</Text>
+              <Text style={styles.logoutText}>{t('common.logout')}</Text>
             </TouchableOpacity>
           )}
         </ScrollView>
 
         {/* Footer */}
         <View style={styles.drawerFooter}>
-          <Text style={styles.footerText}>BuyLow v1.0.0 · Buy More, Pay Less!</Text>
+          <Text style={styles.footerText}>{t('common.tagline')}</Text>
         </View>
       </Animated.View>
     </View>

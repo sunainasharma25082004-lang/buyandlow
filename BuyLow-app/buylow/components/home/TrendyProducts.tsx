@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { getProducts } from '../../services/api';
 import type { Product } from '../../types/api';
 import ProductRail from './ProductRail';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function TrendyProducts() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -33,12 +35,12 @@ export default function TrendyProducts() {
 
   return (
     <ProductRail
-      title="Trending Products"
-      subtitle="Top rated & most loved"
+      title={t('home.trending')}
+      subtitle={t('home.trendingSub')}
       icon="trending-up"
       products={products}
       loading={loading}
-      emptyText={error || 'Trending products will appear here'}
+      emptyText={error || t('home.trendingEmpty')}
     />
   );
 }

@@ -14,9 +14,11 @@ import { API_URL } from '../../config/api';
 import { getProducts, formatINR } from '../../services/api';
 import RemoteImage from '../RemoteImage';
 import type { Product } from '../../types/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function AllProducts() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -49,29 +51,29 @@ export default function AllProducts() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>All Products</Text>
-        <Text style={styles.subtitle}>From admin panel</Text>
+        <Text style={styles.title}>{t('home.allProducts')}</Text>
+        <Text style={styles.subtitle}>{t('home.allProductsSub')}</Text>
       </View>
 
       {loading ? (
         <View style={styles.stateBox}>
           <ActivityIndicator color={Colors.primary} size="large" />
-          <Text style={styles.stateText}>Loading products...</Text>
+          <Text style={styles.stateText}>{t('home.loadingProducts')}</Text>
         </View>
       ) : error ? (
         <View style={styles.errorBox}>
           <Feather name="wifi-off" size={32} color={Colors.error} />
-          <Text style={styles.errorTitle}>Backend connect nahi ho raha</Text>
+          <Text style={styles.errorTitle}>{t('home.backendErrorTitle')}</Text>
           <Text style={styles.errorText}>{error}</Text>
           <Text style={styles.apiHint}>API: {API_URL}</Text>
           <Text style={styles.errorHint}>
-            Server chalao (port 5000), phone + PC same WiFi pe rakho, phir expo start --clear
+            {t('home.backendErrorHint')}
           </Text>
         </View>
       ) : products.length === 0 ? (
         <View style={styles.stateBox}>
           <Feather name="package" size={32} color={Colors.textLight} />
-          <Text style={styles.stateText}>Admin panel se products add karo — yahan dikhenge</Text>
+          <Text style={styles.stateText}>{t('home.adminProductsHint')}</Text>
         </View>
       ) : (
         <View style={styles.grid}>

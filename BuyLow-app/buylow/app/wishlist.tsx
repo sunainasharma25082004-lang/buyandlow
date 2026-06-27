@@ -13,6 +13,7 @@ import { Ionicons, Feather } from '@expo/vector-icons';
 import { Colors, Shadows } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 import RemoteImage from '../components/RemoteImage';
 import { formatINR } from '../services/api';
 import type { Product } from '../types/api';
@@ -21,6 +22,7 @@ export default function WishlistScreen() {
   const router = useRouter();
   const { user, token, toggleWishlist } = useAuth();
   const { addToCart } = useCart();
+  const { t } = useLanguage();
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,9 +46,9 @@ export default function WishlistScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.empty}>
           <Ionicons name="heart-outline" size={56} color={Colors.border} />
-          <Text style={styles.emptyTitle}>Login to see wishlist</Text>
+          <Text style={styles.emptyTitle}>{t('wishlist.loginToSee')}</Text>
           <TouchableOpacity style={styles.btn} onPress={() => router.push('/(auth)/login')}>
-            <Text style={styles.btnText}>Login</Text>
+            <Text style={styles.btnText}>{t('common.login')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -59,7 +61,7 @@ export default function WishlistScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>My Wishlist</Text>
+        <Text style={styles.title}>{t('wishlist.title')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -68,10 +70,10 @@ export default function WishlistScreen() {
       ) : items.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="heart-outline" size={56} color={Colors.border} />
-          <Text style={styles.emptyTitle}>Wishlist is empty</Text>
-          <Text style={styles.emptySub}>Save products you love from product pages</Text>
+          <Text style={styles.emptyTitle}>{t('wishlist.emptyAlt')}</Text>
+          <Text style={styles.emptySub}>{t('wishlist.emptySubAlt')}</Text>
           <TouchableOpacity style={styles.btn} onPress={() => router.replace('/(tabs)')}>
-            <Text style={styles.btnText}>Start Shopping</Text>
+            <Text style={styles.btnText}>{t('cart.startShopping')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -89,18 +91,12 @@ export default function WishlistScreen() {
                 <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
                 <Text style={styles.price}>₹{formatINR(item.price)}</Text>
                 <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={styles.cartBtn}
-                    onPress={() => addToCart(item, 1)}
-                  >
+                  <TouchableOpacity style={styles.cartBtn} onPress={() => addToCart(item, 1)}>
                     <Feather name="shopping-cart" size={14} color={Colors.white} />
-                    <Text style={styles.cartBtnText}>Add</Text>
+                    <Text style={styles.cartBtnText}>{t('common.add')}</Text>
                   </TouchableOpacity>
                   {token && (
-                    <TouchableOpacity
-                      onPress={() => toggleWishlist(item._id)}
-                      style={styles.removeBtn}
-                    >
+                    <TouchableOpacity onPress={() => toggleWishlist(item._id)} style={styles.removeBtn}>
                       <Ionicons name="trash-outline" size={18} color={Colors.error} />
                     </TouchableOpacity>
                   )}

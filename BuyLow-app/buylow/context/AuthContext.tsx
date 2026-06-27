@@ -9,6 +9,7 @@ type AuthContextType = {
   token: string | null;
   loading: boolean;
   login: (data: any) => Promise<AuthResponse>;
+  loginWithGoogle: (credential: string) => Promise<AuthResponse>;
   register: (data: { name: string; email: string; password: string }) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -52,18 +53,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const persistSession = async (res: AuthResponse) => {
+    if (!res.token) return;
+    setToken(res.token);
+    setUser(res as unknown as User);
+    await storage.setItem('token', res.token);
+    await storage.setItem('user', JSON.stringify(res));
+  };
+
   const login = async (data: any) => {
     const res = await api.login(data);
     if (!res.success) {
       throw new Error(res.message || 'Login failed');
     }
-    if (res.token) {
-      setToken(res.token);
-      setUser(res as unknown as User);
-      await storage.setItem('token', res.token);
-      await storage.setItem('user', JSON.stringify(res));
-    }
+    await persistSession(res);
     return res;
+  };
+
+  const loginWithGoogle = async (credential: string) => {
+    const res = await api.loginWithGoogle(credential);
+    if (!res.success) {
+      throw new Error(res.message || 'Google sign-in failed');
+    }
+    await persistSession(res);
+    return res as AuthResponse;
   };
 
   const register = async (data: { name: string; email: string; password: string }) => {
@@ -74,10 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!res.token) {
       throw new Error('Account created but sign-in failed. Please log in manually.');
     }
-    setToken(res.token);
-    setUser(res as unknown as User);
-    await storage.setItem('token', res.token);
-    await storage.setItem('user', JSON.stringify(res));
+    await persistSession(res as AuthResponse);
     return res as AuthResponse;
   };
 
@@ -160,6 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       token,
       loading,
       login,
+      loginWithGoogle,
       register,
       logout,
       refreshUser,

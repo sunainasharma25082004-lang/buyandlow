@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { getProducts } from '../../services/api';
 import type { Product } from '../../types/api';
 import ProductRail from './ProductRail';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function NewArrivals() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,12 +28,12 @@ export default function NewArrivals() {
 
   return (
     <ProductRail
-      title="New Arrivals"
-      subtitle="Fresh from admin panel"
+      title={t('home.newArrivals')}
+      subtitle={t('home.newArrivalsSub')}
       icon="zap"
       products={products}
       loading={loading}
-      emptyText="New products will appear here soon"
+      emptyText={t('home.newArrivalsEmpty')}
     />
   );
 }

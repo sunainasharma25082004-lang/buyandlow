@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { getProduct } from '../../services/api';
 import type { Product } from '../../types/api';
 import ProductRail from './ProductRail';
@@ -8,6 +9,7 @@ import ProductRail from './ProductRail';
 export default function WishlistProducts() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,12 +59,12 @@ export default function WishlistProducts() {
 
   return (
     <ProductRail
-      title="My Favourites"
-      subtitle="Products you saved"
+      title={t('home.myFavourites')}
+      subtitle={t('home.myFavouritesSub')}
       icon="heart"
       products={products}
       loading={loading}
-      emptyText={user ? 'Tap ♥ on products to add favourites' : 'Login to see your favourites'}
+      emptyText={user ? t('home.favouritesEmpty') : t('home.favouritesLogin')}
       onViewAll={user ? () => router.push('/wishlist') : undefined}
     />
   );

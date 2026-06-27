@@ -1,51 +1,47 @@
+import type { TranslateFn } from '../i18n';
+
 export type HelpQuestion = {
   id: string;
   question: string;
   answer: string;
 };
 
-export const COMMON_QUESTIONS: HelpQuestion[] = [
+export const getFaqItems = (t: TranslateFn): HelpQuestion[] => [
   {
     id: 'track-order',
-    question: 'How do I track my order?',
-    answer:
-      'Go to My Orders in your account. Tap any order to see live status — Placed, Confirmed, Packed, Shipped and Delivered.',
+    question: t('help.faq.trackOrderQ'),
+    answer: t('help.faq.trackOrderA'),
   },
   {
     id: 'delivery-time',
-    question: 'How long does delivery take?',
-    answer:
-      'Most orders arrive in 3–7 business days. You will see the expected delivery date on your order details page.',
+    question: t('help.faq.deliveryTimeQ'),
+    answer: t('help.faq.deliveryTimeA'),
   },
   {
     id: 'return-policy',
-    question: 'What is your return policy?',
-    answer:
-      'You can request a return within 7 days of delivery for unused items in original packaging. Contact support with your order ID.',
+    question: t('help.faq.returnPolicyQ'),
+    answer: t('help.faq.returnPolicyA'),
   },
   {
     id: 'payment-methods',
-    question: 'Which payment methods do you accept?',
-    answer:
-      'We accept UPI, debit/credit cards, net banking and wallets through Razorpay. Cash on delivery is available on select orders.',
+    question: t('help.faq.paymentMethodsQ'),
+    answer: t('help.faq.paymentMethodsA'),
   },
   {
     id: 'cancel-order',
-    question: 'Can I cancel my order?',
-    answer:
-      'Yes, before your order is shipped. Open My Orders, select the order and tap Cancel if the option is available.',
+    question: t('help.faq.cancelOrderQ'),
+    answer: t('help.faq.cancelOrderA'),
   },
   {
     id: 'refund-status',
-    question: 'When will I get my refund?',
-    answer:
-      'Refunds are processed within 5–7 business days after return approval. The amount is credited to your original payment method.',
+    question: t('help.faq.refundStatusQ'),
+    answer: t('help.faq.refundStatusA'),
   },
 ];
 
-export const CALLBACK_TIME_SLOTS = [
-  'Within 1 hour',
-  'Today afternoon',
-  'Today evening',
-  'Tomorrow morning',
+export const getCallbackSlots = (t: TranslateFn): string[] => [
+  t('help.slots.withinHour'),
+  t('help.slots.afternoon'),
+  t('help.slots.evening'),
+  t('help.slots.tomorrow'),
 ];

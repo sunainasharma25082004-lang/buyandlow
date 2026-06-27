@@ -15,7 +15,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { Colors, Shadows } from '../../constants/colors';
+import GoogleSignInButton from '../../components/GoogleSignInButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -92,23 +94,38 @@ export default function RegisterScreen() {
   const [error, setError] = useState('');
 
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
+  const { t } = useLanguage();
+
+  const goAfterAuth = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/account');
+    }
+  };
+
+  const handleGoogle = async (idToken: string) => {
+    setError('');
+    await loginWithGoogle(idToken);
+    goAfterAuth();
+  };
 
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password) {
-      setError('Please fill in all fields');
+      setError(t('auth.fillAllFields'));
       return;
     }
     if (name.trim().length < 2) {
-      setError('Name must be at least 2 characters');
+      setError(t('auth.nameMin'));
       return;
     }
     if (!EMAIL_REGEX.test(email.trim())) {
-      setError('Please enter a valid email address');
+      setError(t('auth.invalidEmail'));
       return;
     }
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('auth.passwordMin'));
       return;
     }
     Keyboard.dismiss();
@@ -121,14 +138,14 @@ export default function RegisterScreen() {
         password,
       });
       Alert.alert(
-        'Welcome to BuyLow!',
-        `Account created for ${res.name}. You are now signed in.`,
-        [{ text: 'Continue', onPress: () => router.replace('/(tabs)/account') }],
+        t('auth.welcomeTitle'),
+        t('auth.accountCreated', { name: res.name }),
+        [{ text: t('common.continue'), onPress: () => router.replace('/(tabs)/account') }],
       );
     } catch (err: any) {
-      const message = err?.message || 'Registration failed. Please try again.';
+      const message = err?.message || t('auth.registrationFailed');
       if (message.toLowerCase().includes('already exists')) {
-        setError('This email is already registered. Try logging in instead.');
+        setError(t('auth.emailExists'));
       } else {
         setError(message);
       }
@@ -161,8 +178,8 @@ export default function RegisterScreen() {
               style={styles.logo}
               contentFit="contain"
             />
-            <Text style={styles.heroTitle}>Create Account</Text>
-            <Text style={styles.heroSubtitle}>Join BuyLow — shop smarter, save more</Text>
+            <Text style={styles.heroTitle}>{t('auth.joinTitle')}</Text>
+            <Text style={styles.heroSubtitle}>{t('auth.joinSubtitle')}</Text>
           </View>
 
           <View style={styles.formCard}>
@@ -173,32 +190,40 @@ export default function RegisterScreen() {
               </View>
             ) : null}
 
+            <GoogleSignInButton onSuccess={handleGoogle} disabled={loading} />
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t('auth.orUseEmail')}</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
             <FormField
-              label="Full Name"
+              label={t('auth.nameLabel')}
               icon="user"
               value={name}
               onChangeText={setName}
-              placeholder="e.g. Rahul Sharma"
+              placeholder={t('auth.namePlaceholder')}
               autoCapitalize="words"
               editable={!loading}
             />
 
             <FormField
-              label="Email Address"
+              label={t('auth.emailLabel')}
               icon="mail"
               value={email}
               onChangeText={setEmail}
-              placeholder="you@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               keyboardType="email-address"
               editable={!loading}
             />
 
             <FormField
-              label="Password"
+              label={t('auth.passwordLabel')}
               icon="lock"
               value={password}
               onChangeText={setPassword}
-              placeholder="Minimum 6 characters"
+              placeholder={t('auth.passwordPlaceholder')}
               secureTextEntry={!showPassword}
               returnKeyType="done"
               onSubmitEditing={handleRegister}
@@ -208,7 +233,7 @@ export default function RegisterScreen() {
                   onPress={() => setShowPassword((prev) => !prev)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={styles.showHide}>{showPassword ? 'Hide' : 'Show'}</Text>
+                  <Text style={styles.showHide}>{showPassword ? t('auth.hide') : t('auth.show')}</Text>
                 </TouchableOpacity>
               }
             />
@@ -222,15 +247,15 @@ export default function RegisterScreen() {
               {loading ? (
                 <ActivityIndicator color={Colors.white} />
               ) : (
-                <Text style={styles.buttonText}>Create Account</Text>
+                <Text style={styles.buttonText}>{t('auth.joinTitle')}</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account?</Text>
+            <Text style={styles.footerText}>{t('auth.hasAccount')}</Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.footerLink}>Log In</Text>
+              <Text style={styles.footerLink}>{t('auth.logIn')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -306,6 +331,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     flex: 1,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 18,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    fontSize: 13,
+    color: Colors.textLight,
+    fontWeight: '500',
   },
   fieldBlock: {
     marginBottom: 18,

@@ -136,6 +136,9 @@ export const login = (data: { email: string; password: string }) =>
 export const register = (data: { name: string; email: string; password: string }) =>
   request<any>('/auth/register', { method: 'POST', body: JSON.stringify(data) });
 
+export const loginWithGoogle = (credential: string) =>
+  request<any>('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) });
+
 export const getProfile = (token: string) =>
   request<User>('/auth/profile', { headers: { Authorization: `Bearer ${token}` } });
 

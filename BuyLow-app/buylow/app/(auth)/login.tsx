@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { Colors, Shadows } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import GoogleSignInButton from '../../components/GoogleSignInButton';
 
 const { width } = Dimensions.get('window');
 
@@ -28,29 +30,40 @@ export default function LoginScreen() {
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
+  const { t } = useLanguage();
+
+  const goAfterAuth = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      setError('Please enter your email and password');
+      setError(t('auth.enterEmailPassword'));
       return;
     }
     setLoading(true);
     setError('');
     try {
       await login({ email: email.trim(), password });
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
+      goAfterAuth();
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password');
+      setError(err.message || t('auth.invalidCredentials'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogle = async (idToken: string) => {
+    setError('');
+    await loginWithGoogle(idToken);
+    goAfterAuth();
   };
 
   return (
@@ -77,8 +90,8 @@ export default function LoginScreen() {
               style={styles.logo}
               contentFit="contain"
             />
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Log in to access your account & orders</Text>
+            <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
+            <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
           </View>
 
           {error ? (
@@ -88,65 +101,73 @@ export default function LoginScreen() {
             </View>
           ) : null}
 
-          <Text style={styles.label}>Email Address</Text>
-            <View style={[styles.inputContainer, emailFocused && styles.inputFocused]}>
-              <View style={styles.leadingIcon} pointerEvents="none">
-                <Feather name="mail" size={20} color={emailFocused ? Colors.primary : Colors.textLight} />
-              </View>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor={Colors.textLight}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-                editable={!loading}
-                underlineColorAndroid="transparent"
-              />
-            </View>
+          <GoogleSignInButton onSuccess={handleGoogle} disabled={loading} />
 
-            <Text style={styles.label}>Password</Text>
-            <View style={[styles.inputContainer, passwordFocused && styles.inputFocused]}>
-              <View style={styles.leadingIcon} pointerEvents="none">
-                <Feather name="lock" size={20} color={passwordFocused ? Colors.primary : Colors.textLight} />
-              </View>
-              <TextInput
-                style={[styles.input, styles.inputWithTrailing]}
-                placeholder="Enter your password"
-                placeholderTextColor={Colors.textLight}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="password"
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-                editable={!loading}
-                underlineColorAndroid="transparent"
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.trailingIcon}>
-                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textLight} />
-              </TouchableOpacity>
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t('auth.orUseEmail')}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Text style={styles.label}>{t('auth.emailLabel')}</Text>
+          <View style={[styles.inputContainer, emailFocused && styles.inputFocused]}>
+            <View style={styles.leadingIcon} pointerEvents="none">
+              <Feather name="mail" size={20} color={emailFocused ? Colors.primary : Colors.textLight} />
             </View>
+            <TextInput
+              style={styles.input}
+              placeholder={t('auth.emailPlaceholder')}
+              placeholderTextColor={Colors.textLight}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              onFocus={() => setEmailFocused(true)}
+              onBlur={() => setEmailFocused(false)}
+              editable={!loading}
+              underlineColorAndroid="transparent"
+            />
+          </View>
+
+          <Text style={styles.label}>{t('auth.passwordLabel')}</Text>
+          <View style={[styles.inputContainer, passwordFocused && styles.inputFocused]}>
+            <View style={styles.leadingIcon} pointerEvents="none">
+              <Feather name="lock" size={20} color={passwordFocused ? Colors.primary : Colors.textLight} />
+            </View>
+            <TextInput
+              style={[styles.input, styles.inputWithTrailing]}
+              placeholder={t('auth.passwordPlaceholder')}
+              placeholderTextColor={Colors.textLight}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="password"
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
+              editable={!loading}
+              underlineColorAndroid="transparent"
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.trailingIcon}>
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textLight} />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
             {loading ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
-              <Text style={styles.buttonText}>Log In</Text>
+              <Text style={styles.buttonText}>{t('auth.logIn')}</Text>
             )}
           </TouchableOpacity>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+            <Text style={styles.footerText}>{t('auth.noAccount')} </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-              <Text style={styles.footerLink}>Sign Up</Text>
+              <Text style={styles.footerLink}>{t('common.signUp')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -177,7 +198,7 @@ const styles = StyleSheet.create({
   brandHeader: {
     alignItems: 'center',
     marginTop: 20,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   logo: {
     width: width * 0.5,
@@ -196,7 +217,22 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
     textAlign: 'center',
   },
-
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    fontSize: 13,
+    color: Colors.textLight,
+    fontWeight: '500',
+  },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,7 +241,7 @@ const styles = StyleSheet.create({
     borderColor: '#FEE2E2',
     borderRadius: 12,
     padding: 12,
-    marginBottom: 20,
+    marginBottom: 16,
     gap: 8,
   },
   errorText: {
@@ -294,4 +330,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-

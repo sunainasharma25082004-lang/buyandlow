@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { getSaleProducts } from '../../services/api';
 import type { Product } from '../../types/api';
 import ProductRail from './ProductRail';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Deals() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,13 +28,13 @@ export default function Deals() {
 
   return (
     <ProductRail
-      title="Top Deals"
-      subtitle="Limited time offers"
+      title={t('home.topDeals')}
+      subtitle={t('home.topDealsSub')}
       icon="tag"
       products={products}
       loading={loading}
       showDiscount
-      emptyText="Sale products from admin panel show here"
+      emptyText={t('home.dealsEmpty')}
     />
   );
 }

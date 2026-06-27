@@ -15,9 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '../../constants/colors';
-import { COMMON_QUESTIONS } from '../../constants/help';
+import { getFaqItems } from '../../constants/help';
 import HelpHeader from '../../components/HelpHeader';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import * as api from '../../services/api';
 
 type ChatMessage = {
@@ -25,15 +26,6 @@ type ChatMessage = {
   text: string;
   sender: 'bot' | 'user' | 'system';
 };
-
-const WELCOME_MESSAGE =
-  'Hi! Welcome to BuyLow Support 👋\nPick a common question below or type your message.';
-
-const ESCALATION_MESSAGE =
-  'Thank you for your patience. We are connecting you with our team manager. They will assist you shortly.';
-
-const OTHER_ISSUE_MESSAGE =
-  'In common questions ke alawa koi aur issue hai? Neeche "Request Call Back" dabayein — hum aapko phone par contact karenge.';
 
 const buildChatSummary = (messages: ChatMessage[]) =>
   messages
@@ -44,11 +36,10 @@ const buildChatSummary = (messages: ChatMessage[]) =>
 export default function HelpChatScreen() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const listRef = useRef<FlatList>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 'welcome', text: WELCOME_MESSAGE, sender: 'bot' },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [contactName, setContactName] = useState(user?.name || '');
   const [contactEmail, setContactEmail] = useState(user?.email || '');
@@ -63,6 +54,10 @@ export default function HelpChatScreen() {
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    setMessages([{ id: 'welcome', text: t('help.chat.welcome'), sender: 'bot' }]);
+  }, [t]);
 
   useEffect(() => {
     if (user?.name) setContactName(user.name);
@@ -80,13 +75,13 @@ export default function HelpChatScreen() {
   const submitChatToAdmin = useCallback(async (chatMessages: ChatMessage[]) => {
     const summary = buildChatSummary(chatMessages);
     if (!summary.trim()) {
-      Alert.alert('Support', 'Please send a message or pick a question first.');
+      Alert.alert(t('help.title'), t('help.chat.sendFirst'));
       return false;
     }
 
     const name = contactName.trim() || user?.name?.trim();
     if (!name) {
-      Alert.alert('Name required', 'Please enter your name so our team can contact you.');
+      Alert.alert(t('common.error'), t('help.chat.nameRequired'));
       return false;
     }
 
@@ -105,20 +100,20 @@ export default function HelpChatScreen() {
       setRequestSent(true);
       return true;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not send to admin. Check internet & backend.';
-      Alert.alert('Support Request Failed', message);
+      const message = err instanceof Error ? err.message : t('help.chat.sendError');
+      Alert.alert(t('help.chat.requestFailed'), message);
       return false;
     } finally {
       setSubmittingRequest(false);
     }
-  }, [contactEmail, contactName, contactPhone, token, user?.email, user?.name]);
+  }, [contactEmail, contactName, contactPhone, token, user?.email, user?.name, t]);
 
   const escalateToManager = useCallback(async () => {
     if (escalated) return;
 
     const name = contactName.trim() || user?.name?.trim();
     if (!name) {
-      Alert.alert('Name required', 'Apna naam likhein taaki team aap se contact kar sake.');
+      Alert.alert(t('common.error'), t('help.chat.nameRequiredShort'));
       return;
     }
 
@@ -133,18 +128,18 @@ export default function HelpChatScreen() {
     if (sent) {
       setMessages((prev) => [
         ...prev,
-        { id: `system-${Date.now()}`, text: ESCALATION_MESSAGE, sender: 'system' },
-        { id: `bot-other-${Date.now()}`, text: OTHER_ISSUE_MESSAGE, sender: 'bot' },
+        { id: `system-${Date.now()}`, text: t('help.chat.escalation'), sender: 'system' },
+        { id: `bot-other-${Date.now()}`, text: t('help.chat.otherIssue'), sender: 'bot' },
         {
           id: `system-sent-${Date.now()}`,
-          text: '✅ Aapki request admin panel par bhej di gayi hai. Hamari team jald contact karegi.',
+          text: t('help.chat.sentToAdmin'),
           sender: 'system',
         },
       ]);
     } else {
       setEscalated(false);
     }
-  }, [contactName, escalated, submitChatToAdmin, user?.name]);
+  }, [contactName, escalated, submitChatToAdmin, user?.name, t]);
 
   const addBotReply = useCallback(
     (text: string, onDone?: () => void) => {
@@ -171,9 +166,7 @@ export default function HelpChatScreen() {
     setInteractionCount(nextCount);
 
     addBotReply(answer, () => {
-      addBotReply(
-        'Kisi aur issue ke liye neeche apna naam/email likhein, phir "Connect with Team Manager" dabayein.',
-      );
+      addBotReply(t('help.chat.followUp'));
     });
   };
 
@@ -185,9 +178,7 @@ export default function HelpChatScreen() {
     setInteractionCount((c) => c + 1);
     setMessages((prev) => [...prev, { id: `user-${Date.now()}`, text: trimmed, sender: 'user' }]);
 
-    addBotReply(
-      'Thanks! Apna naam & email neeche confirm karein, phir "Connect with Team Manager" par tap karein.',
-    );
+    addBotReply(t('help.chat.thanksReply'));
   };
 
   const goToCallBack = () => {
@@ -226,12 +217,12 @@ export default function HelpChatScreen() {
     );
   };
 
-  const availableQuestions = COMMON_QUESTIONS.filter((q) => !answeredIds.has(q.id));
+  const availableQuestions = getFaqItems(t).filter((q) => !answeredIds.has(q.id));
   const showContactForm = interactionCount >= 1 && !requestSent;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <HelpHeader title="Chat with Us" />
+      <HelpHeader title={t('help.chat.title')} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -253,7 +244,7 @@ export default function HelpChatScreen() {
                   <View style={styles.typingBubble}>
                     <ActivityIndicator size="small" color={Colors.primary} />
                     <Text style={styles.typingText}>
-                      {submittingRequest ? 'Admin ko bhej rahe hain...' : 'Typing...'}
+                      {submittingRequest ? t('help.chat.sendingToAdmin') : t('help.chat.typing')}
                     </Text>
                   </View>
                 </View>
@@ -261,17 +252,17 @@ export default function HelpChatScreen() {
 
               {showContactForm ? (
                 <View style={styles.contactCard}>
-                  <Text style={styles.contactTitle}>Aapki details (team contact karegi)</Text>
+                  <Text style={styles.contactTitle}>{t('help.chat.contactDetails')}</Text>
                   <TextInput
                     style={styles.contactInput}
-                    placeholder="Your name *"
+                    placeholder={t('help.chat.namePlaceholder')}
                     placeholderTextColor={Colors.textLight}
                     value={contactName}
                     onChangeText={setContactName}
                   />
                   <TextInput
                     style={styles.contactInput}
-                    placeholder="Email"
+                    placeholder={t('help.chat.emailPlaceholder')}
                     placeholderTextColor={Colors.textLight}
                     value={contactEmail}
                     onChangeText={setContactEmail}
@@ -280,7 +271,7 @@ export default function HelpChatScreen() {
                   />
                   <TextInput
                     style={styles.contactInput}
-                    placeholder="Phone (optional)"
+                    placeholder={t('help.chat.phoneOptional')}
                     placeholderTextColor={Colors.textLight}
                     value={contactPhone}
                     onChangeText={setContactPhone}
@@ -292,7 +283,7 @@ export default function HelpChatScreen() {
 
               {!escalated && availableQuestions.length > 0 ? (
                 <View style={styles.questionsBlock}>
-                  <Text style={styles.questionsLabel}>Common questions</Text>
+                  <Text style={styles.questionsLabel}>{t('help.chat.commonQuestions')}</Text>
                   {availableQuestions.map((q) => (
                     <TouchableOpacity
                       key={q.id}
@@ -308,14 +299,14 @@ export default function HelpChatScreen() {
               {!escalated && interactionCount >= 1 ? (
                 <TouchableOpacity style={styles.managerBtn} onPress={escalateToManager}>
                   <Ionicons name="person-circle-outline" size={20} color={Colors.white} />
-                  <Text style={styles.managerBtnText}>Connect with Team Manager</Text>
+                  <Text style={styles.managerBtnText}>{t('help.chat.connectManager')}</Text>
                 </TouchableOpacity>
               ) : null}
 
               {escalated ? (
                 <TouchableOpacity style={styles.callbackBtn} onPress={goToCallBack}>
                   <Ionicons name="call" size={20} color={Colors.primary} />
-                  <Text style={styles.callbackBtnText}>Request Call Back</Text>
+                  <Text style={styles.callbackBtnText}>{t('help.chat.requestCallback')}</Text>
                 </TouchableOpacity>
               ) : null}
             </>
@@ -326,7 +317,7 @@ export default function HelpChatScreen() {
           <View style={styles.inputBar}>
             <TextInput
               style={styles.input}
-              placeholder={escalated ? 'Use Request Call Back for other issues' : 'Type your message...'}
+              placeholder={escalated ? t('help.chat.placeholderEscalated') : t('help.chat.placeholder')}
               placeholderTextColor={Colors.textLight}
               value={input}
               onChangeText={setInput}

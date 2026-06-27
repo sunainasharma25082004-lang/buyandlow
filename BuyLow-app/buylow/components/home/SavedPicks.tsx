@@ -5,6 +5,7 @@ import { useCart } from '../../context/CartContext';
 import { getProduct } from '../../services/api';
 import type { Product } from '../../types/api';
 import ProductRail from './ProductRail';
+import { useLanguage } from '../../context/LanguageContext';
 
 const MIN_ITEMS = 6;
 
@@ -12,6 +13,7 @@ export default function SavedPicks() {
   const router = useRouter();
   const { user } = useAuth();
   const { cart } = useCart();
+  const { t } = useLanguage();
   const [wishlistProducts, setWishlistProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,19 +77,19 @@ export default function SavedPicks() {
   const hasFavourites = wishlistProducts.length > 0;
   const hasCart = cartProducts.length > 0;
   const subtitle = hasFavourites && hasCart
-    ? 'From your favourites & cart'
+    ? t('home.yourPicksFromBoth')
     : hasFavourites
-      ? 'Products you saved'
-      : 'Items in your cart';
+      ? t('home.myFavouritesSub')
+      : t('home.yourPicksCart');
 
   return (
     <ProductRail
-      title="Your Picks"
+      title={t('home.yourPicks')}
       subtitle={subtitle}
       icon="heart"
       products={combined}
       loading={loading}
-      emptyText="Add to wishlist or cart — shows here when you have more than 6 items"
+      emptyText={t('home.yourPicksEmpty')}
       onViewAll={() => router.push(hasFavourites ? '/wishlist' : '/cart')}
       showDiscount
     />

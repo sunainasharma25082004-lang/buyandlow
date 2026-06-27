@@ -6,17 +6,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Shadows } from '../constants/colors';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { formatINR } from '../services/api';
 import RemoteImage from '../components/RemoteImage';
 import { FREE_SHIPPING_MIN, getShippingPrice } from '../constants/shop';
 
 function CartHeader({ onBack }: { onBack: () => void }) {
+  const { t } = useLanguage();
   return (
     <View style={styles.header}>
       <TouchableOpacity style={styles.headerBtn} onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
         <Ionicons name="arrow-back" size={22} color={Colors.white} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>Shopping Cart</Text>
+      <Text style={styles.headerTitle}>{t('cart.title')}</Text>
       <View style={styles.headerBtn} />
     </View>
   );
@@ -26,19 +28,16 @@ export default function CartScreen() {
   const router = useRouter();
   const { cart, removeFromCart, updateQuantity, cartTotal } = useCart();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const shipping = getShippingPrice(cartTotal);
   const grandTotal = cartTotal + shipping;
 
   const handleCheckout = () => {
     if (!user) {
-      Alert.alert(
-        'Login Required',
-        'Please login to proceed to checkout',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Login', onPress: () => router.push('/(auth)/login') },
-        ],
-      );
+      Alert.alert(t('auth.loginRequired'), t('auth.loginToCheckout'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
+      ]);
       return;
     }
     router.push('/checkout');
@@ -52,10 +51,10 @@ export default function CartScreen() {
           <View style={styles.emptyIconWrap}>
             <Feather name="shopping-bag" size={64} color={Colors.textLight} />
           </View>
-          <Text style={styles.emptyTitle}>Your Cart is Empty</Text>
-          <Text style={styles.emptyText}>Explore our wide range of products and find your next favorites.</Text>
+          <Text style={styles.emptyTitle}>{t('cart.emptyTitle')}</Text>
+          <Text style={styles.emptyText}>{t('cart.emptyText')}</Text>
           <TouchableOpacity style={styles.shopButton} onPress={() => router.push('/(tabs)')}>
-            <Text style={styles.shopButtonText}>Start Shopping</Text>
+            <Text style={styles.shopButtonText}>{t('cart.startShopping')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -120,27 +119,29 @@ export default function CartScreen() {
           <View style={styles.footer}>
             <View style={styles.summaryBox}>
               <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Subtotal</Text>
+                <Text style={styles.totalLabel}>{t('cart.subtotal')}</Text>
                 <Text style={styles.totalValue}>₹{formatINR(cartTotal)}</Text>
               </View>
               <View style={styles.deliveryRow}>
-                <Text style={styles.deliveryLabel}>Delivery</Text>
+                <Text style={styles.deliveryLabel}>{t('cart.delivery')}</Text>
                 <Text style={[styles.deliveryValue, shipping === 0 && { color: Colors.success }]}>
-                  {shipping === 0 ? 'FREE' : `₹${formatINR(shipping)}`}
+                  {shipping === 0 ? t('common.free') : `₹${formatINR(shipping)}`}
                 </Text>
               </View>
               {cartTotal < FREE_SHIPPING_MIN && (
-                <Text style={styles.shipHint}>Shop ₹{formatINR(FREE_SHIPPING_MIN - cartTotal)} more for free delivery</Text>
+                <Text style={styles.shipHint}>
+                  {t('cart.freeDeliveryHint', { amount: formatINR(FREE_SHIPPING_MIN - cartTotal) })}
+                </Text>
               )}
               <View style={styles.divider} />
               <View style={styles.grandTotalRow}>
-                <Text style={styles.grandTotalLabel}>Grand Total</Text>
+                <Text style={styles.grandTotalLabel}>{t('cart.grandTotal')}</Text>
                 <Text style={styles.grandTotalValue}>₹{formatINR(grandTotal)}</Text>
               </View>
             </View>
 
             <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
-              <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
+              <Text style={styles.checkoutButtonText}>{t('cart.proceedCheckout')}</Text>
               <Feather name="arrow-right" size={18} color={Colors.white} style={{ marginLeft: 8 }} />
             </TouchableOpacity>
           </View>

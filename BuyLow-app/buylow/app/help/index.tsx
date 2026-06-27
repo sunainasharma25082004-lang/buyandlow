@@ -5,53 +5,44 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Shadows } from '../../constants/colors';
 import HelpHeader from '../../components/HelpHeader';
-
-type HelpOption = {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  route: '/help/chat' | '/help/callback';
-  color: string;
-};
-
-const HELP_OPTIONS: HelpOption[] = [
-  {
-    id: 'chat',
-    title: 'Chat with Us',
-    subtitle: 'Common questions & live support',
-    icon: 'chatbubbles-outline',
-    route: '/help/chat',
-    color: Colors.primary,
-  },
-  {
-    id: 'callback',
-    title: 'Call Me Back',
-    subtitle: 'Request a call from our team',
-    icon: 'call-outline',
-    route: '/help/callback',
-    color: '#2E7D32',
-  },
-];
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function HelpScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const helpOptions = [
+    {
+      id: 'chat',
+      title: t('help.chatTitle'),
+      subtitle: t('help.chatSubtitle'),
+      icon: 'chatbubbles-outline' as const,
+      route: '/help/chat' as const,
+      color: Colors.primary,
+    },
+    {
+      id: 'callback',
+      title: t('help.callbackTitle'),
+      subtitle: t('help.callbackSubtitle'),
+      icon: 'call-outline' as const,
+      route: '/help/callback' as const,
+      color: '#2E7D32',
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <HelpHeader title="Help & Support" />
+      <HelpHeader title={t('help.title')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <View style={styles.heroIcon}>
             <Ionicons name="help-buoy" size={36} color={Colors.primary} />
           </View>
-          <Text style={styles.heroTitle}>How can we help you?</Text>
-          <Text style={styles.heroSubtitle}>
-            Choose an option below. Our support team is here for you 24×7.
-          </Text>
+          <Text style={styles.heroTitle}>{t('help.heroTitle')}</Text>
+          <Text style={styles.heroSubtitle}>{t('help.heroSubtitle')}</Text>
         </View>
 
-        {HELP_OPTIONS.map((option) => (
+        {helpOptions.map((option) => (
           <TouchableOpacity
             key={option.id}
             style={styles.optionCard}
@@ -71,9 +62,7 @@ export default function HelpScreen() {
 
         <View style={styles.tipCard}>
           <Ionicons name="information-circle-outline" size={22} color={Colors.primary} />
-          <Text style={styles.tipText}>
-            For order issues, keep your order ID ready. You can find it in My Orders.
-          </Text>
+          <Text style={styles.tipText}>{t('help.tip')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

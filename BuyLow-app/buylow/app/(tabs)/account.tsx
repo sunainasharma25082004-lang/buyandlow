@@ -5,17 +5,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import CustomHeader from '../../components/CustomHeader';
-
 export default function AccountScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
 
   const requireLogin = (route: string) => {
     if (!user) {
-      Alert.alert('Login Required', 'Please login to access this section.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Login', onPress: () => router.push('/(auth)/login') },
+      Alert.alert(t('auth.loginRequired'), t('auth.loginRequiredGeneric'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
@@ -23,18 +24,26 @@ export default function AccountScreen() {
   };
 
   const addressCount = user?.addresses?.length || 0;
-  const paymentLabel = user?.paymentPreference === 'cod' ? 'Cash on Delivery' : 'Razorpay · UPI · Cards';
+  const paymentLabel =
+    user?.paymentPreference === 'cod' ? t('account.paymentCod') : t('account.paymentRazorpay');
+
+  const addressSubtitle =
+    user && addressCount > 0
+      ? addressCount > 1
+        ? t('account.savedAddressesCountPlural', { count: String(addressCount) })
+        : t('account.savedAddressesCount', { count: String(addressCount) })
+      : t('account.savedAddressesSub');
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      { 
-        text: 'Logout', 
+    Alert.alert(t('common.logout'), t('account.logoutConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.logout'),
         style: 'destructive',
         onPress: async () => {
           await logout();
-        }
-      }
+        },
+      },
     ]);
   };
 
@@ -67,72 +76,80 @@ export default function AccountScreen() {
           </View>
         ) : (
           <View style={styles.loginBanner}>
-            <Text style={styles.loginTitle}>Welcome to BuyLow</Text>
-            <Text style={styles.loginSubtitle}>Login or sign up to manage your orders</Text>
+            <Text style={styles.loginTitle}>{t('account.welcome')}</Text>
+            <Text style={styles.loginSubtitle}>{t('account.welcomeSubtitle')}</Text>
             <View style={styles.loginButtons}>
               <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/(auth)/login')}>
-                <Text style={styles.primaryButtonText}>Login</Text>
+                <Text style={styles.primaryButtonText}>{t('common.login')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/(auth)/register')}>
-                <Text style={styles.secondaryButtonText}>Sign Up</Text>
+                <Text style={styles.secondaryButtonText}>{t('common.signUp')}</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Account</Text>
+          <Text style={styles.sectionTitle}>{t('account.myAccount')}</Text>
           <View style={styles.card}>
-            {renderMenuItem('bag-outline', 'My Orders', 'Track and view order history', () => router.push('/(tabs)/orders'))}
-            {renderMenuItem('cart-outline', 'Shopping Cart', 'View items in your cart', () => router.push('/cart'))}
+            {renderMenuItem('bag-outline', t('account.myOrders'), t('account.myOrdersSub'), () =>
+              router.push('/(tabs)/orders'),
+            )}
+            {renderMenuItem('cart-outline', t('account.shoppingCart'), t('account.shoppingCartSub'), () =>
+              router.push('/cart'),
+            )}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Settings</Text>
+          <Text style={styles.sectionTitle}>{t('account.accountSettings')}</Text>
           <View style={styles.card}>
-            {renderMenuItem('heart-outline', 'My Wishlist', 'Saved products you love', () => router.push('/wishlist'))}
-            {renderMenuItem(
-              'person-outline',
-              'Personal Information',
-              user ? `${user.name}${user.phone ? ` · +91 ${user.phone}` : ''}` : 'Name, email & phone',
-              () => requireLogin('/account/profile'),
+            {renderMenuItem('heart-outline', t('account.wishlist'), t('account.wishlistSub'), () =>
+              router.push('/wishlist'),
             )}
             {renderMenuItem(
-              'location-outline',
-              'Saved Addresses',
-              user && addressCount > 0 ? `${addressCount} saved address${addressCount > 1 ? 'es' : ''}` : 'Add or remove delivery address',
-              () => requireLogin('/account/addresses'),
+              'person-outline',
+              t('account.personalInfo'),
+              user
+                ? `${user.name}${user.phone ? ` · +91 ${user.phone}` : ''}`
+                : t('account.personalInfoSub'),
+              () => requireLogin('/account/profile'),
+            )}
+            {renderMenuItem('location-outline', t('account.savedAddresses'), addressSubtitle, () =>
+              requireLogin('/account/addresses'),
             )}
             {renderMenuItem(
               'card-outline',
-              'Payment Methods',
-              user ? paymentLabel : 'Razorpay · UPI · Cards · COD',
+              t('account.paymentMethods'),
+              user ? paymentLabel : t('account.paymentDefault'),
               () => requireLogin('/account/payment'),
             )}
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
+          <Text style={styles.sectionTitle}>{t('account.support')}</Text>
           <View style={styles.card}>
-            {renderMenuItem('help-circle-outline', 'Help Center', 'Chat with us or request a callback', () => router.push('/help' as any))}
-            {renderMenuItem('document-text-outline', 'Terms & Policies')}
+            {renderMenuItem('help-circle-outline', t('account.helpCenter'), t('account.helpCenterSub'), () =>
+              router.push('/help' as any),
+            )}
+            {renderMenuItem('document-text-outline', t('account.termsPolicies'))}
           </View>
         </View>
 
         {user && (
           <View style={styles.logoutContainer}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.logoutText}>Logout</Text>
+              <Text style={styles.logoutText}>{t('common.logout')}</Text>
             </TouchableOpacity>
           </View>
         )}
-        
+
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>App Version 1.0.0</Text>
+          <Text style={styles.versionText}>{t('common.version')}</Text>
         </View>
       </ScrollView>
+
     </SafeAreaView>
   );
 }

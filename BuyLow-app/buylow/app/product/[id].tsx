@@ -34,6 +34,7 @@ import { SCREEN_WIDTH, horizontalPadding } from '../../utils/responsive';
 import { Product } from '../../types/api';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const CAROUSEL_HEIGHT = Math.min(SCREEN_WIDTH * 0.85, 360);
 
@@ -75,6 +76,7 @@ export default function ProductDetailScreen() {
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist, user, token } = useAuth();
+  const { t } = useLanguage();
   
   const isFaved = product ? isInWishlist(product._id) : false;
 
@@ -111,7 +113,7 @@ export default function ProductDetailScreen() {
 
   useEffect(() => {
     if (!id) {
-      setError('Invalid product');
+      setError(t('product.invalid'));
       setLoading(false);
       return;
     }
@@ -143,7 +145,7 @@ export default function ProductDetailScreen() {
         }
       })
       .catch((err) => {
-        if (active) setError(err.message || 'Failed to load product');
+        if (active) setError(err.message || t('product.loadFailed'));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -157,7 +159,7 @@ export default function ProductDetailScreen() {
   const handleAddToCart = async () => {
     if (product) {
       await addToCart(product, 1);
-      triggerToast('Added to Shopping Cart!');
+      triggerToast(t('product.addedToCart'));
     }
   };
 
@@ -165,7 +167,7 @@ export default function ProductDetailScreen() {
     if (!product) return;
     try {
       await Share.share({
-        message: `Check out ${product.name} on BuyLow India! Only ₹${formatINR(product.price)}`,
+        message: t('product.shareMessage', { name: product.name, price: formatINR(product.price) }),
         url: resolveMediaUrl(product.image),
         title: product.name,
       });
@@ -176,18 +178,18 @@ export default function ProductDetailScreen() {
 
   const handleWishlist = async () => {
     if (!user) {
-      Alert.alert('Login Required', 'Please login to add items to your wishlist.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Login', onPress: () => router.push('/(auth)/login') }
+      Alert.alert(t('auth.loginRequired'), t('auth.loginToWishlist'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
     if (product) {
       try {
         await toggleWishlist(product._id);
-        triggerToast(!isFaved ? 'Added to Wishlist!' : 'Removed from Wishlist!');
+        triggerToast(!isFaved ? t('product.addedWishlist') : t('product.removedWishlist'));
       } catch {
-        Alert.alert('Error', 'Failed to update wishlist. Please try again.');
+        Alert.alert(t('common.error'), t('product.wishlistFailed'));
       }
     }
   };
@@ -202,7 +204,7 @@ export default function ProductDetailScreen() {
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (permission.status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow camera/photo access to upload review images.');
+      Alert.alert(t('product.permissionNeeded'), t('product.photoPermission'));
       return;
     }
 
@@ -222,9 +224,9 @@ export default function ProductDetailScreen() {
 
   const handleOpenReviewForm = () => {
     if (!user || !token) {
-      Alert.alert('Login Required', 'Please login to rate and review this product.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Login', onPress: () => router.push('/(auth)/login') },
+      Alert.alert(t('auth.loginRequired'), t('auth.loginToReview'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
@@ -242,14 +244,14 @@ export default function ProductDetailScreen() {
 
   const handleSubmitReview = async () => {
     if (!token) {
-      Alert.alert('Login Required', 'Please login to post reviews.', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Login', onPress: () => router.push('/(auth)/login') }
+      Alert.alert(t('auth.loginRequired'), t('product.loginToPostReview'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
     if (!newComment.trim()) {
-      Alert.alert('Input Error', 'Please write a review comment.');
+      Alert.alert(t('common.error'), t('product.reviewInputError'));
       return;
     }
 
@@ -273,7 +275,7 @@ export default function ProductDetailScreen() {
         uploadedUrls,
       );
       if (res.success) {
-        Alert.alert('Review Saved', 'Thank you for your feedback!');
+        Alert.alert(t('product.reviewSaved'), t('product.reviewThanks'));
         setNewComment('');
         setReviewPhotos([]);
         setShowReviewForm(false);
@@ -287,7 +289,7 @@ export default function ProductDetailScreen() {
         }
       }
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to submit review. Please try again.');
+      Alert.alert(t('common.error'), err.message || t('product.reviewSubmitFailed'));
     } finally {
       setSubmittingReview(false);
     }
@@ -304,9 +306,9 @@ export default function ProductDetailScreen() {
   if (error || !product) {
     return (
       <SafeAreaView style={[styles.container, styles.center]}>
-        <Text style={styles.errorText}>{error || 'Product not found'}</Text>
+        <Text style={styles.errorText}>{error || t('product.notFound')}</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>{t('common.goBack')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -376,7 +378,7 @@ export default function ProductDetailScreen() {
 
           {discount && (
             <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>-{discount}% OFF</Text>
+              <Text style={styles.discountText}>-{discount}% {t('product.off')}</Text>
             </View>
           )}
 
@@ -401,36 +403,36 @@ export default function ProductDetailScreen() {
               <Text style={styles.ratingValue}>{averageRating.toFixed(1)}</Text>
               <Ionicons name="star" size={13} color={Colors.white} />
             </View>
-            <Text style={styles.ratingCount}>{totalReviews} customer reviews</Text>
+            <Text style={styles.ratingCount}>{t('product.customerReviews', { count: String(totalReviews) })}</Text>
           </View>
 
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{product.description || 'No description available for this product.'}</Text>
+          <Text style={styles.sectionTitle}>{t('product.description')}</Text>
+          <Text style={styles.description}>{product.description || t('product.noDescription')}</Text>
 
           <View style={styles.divider} />
 
           <View style={styles.relatedSection}>
             <ProductRail
-              title="Related Products"
-              subtitle={`More in ${product.category}`}
+              title={t('home.relatedProducts')}
+              subtitle={t('home.relatedMoreIn', { category: product.category })}
               icon="layers"
               products={relatedProducts}
               loading={relatedLoading}
-              emptyText={relatedLoading ? '' : 'No related products found'}
+              emptyText={relatedLoading ? '' : t('home.noRelated')}
               showDiscount
             />
           </View>
 
           <View style={styles.divider} />
 
-          <Text style={styles.sectionTitle}>Ratings & Reviews</Text>
+          <Text style={styles.sectionTitle}>{t('product.ratingsReviews')}</Text>
 
           {!userReview && !showReviewForm ? (
             <TouchableOpacity style={styles.reviewCtaCard} onPress={handleOpenReviewForm} activeOpacity={0.9}>
               <View style={styles.reviewCtaLeft}>
-                <Text style={styles.reviewCtaTitle}>Rate this product</Text>
+                <Text style={styles.reviewCtaTitle}>{t('product.rateProduct')}</Text>
                 <Text style={styles.reviewCtaSub}>
-                  {user ? 'Share rating, comment & photos' : 'Login to write a review'}
+                  {user ? t('product.writeReview') : t('product.loginToReview')}
                 </Text>
                 <View style={styles.starsPreview}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -445,13 +447,15 @@ export default function ProductDetailScreen() {
           {showReviewForm ? (
             <View style={styles.writeReviewBox}>
               <View style={styles.writeReviewHeader}>
-                <Text style={styles.writeReviewTitle}>{userReview ? 'Edit Your Review' : 'Your Review'}</Text>
+                <Text style={styles.writeReviewTitle}>
+                  {userReview ? t('product.editReview') : t('product.yourReview')}
+                </Text>
                 <TouchableOpacity onPress={() => setShowReviewForm(false)}>
-                  <Text style={styles.cancelReview}>Cancel</Text>
+                  <Text style={styles.cancelReview}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.ratingLabel}>Your Rating</Text>
+              <Text style={styles.ratingLabel}>{t('product.yourRating')}</Text>
               <View style={styles.starsSelector}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <TouchableOpacity key={star} onPress={() => setNewRating(star)} hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
@@ -466,10 +470,10 @@ export default function ProductDetailScreen() {
                 <Text style={styles.ratingHint}>{newRating}/5</Text>
               </View>
 
-              <Text style={styles.ratingLabel}>Your Comment</Text>
+              <Text style={styles.ratingLabel}>{t('product.yourComment')}</Text>
               <TextInput
                 style={styles.reviewInput}
-                placeholder="Tell others about quality, delivery, value for money..."
+                placeholder={t('product.reviewPlaceholder')}
                 placeholderTextColor={Colors.textLight}
                 value={newComment}
                 onChangeText={setNewComment}
@@ -481,7 +485,7 @@ export default function ProductDetailScreen() {
               />
               <Text style={styles.charCount}>{newComment.length}/500</Text>
 
-              <Text style={styles.photoLabel}>Add Photos (optional, max 5)</Text>
+              <Text style={styles.photoLabel}>{t('product.addPhotos')}</Text>
               <View style={styles.reviewPhotoPicker}>
                 {reviewPhotos.map((uri, idx) => (
                   <View key={`${uri}-${idx}`} style={styles.pickedPhotoWrap}>
@@ -498,11 +502,11 @@ export default function ProductDetailScreen() {
                   <>
                     <TouchableOpacity style={styles.addPhotoBtn} onPress={() => pickReviewPhotos(false)}>
                       <Ionicons name="images-outline" size={22} color={Colors.primary} />
-                      <Text style={styles.addPhotoText}>Gallery</Text>
+                      <Text style={styles.addPhotoText}>{t('product.gallery')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.addPhotoBtn} onPress={() => pickReviewPhotos(true)}>
                       <Ionicons name="camera-outline" size={22} color={Colors.primary} />
-                      <Text style={styles.addPhotoText}>Camera</Text>
+                      <Text style={styles.addPhotoText}>{t('product.camera')}</Text>
                     </TouchableOpacity>
                   </>
                 )}
@@ -518,7 +522,7 @@ export default function ProductDetailScreen() {
                 ) : (
                   <>
                     <Ionicons name="send" size={16} color={Colors.white} />
-                    <Text style={styles.submitReviewText}>Submit Review</Text>
+                    <Text style={styles.submitReviewText}>{t('product.submitReview')}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -527,11 +531,13 @@ export default function ProductDetailScreen() {
 
           <View style={styles.reviewsHeaderRow}>
             <Text style={styles.reviewsCountTitle}>
-              {totalReviews} Customer Review{totalReviews === 1 ? '' : 's'}
+              {totalReviews === 1
+                ? t('product.customerReview', { count: String(totalReviews) })
+                : t('product.customerReviewsPlural', { count: String(totalReviews) })}
             </Text>
             {userReview && !showReviewForm ? (
               <TouchableOpacity onPress={handleOpenReviewForm}>
-                <Text style={styles.writeReviewLink}>Edit Review</Text>
+                <Text style={styles.writeReviewLink}>{t('product.editReviewLink')}</Text>
               </TouchableOpacity>
             ) : null}
           </View>
@@ -539,7 +545,7 @@ export default function ProductDetailScreen() {
           {userReview && !showReviewForm ? (
             <View style={styles.userReviewBox}>
               <View style={styles.reviewHeader}>
-                <Text style={styles.reviewAuthor}>Your Review (Verified)</Text>
+                <Text style={styles.reviewAuthor}>{t('product.yourReviewVerified')}</Text>
                 <View style={styles.reviewStars}>
                   {[1, 2, 3, 4, 5].map(i => (
                     <Ionicons key={i} name="star" size={12} color={i <= userReview.rating ? Colors.secondary : Colors.border} />
@@ -552,12 +558,12 @@ export default function ProductDetailScreen() {
           ) : null}
 
           {reviews.length === 0 ? (
-            <Text style={styles.noReviewsText}>No reviews yet. Be the first to share your opinion!</Text>
+            <Text style={styles.noReviewsText}>{t('product.noReviewsYet')}</Text>
           ) : (
             reviews.filter(r => r._id !== userReview?._id).map((rev) => (
               <View key={rev._id} style={styles.reviewItem}>
                 <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewAuthor}>{rev.userName || 'Verified Buyer'}</Text>
+                  <Text style={styles.reviewAuthor}>{rev.userName || t('product.verifiedBuyer')}</Text>
                   <View style={styles.reviewStars}>
                     {[1, 2, 3, 4, 5].map(i => (
                       <Ionicons key={i} name="star" size={12} color={i <= rev.rating ? Colors.secondary : Colors.border} />
@@ -580,10 +586,10 @@ export default function ProductDetailScreen() {
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
           <Feather name="shopping-cart" size={18} color={Colors.primary} />
-          <Text style={styles.addToCartText}>Add to Cart</Text>
+          <Text style={styles.addToCartText}>{t('product.addToCart')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.buyNowButton} onPress={() => { handleAddToCart(); router.push('/cart'); }}>
-          <Text style={styles.buyNowText}>Buy Now</Text>
+          <Text style={styles.buyNowText}>{t('product.buyNow')}</Text>
         </TouchableOpacity>
       </View>
       </SafeAreaView>

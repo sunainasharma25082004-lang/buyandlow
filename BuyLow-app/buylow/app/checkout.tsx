@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '../constants/colors';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { createOrder, verifyPayment, formatINR } from '../services/api';
 import { FREE_SHIPPING_MIN, getShippingPrice } from '../constants/shop';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -45,6 +46,7 @@ export default function CheckoutScreen() {
   const router = useRouter();
   const { cart, cartTotal, clearCart } = useCart();
   const { token, user } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('razorpay');
   const [showRazorpay, setShowRazorpay] = useState(false);
@@ -53,7 +55,7 @@ export default function CheckoutScreen() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
-  const country = 'India';
+  const country = t('checkout.country');
   const [phone, setPhone] = useState('');
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [locationPreview, setLocationPreview] = useState<GeocodedAddress | null>(null);
@@ -135,8 +137,8 @@ export default function CheckoutScreen() {
 
   const finishOrder = async () => {
     await clearCart();
-    Alert.alert('Order Confirmed!', 'Your order has been placed successfully.', [
-      { text: 'View Orders', onPress: () => router.replace('/(tabs)/orders') },
+    Alert.alert(t('checkout.orderConfirmed'), t('checkout.orderConfirmedMsg'), [
+      { text: t('common.viewOrders'), onPress: () => router.replace('/(tabs)/orders') },
     ]);
   };
 
@@ -144,7 +146,7 @@ export default function CheckoutScreen() {
     setShowRazorpay(false);
     setLoading(true);
     try {
-      if (!token) throw new Error('Session expired. Please login again.');
+      if (!token) throw new Error(t('checkout.sessionExpired'));
       const res = await verifyPayment(
         {
           razorpayOrderId: payload.razorpay_order_id,
@@ -153,10 +155,10 @@ export default function CheckoutScreen() {
         },
         token,
       );
-      if (!res.success) throw new Error(res.message || 'Payment verification failed');
+      if (!res.success) throw new Error(res.message || t('checkout.paymentVerificationFailed'));
       await finishOrder();
     } catch (err: any) {
-      Alert.alert('Payment Failed', err.message || 'Could not verify payment');
+      Alert.alert(t('checkout.paymentFailed'), err.message || t('checkout.paymentVerificationFailed'));
     } finally {
       setLoading(false);
       setPaymentSession(null);
@@ -165,12 +167,12 @@ export default function CheckoutScreen() {
 
   const handlePlaceOrder = async () => {
     if (!address.trim() || !city.trim() || !postalCode.trim() || !phone.trim()) {
-      Alert.alert('Details Missing', 'Please fill in all shipping details.');
+      Alert.alert(t('common.error'), t('checkout.detailsMissing'));
       return;
     }
     if (!token) {
-      Alert.alert('Login Required', 'Please login to place your order.', [
-        { text: 'Login', onPress: () => router.push('/(auth)/login') },
+      Alert.alert(t('auth.loginRequired'), t('auth.loginToOrder'), [
+        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
       ]);
       return;
     }
@@ -195,7 +197,7 @@ export default function CheckoutScreen() {
       }
 
       if (!res.key_id && !res.simulated) {
-        throw new Error('Razorpay is not configured on the server. Try Cash on Delivery.');
+        throw new Error(t('checkout.razorpayNotConfigured'));
       }
 
       if (supportsWebRazorpay) {
@@ -212,7 +214,7 @@ export default function CheckoutScreen() {
           onSuccess: handleRazorpaySuccess,
           onDismiss: () => setPaymentSession(null),
           onError: (message) => {
-            Alert.alert('Payment Failed', message);
+            Alert.alert(t('checkout.paymentFailed'), message);
             setPaymentSession(null);
           },
         });
@@ -222,7 +224,7 @@ export default function CheckoutScreen() {
       setPaymentSession(res);
       setShowRazorpay(true);
     } catch (err: any) {
-      Alert.alert('Checkout Failed', err.message || 'Could not place order');
+      Alert.alert(t('checkout.checkoutFailed'), err.message || t('checkout.checkoutFailed'));
     } finally {
       setLoading(false);
     }
@@ -242,17 +244,15 @@ export default function CheckoutScreen() {
         >
           <View style={styles.sectionHeader}>
             <Feather name="map-pin" size={18} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>Shipping Address</Text>
+            <Text style={styles.sectionTitle}>{t('checkout.shippingAddress')}</Text>
             {savedAddresses.length > 0 && (
               <TouchableOpacity onPress={() => router.push('/account/addresses' as any)}>
-                <Text style={styles.manageLink}>Manage</Text>
+                <Text style={styles.manageLink}>{t('common.manage')}</Text>
               </TouchableOpacity>
             )}
           </View>
 
-          <Text style={styles.chooseHint}>
-            Saved address choose karo ya apni current location select karo
-          </Text>
+          <Text style={styles.chooseHint}>{t('checkout.chooseAddress')}</Text>
 
           <ScrollView
             horizontal
@@ -276,17 +276,17 @@ export default function CheckoutScreen() {
                   <Text style={styles.savedLabel}>{addr.label}</Text>
                   <Text style={styles.savedText} numberOfLines={2}>{addr.address}</Text>
                   <Text style={styles.savedMeta}>{addr.city} · {addr.postalCode}</Text>
-                  {addr.isDefault && <Text style={styles.savedDefault}>Default</Text>}
+                  {addr.isDefault && <Text style={styles.savedDefault}>{t('common.default')}</Text>}
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
 
-          <Text style={styles.label}>Full Address</Text>
+          <Text style={styles.label}>{t('checkout.fullAddress')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="House No, Street, Area"
+              placeholder={t('checkout.addressPlaceholder')}
               placeholderTextColor={Colors.textLight}
               value={address}
               onChangeText={setAddress}
@@ -295,14 +295,14 @@ export default function CheckoutScreen() {
 
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>City</Text>
+              <Text style={styles.label}>{t('checkout.city')}</Text>
               <View style={styles.inputContainer}>
-                <TextInput style={styles.input} placeholder="City" value={city} onChangeText={setCity} />
+                <TextInput style={styles.input} placeholder={t('checkout.cityPlaceholder')} value={city} onChangeText={setCity} />
               </View>
             </View>
             <View style={{ width: 12 }} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>PIN Code</Text>
+              <Text style={styles.label}>{t('checkout.pinCode')}</Text>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
@@ -316,11 +316,11 @@ export default function CheckoutScreen() {
             </View>
           </View>
 
-          <Text style={styles.label}>Phone</Text>
+          <Text style={styles.label}>{t('common.phone')}</Text>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="10-digit mobile"
+              placeholder={t('checkout.phonePlaceholder')}
               keyboardType="phone-pad"
               maxLength={10}
               value={phone}
@@ -329,38 +329,38 @@ export default function CheckoutScreen() {
           </View>
 
           <View style={styles.summaryContainer}>
-            <Text style={styles.summaryTitle}>Order Summary</Text>
+            <Text style={styles.summaryTitle}>{t('checkout.orderSummary')}</Text>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryLabel}>{t('checkout.subtotal')}</Text>
               <Text style={styles.summaryValue}>₹{formatINR(cartTotal)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Shipping</Text>
+              <Text style={styles.summaryLabel}>{t('checkout.shipping')}</Text>
               <Text style={[styles.summaryValue, shippingPrice === 0 && { color: Colors.success }]}>
-                {shippingPrice === 0 ? 'FREE' : `₹${formatINR(shippingPrice)}`}
+                {shippingPrice === 0 ? t('common.free') : `₹${formatINR(shippingPrice)}`}
               </Text>
             </View>
             {cartTotal < FREE_SHIPPING_MIN && (
               <Text style={styles.shippingHint}>
-                Add ₹{formatINR(FREE_SHIPPING_MIN - cartTotal)} more for free shipping
+                {t('checkout.freeShippingHint', { amount: formatINR(FREE_SHIPPING_MIN - cartTotal) })}
               </Text>
             )}
             <View style={styles.divider} />
             <View style={styles.summaryRow}>
-              <Text style={styles.totalLabel}>Grand Total</Text>
+              <Text style={styles.totalLabel}>{t('checkout.grandTotal')}</Text>
               <Text style={styles.totalValue}>₹{formatINR(grandTotal)}</Text>
             </View>
           </View>
 
-          <Text style={styles.payTitle}>Payment Method</Text>
+          <Text style={styles.payTitle}>{t('checkout.paymentMethod')}</Text>
           <TouchableOpacity
             style={[styles.payOption, paymentMethod === 'razorpay' && styles.payOptionActive]}
             onPress={() => setPaymentMethod('razorpay')}
           >
             <Ionicons name="card-outline" size={22} color={Colors.primary} />
             <View style={styles.payTextWrap}>
-              <Text style={styles.payOptionTitle}>Razorpay (UPI / Card / NetBanking)</Text>
-              <Text style={styles.payOptionDesc}>Same secure checkout as website</Text>
+              <Text style={styles.payOptionTitle}>{t('checkout.razorpayTitle')}</Text>
+              <Text style={styles.payOptionDesc}>{t('checkout.razorpayDesc')}</Text>
             </View>
             {paymentMethod === 'razorpay' && <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />}
           </TouchableOpacity>
@@ -371,8 +371,8 @@ export default function CheckoutScreen() {
           >
             <Ionicons name="cash-outline" size={22} color={Colors.primary} />
             <View style={styles.payTextWrap}>
-              <Text style={styles.payOptionTitle}>Cash on Delivery</Text>
-              <Text style={styles.payOptionDesc}>Pay when your order arrives</Text>
+              <Text style={styles.payOptionTitle}>{t('checkout.codTitle')}</Text>
+              <Text style={styles.payOptionDesc}>{t('checkout.codDesc')}</Text>
             </View>
             {paymentMethod === 'cod' && <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />}
           </TouchableOpacity>
@@ -383,7 +383,7 @@ export default function CheckoutScreen() {
             ) : (
               <>
                 <Text style={styles.buttonText}>
-                  {paymentMethod === 'razorpay' ? 'Pay with Razorpay' : 'Place COD Order'}
+                  {paymentMethod === 'razorpay' ? t('checkout.payWithRazorpay') : t('checkout.placeCodOrder')}
                 </Text>
                 <Feather name="lock" size={16} color={Colors.white} style={{ marginLeft: 8 }} />
               </>

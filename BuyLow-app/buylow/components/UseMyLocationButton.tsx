@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
 import { fetchCurrentAddress, type GeocodedAddress } from '../utils/location';
+import { useLanguage } from '../context/LanguageContext';
 
 type Props = {
   onResolved: (address: GeocodedAddress) => void;
@@ -20,23 +21,25 @@ type Props = {
 
 export default function UseMyLocationButton({
   onResolved,
-  label = 'Use My Live Location',
+  label,
   compact = false,
   style,
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
+  const buttonLabel = label ?? t('location.useLive');
 
   const handlePress = async () => {
     setLoading(true);
     try {
       const resolved = await fetchCurrentAddress();
       if (!resolved.address && !resolved.city) {
-        throw new Error('Address not found for this location. Try again or enter manually.');
+        throw new Error(t('addresses.addressNotFound'));
       }
       onResolved(resolved);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not get your location';
-      Alert.alert('Location Failed', message);
+      const message = err instanceof Error ? err.message : t('addresses.couldNotGetLocation');
+      Alert.alert(t('addresses.locationFailed'), message);
     } finally {
       setLoading(false);
     }
@@ -55,7 +58,7 @@ export default function UseMyLocationButton({
         <Ionicons name="locate" size={compact ? 16 : 18} color={Colors.primary} />
       )}
       <Text style={compact ? styles.compactText : styles.text}>
-        {loading ? 'Getting location...' : label}
+        {loading ? t('location.getting') : buttonLabel}
       </Text>
     </TouchableOpacity>
   );

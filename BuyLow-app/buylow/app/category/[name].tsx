@@ -7,10 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
 import { getProducts, formatINR } from '../../services/api';
 import { Product } from '../../types/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function CategoryProductsScreen() {
   const { name } = useLocalSearchParams();
   const router = useRouter();
+  const { t } = useLanguage();
   const categoryName = decodeURIComponent(Array.isArray(name) ? name[0] : (name || ''));
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export default function CategoryProductsScreen() {
         columnWrapperStyle={styles.row}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No products found in this category.</Text>
+            <Text style={styles.emptyText}>{t('categories.noProductsInCategory')}</Text>
           </View>
         }
         renderItem={({ item }) => (

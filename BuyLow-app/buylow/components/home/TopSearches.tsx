@@ -4,8 +4,10 @@ import storage from '../../utils/storage';
 import { getProducts } from '../../services/api';
 import type { Product } from '../../types/api';
 import ProductRail from './ProductRail';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function TopSearches() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,12 +53,14 @@ export default function TopSearches() {
 
   return (
     <ProductRail
-      title="Top Searches"
-      subtitle={searchTerm ? `Based on "${searchTerm}"` : 'Popular search results'}
+      title={t('home.topSearches')}
+      subtitle={
+        searchTerm ? t('home.topSearchesBased', { term: searchTerm }) : t('home.topSearchesPopular')
+      }
       icon="search"
       products={products}
       loading={loading}
-      emptyText="Search products in the Search tab — results show here"
+      emptyText={t('home.topSearchesEmpty')}
     />
   );
 }

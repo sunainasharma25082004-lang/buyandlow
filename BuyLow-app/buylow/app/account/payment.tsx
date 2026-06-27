@@ -13,32 +13,34 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import HelpHeader from '../../components/HelpHeader';
 import type { PaymentPreference } from '../../types/api';
-
-const PAYMENT_OPTIONS: {
-  id: PaymentPreference;
-  title: string;
-  desc: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}[] = [
-  {
-    id: 'razorpay',
-    title: 'Razorpay (UPI / Card / NetBanking)',
-    desc: 'Secure online payments via UPI, debit/credit cards, and net banking',
-    icon: 'card-outline',
-  },
-  {
-    id: 'cod',
-    title: 'Cash on Delivery',
-    desc: 'Pay when your order arrives at your doorstep',
-    icon: 'cash-outline',
-  },
-];
 
 export default function PaymentScreen() {
   const router = useRouter();
   const { user, loading, updateProfile } = useAuth();
+  const { t } = useLanguage();
+
+  const PAYMENT_OPTIONS: {
+    id: PaymentPreference;
+    title: string;
+    desc: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  }[] = [
+    {
+      id: 'razorpay',
+      title: t('payment.razorpay'),
+      desc: t('payment.razorpayDesc'),
+      icon: 'card-outline',
+    },
+    {
+      id: 'cod',
+      title: t('payment.cod'),
+      desc: t('payment.codDesc'),
+      icon: 'cash-outline',
+    },
+  ];
   const [selected, setSelected] = useState<PaymentPreference>('razorpay');
   const [saving, setSaving] = useState(false);
 
@@ -58,10 +60,10 @@ export default function PaymentScreen() {
     setSaving(true);
     try {
       await updateProfile({ paymentPreference: selected });
-      Alert.alert('Saved', 'Your preferred payment method has been updated.');
+      Alert.alert(t('common.success'), t('payment.savedPreference'));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not save preference.';
-      Alert.alert('Save Failed', message);
+      const message = err instanceof Error ? err.message : t('payment.saveFailed');
+      Alert.alert(t('common.error'), message);
     } finally {
       setSaving(false);
     }
@@ -70,7 +72,7 @@ export default function PaymentScreen() {
   if (loading || !user) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-        <HelpHeader title="Payment Methods" />
+        <HelpHeader title={t('payment.title')} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -80,11 +82,9 @@ export default function PaymentScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <HelpHeader title="Payment Methods" />
+      <HelpHeader title={t('payment.title')} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.intro}>
-          Choose your default payment method for checkout. You can still change it while placing an order.
-        </Text>
+        <Text style={styles.intro}>{t('payment.subtitle')}</Text>
 
         {PAYMENT_OPTIONS.map((option) => {
           const active = selected === option.id;
@@ -109,10 +109,8 @@ export default function PaymentScreen() {
         <View style={styles.infoCard}>
           <Ionicons name="shield-checkmark-outline" size={22} color={Colors.primary} />
           <View style={styles.infoText}>
-            <Text style={styles.infoTitle}>Secure Payments</Text>
-            <Text style={styles.infoDesc}>
-              Razorpay supports UPI apps, all major cards, and net banking. Card details are never stored in the app.
-            </Text>
+            <Text style={styles.infoTitle}>{t('payment.secureTitle')}</Text>
+            <Text style={styles.infoDesc}>{t('payment.secureDesc')}</Text>
           </View>
         </View>
 
@@ -120,7 +118,7 @@ export default function PaymentScreen() {
           {saving ? (
             <ActivityIndicator color={Colors.white} />
           ) : (
-            <Text style={styles.buttonText}>Save Preference</Text>
+            <Text style={styles.buttonText}>{t('payment.savePreference')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

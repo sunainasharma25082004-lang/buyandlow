@@ -7,9 +7,11 @@ import storage from '../../utils/storage';
 import { Colors, Shadows } from '../../constants/colors';
 import { formatINR } from '../../services/api';
 import type { Product } from '../../types/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function RecentlyViewed() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +41,7 @@ export default function RecentlyViewed() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Recently Viewed</Text>
+        <Text style={styles.title}>{t('home.recentlyViewed')}</Text>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>

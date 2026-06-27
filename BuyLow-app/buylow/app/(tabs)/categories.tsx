@@ -14,11 +14,13 @@ import RemoteImage from '../../components/RemoteImage';
 import { PLACEHOLDER_CATEGORY } from '../../constants/images';
 import type { Category } from '../../types/api';
 import CustomHeader from '../../components/CustomHeader';
+import { useLanguage } from '../../context/LanguageContext';
 
 import { useRouter } from 'expo-router';
 
 export default function CategoriesScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -36,7 +38,7 @@ export default function CategoriesScreen() {
       .catch(() => {
         if (active) {
           setCategories([]);
-          setError('Could not load categories. Make sure the backend server is running.');
+          setError(t('categories.loadError'));
         }
       })
       .finally(() => {
@@ -54,21 +56,19 @@ export default function CategoriesScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <CustomHeader />
       <View style={styles.header}>
-        <Text style={styles.title}>All Categories</Text>
-        <Text style={styles.subtitle}>Browse collections uploaded from admin panel</Text>
+        <Text style={styles.title}>{t('categories.allCategories')}</Text>
+        <Text style={styles.subtitle}>{t('categories.browseAdmin')}</Text>
       </View>
 
       {loading ? (
         <View style={styles.stateBox}>
           <ActivityIndicator color={Colors.primary} size="large" />
-          <Text style={styles.stateText}>Loading categories...</Text>
+          <Text style={styles.stateText}>{t('categories.loadingCategories')}</Text>
         </View>
       ) : categories.length === 0 ? (
         <View style={styles.stateBox}>
-          <Text style={styles.emptyTitle}>No categories yet</Text>
-          <Text style={styles.stateText}>
-            {error || 'Add categories from the admin panel and they will show up here automatically.'}
-          </Text>
+          <Text style={styles.emptyTitle}>{t('categories.noCategoriesYet')}</Text>
+          <Text style={styles.stateText}>{error || t('categories.adminHint')}</Text>
         </View>
       ) : (
         <FlatList
@@ -89,8 +89,10 @@ export default function CategoriesScreen() {
                 </Text>
                 <Text style={styles.cardCount}>
                   {item.productCount
-                    ? `${item.productCount} product${item.productCount > 1 ? 's' : ''}`
-                    : 'Explore collection'}
+                    ? item.productCount > 1
+                      ? t('categories.productCountPlural', { count: String(item.productCount) })
+                      : t('categories.productCount', { count: String(item.productCount) })
+                    : t('categories.exploreCollection')}
                 </Text>
               </View>
             </TouchableOpacity>

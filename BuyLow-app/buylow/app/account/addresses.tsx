@@ -16,12 +16,13 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import HelpHeader from '../../components/HelpHeader';
 import LocationSelectCard from '../../components/LocationSelectCard';
 import type { GeocodedAddress } from '../../utils/location';
 import type { SavedAddress } from '../../types/api';
 
-const LABELS = ['Home', 'Work', 'Other'];
+
 
 const emptyForm = (): SavedAddress => ({
   label: 'Home',
@@ -36,6 +37,8 @@ const emptyForm = (): SavedAddress => ({
 export default function AddressesScreen() {
   const router = useRouter();
   const { user, loading, saveAddresses } = useAuth();
+  const { t } = useLanguage();
+  const LABELS = [t('addresses.labelHome'), t('addresses.labelWork'), t('addresses.labelOther')];
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -72,6 +75,7 @@ export default function AddressesScreen() {
     setLocationPreview(null);
     setForm({
       ...emptyForm(),
+      label: t('addresses.labelHome'),
       isDefault: addresses.length === 0,
       phone: user?.phone || '',
     });
@@ -101,8 +105,8 @@ export default function AddressesScreen() {
       setAddresses(saved);
       return saved;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not save addresses.';
-      Alert.alert('Save Failed', message);
+      const message = err instanceof Error ? err.message : t('addresses.saveFailed');
+      Alert.alert(t('common.error'), message);
       throw err;
     } finally {
       setSaving(false);
@@ -112,11 +116,11 @@ export default function AddressesScreen() {
   const handleSaveForm = async () => {
     const digits = form.phone.replace(/\D/g, '');
     if (!form.address.trim() || !form.city.trim() || !form.postalCode.trim()) {
-      Alert.alert('Missing details', 'Please fill address, city, and PIN code.');
+      Alert.alert(t('common.error'), t('addresses.missingDetails'));
       return;
     }
     if (digits.length < 10) {
-      Alert.alert('Invalid phone', 'Please enter a valid 10-digit mobile number.');
+      Alert.alert(t('common.error'), t('profile.invalidPhone'));
       return;
     }
 
@@ -149,17 +153,17 @@ export default function AddressesScreen() {
     try {
       await persistAddresses(next);
       closeForm();
-      Alert.alert('Saved', editingId ? 'Address updated.' : 'Address added.');
+      Alert.alert(t('common.success'), editingId ? t('addresses.addressUpdated') : t('addresses.addressAdded'));
     } catch {
       // error shown in persistAddresses
     }
   };
 
   const handleDelete = (addr: SavedAddress) => {
-    Alert.alert('Delete Address', `Remove "${addr.label}" address?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('addresses.deleteTitle'), t('addresses.removeConfirm', { label: addr.label }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           let next = addresses.filter((item) => item._id !== addr._id);
@@ -191,7 +195,7 @@ export default function AddressesScreen() {
   if (loading || !user) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-        <HelpHeader title="Saved Addresses" />
+        <HelpHeader title={t('addresses.title')} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -201,7 +205,7 @@ export default function AddressesScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <HelpHeader title="Saved Addresses" />
+      <HelpHeader title={t('addresses.title')} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -214,17 +218,15 @@ export default function AddressesScreen() {
           {!showForm && (
             <TouchableOpacity style={styles.addButton} onPress={openAddForm}>
               <Ionicons name="add-circle" size={22} color={Colors.white} />
-              <Text style={styles.addButtonText}>Add New Address</Text>
+              <Text style={styles.addButtonText}>{t('addresses.addNew')}</Text>
             </TouchableOpacity>
           )}
 
           {showForm && (
             <View style={styles.formCard}>
-              <Text style={styles.formTitle}>{editingId ? 'Edit Address' : 'New Address'}</Text>
+              <Text style={styles.formTitle}>{editingId ? t('addresses.editAddress') : t('addresses.newAddress')}</Text>
 
-              <Text style={styles.chooseHint}>
-                Chaaho to apni current location select karke address auto-fill karo
-              </Text>
+              <Text style={styles.chooseHint}>{t('addresses.chooseLocationHint')}</Text>
               <LocationSelectCard
                 compact
                 selected={locationSelected}
@@ -232,7 +234,7 @@ export default function AddressesScreen() {
                 onSelect={fillFormFromLocation}
               />
 
-              <Text style={styles.label}>Label</Text>
+              <Text style={styles.label}>{t('addresses.label')}</Text>
               <View style={styles.labelRow}>
                 {LABELS.map((label) => (
                   <TouchableOpacity
@@ -247,32 +249,32 @@ export default function AddressesScreen() {
                 ))}
               </View>
 
-              <Text style={styles.label}>Full Address</Text>
+              <Text style={styles.label}>{t('checkout.fullAddress')}</Text>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
                   value={form.address}
                   onChangeText={(v) => setForm({ ...form, address: v })}
-                  placeholder="House No, Street, Area"
+                  placeholder={t('checkout.addressPlaceholder')}
                   placeholderTextColor={Colors.textLight}
                 />
               </View>
 
               <View style={styles.row}>
                 <View style={styles.half}>
-                  <Text style={styles.label}>City</Text>
+                  <Text style={styles.label}>{t('checkout.city')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput
                       style={styles.input}
                       value={form.city}
                       onChangeText={(v) => setForm({ ...form, city: v })}
-                      placeholder="City"
+                      placeholder={t('checkout.cityPlaceholder')}
                       placeholderTextColor={Colors.textLight}
                     />
                   </View>
                 </View>
                 <View style={styles.half}>
-                  <Text style={styles.label}>PIN Code</Text>
+                  <Text style={styles.label}>{t('checkout.pinCode')}</Text>
                   <View style={styles.inputContainer}>
                     <TextInput
                       style={styles.input}
@@ -287,13 +289,13 @@ export default function AddressesScreen() {
                 </View>
               </View>
 
-              <Text style={styles.label}>Phone</Text>
+              <Text style={styles.label}>{t('common.phone')}</Text>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
                   value={form.phone}
                   onChangeText={(v) => setForm({ ...form, phone: v })}
-                  placeholder="10-digit mobile"
+                  placeholder={t('checkout.phonePlaceholder')}
                   keyboardType="phone-pad"
                   maxLength={10}
                   placeholderTextColor={Colors.textLight}
@@ -309,18 +311,18 @@ export default function AddressesScreen() {
                   size={22}
                   color={Colors.primary}
                 />
-                <Text style={styles.defaultToggleText}>Set as default delivery address</Text>
+                <Text style={styles.defaultToggleText}>{t('addresses.setDefaultDelivery')}</Text>
               </TouchableOpacity>
 
               <View style={styles.formActions}>
                 <TouchableOpacity style={styles.cancelBtn} onPress={closeForm}>
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                  <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSaveForm} disabled={saving}>
                   {saving ? (
                     <ActivityIndicator color={Colors.white} size="small" />
                   ) : (
-                    <Text style={styles.saveBtnText}>Save Address</Text>
+                    <Text style={styles.saveBtnText}>{t('addresses.saveAddress')}</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -330,8 +332,8 @@ export default function AddressesScreen() {
           {addresses.length === 0 && !showForm ? (
             <View style={styles.emptyState}>
               <Ionicons name="location-outline" size={48} color={Colors.border} />
-              <Text style={styles.emptyTitle}>No saved addresses</Text>
-              <Text style={styles.emptyDesc}>Add a delivery address for faster checkout</Text>
+              <Text style={styles.emptyTitle}>{t('addresses.noAddresses')}</Text>
+              <Text style={styles.emptyDesc}>{t('addresses.emptyDesc')}</Text>
             </View>
           ) : (
             addresses.map((addr) => (
@@ -342,7 +344,7 @@ export default function AddressesScreen() {
                     <Text style={styles.addressLabel}>{addr.label}</Text>
                     {addr.isDefault && (
                       <View style={styles.defaultBadge}>
-                        <Text style={styles.defaultBadgeText}>Default</Text>
+                        <Text style={styles.defaultBadgeText}>{t('common.default')}</Text>
                       </View>
                     )}
                   </View>
@@ -362,7 +364,7 @@ export default function AddressesScreen() {
                 <Text style={styles.addressMeta}>+91 {addr.phone}</Text>
                 {!addr.isDefault && (
                   <TouchableOpacity style={styles.setDefaultBtn} onPress={() => handleSetDefault(addr)}>
-                    <Text style={styles.setDefaultText}>Set as default</Text>
+                    <Text style={styles.setDefaultText}>{t('addresses.setDefault')}</Text>
                   </TouchableOpacity>
                 )}
               </View>

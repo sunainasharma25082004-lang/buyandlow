@@ -3,8 +3,10 @@ import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../constants/colors';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function CouponBanner() {
+  const { t } = useLanguage();
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -18,12 +20,12 @@ export default function CouponBanner() {
             <Feather name="gift" size={22} color={Colors.accent} />
           </View>
           <View style={styles.textContainer}>
-            <Text style={styles.title}>Extra 10% Off</Text>
-            <Text style={styles.subtitle}>on all Prepaid Orders via Razorpay</Text>
+            <Text style={styles.title}>{t('home.couponTitle')}</Text>
+            <Text style={styles.subtitle}>{t('home.couponSubtitle')}</Text>
           </View>
         </View>
         <View style={styles.codeContainer}>
-          <Text style={styles.codeLabel}>USE CODE</Text>
+          <Text style={styles.codeLabel}>{t('home.couponCodeLabel')}</Text>
           <Text style={styles.code}>BUYLOW10</Text>
         </View>
       </LinearGradient>

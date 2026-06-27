@@ -14,6 +14,7 @@ import { getCategories } from '../../services/api';
 import RemoteImage from '../RemoteImage';
 import { PLACEHOLDER_CATEGORY } from '../../constants/images';
 import type { Category } from '../../types/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 type CategoriesProps = {
   homeOnly?: boolean;
@@ -22,6 +23,7 @@ type CategoriesProps = {
 
 export default function Categories({ homeOnly = true, showHeader = true }: CategoriesProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,9 +59,9 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
     <View style={styles.container}>
       {showHeader && (
         <View style={styles.header}>
-          <Text style={styles.title}>Top Categories</Text>
+          <Text style={styles.title}>{t('home.topCategories')}</Text>
           <TouchableOpacity style={styles.viewAll} onPress={() => router.push('/(tabs)/categories')}>
-            <Text style={styles.viewAllText}>View All</Text>
+            <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
             <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
           </TouchableOpacity>
         </View>
@@ -71,7 +73,7 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
         <View style={styles.stateBox}>
           <Ionicons name="grid-outline" size={28} color={Colors.textLight} />
           <Text style={styles.stateText}>
-            {error || 'Categories will appear here once added from the admin panel.'}
+            {error || t('home.categoriesEmptyHint')}
           </Text>
         </View>
       ) : (

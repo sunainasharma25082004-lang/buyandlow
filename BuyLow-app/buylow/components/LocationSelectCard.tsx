@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '../constants/colors';
 import { fetchCurrentAddress, type GeocodedAddress } from '../utils/location';
+import { useLanguage } from '../context/LanguageContext';
 
 export const CURRENT_LOCATION_ID = 'current-location';
 
@@ -27,18 +28,19 @@ export default function LocationSelectCard({
   compact = false,
 }: Props) {
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const handlePress = async () => {
     setLoading(true);
     try {
       const resolved = await fetchCurrentAddress();
       if (!resolved.address && !resolved.city) {
-        throw new Error('Address not found. Try again or enter manually.');
+        throw new Error(t('addresses.addressNotFound'));
       }
       onSelect(resolved);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not get your location';
-      Alert.alert('Location Failed', message);
+      const message = err instanceof Error ? err.message : t('addresses.couldNotGetLocation');
+      Alert.alert(t('addresses.locationFailed'), message);
     } finally {
       setLoading(false);
     }
@@ -64,11 +66,9 @@ export default function LocationSelectCard({
       </View>
 
       <View style={[styles.textWrap, compact && styles.textWrapCompact]}>
-        <Text style={styles.title}>Current Location</Text>
+        <Text style={styles.title}>{t('location.currentLocation')}</Text>
         <Text style={styles.subtitle}>
-          {loading
-            ? 'Location detect ho rahi hai...'
-            : 'Apni live location select karo'}
+          {loading ? t('location.detecting') : t('addresses.selectLiveLocation')}
         </Text>
         {preview && (preview.address || preview.city) ? (
           <Text style={styles.preview} numberOfLines={2}>

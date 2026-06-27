@@ -8,9 +8,11 @@ import { Colors, Shadows } from '../../constants/colors';
 import { getProducts, formatINR } from '../../services/api';
 import type { Product } from '../../types/api';
 import { Feather } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function InspiredBySearches() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,7 +59,7 @@ export default function InspiredBySearches() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Inspired by your Searches</Text>
+          <Text style={styles.title}>{t('home.inspiredLoading')}</Text>
         </View>
         <View style={styles.stateBox}>
           <ActivityIndicator color={Colors.primary} />
@@ -73,7 +75,7 @@ export default function InspiredBySearches() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Based on &quot;{searchTerm}&quot;</Text>
+        <Text style={styles.title}>{t('home.basedOnSearch', { term: searchTerm })}</Text>
         <Feather name="search" size={16} color={Colors.textLight} />
       </View>
 

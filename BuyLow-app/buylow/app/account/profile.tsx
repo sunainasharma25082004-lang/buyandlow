@@ -16,11 +16,13 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import HelpHeader from '../../components/HelpHeader';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, loading, updateProfile } = useAuth();
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
@@ -40,22 +42,22 @@ export default function ProfileScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert('Missing name', 'Please enter your name.');
+      Alert.alert(t('common.error'), t('profile.missingName'));
       return;
     }
     const digits = phone.replace(/\D/g, '');
     if (digits.length > 0 && digits.length < 10) {
-      Alert.alert('Invalid phone', 'Please enter a valid 10-digit mobile number.');
+      Alert.alert(t('common.error'), t('profile.invalidPhone'));
       return;
     }
 
     setSaving(true);
     try {
       await updateProfile({ name: name.trim(), phone: digits });
-      Alert.alert('Saved', 'Your personal information has been updated.');
+      Alert.alert(t('common.success'), t('profile.saved'));
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not save profile.';
-      Alert.alert('Save Failed', message);
+      const message = err instanceof Error ? err.message : t('profile.saveFailed');
+      Alert.alert(t('common.error'), message);
     } finally {
       setSaving(false);
     }
@@ -64,7 +66,7 @@ export default function ProfileScreen() {
   if (loading || !user) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-        <HelpHeader title="Personal Information" />
+        <HelpHeader title={t('profile.title')} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -74,7 +76,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <HelpHeader title="Personal Information" />
+      <HelpHeader title={t('profile.title')} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -88,22 +90,22 @@ export default function ProfileScreen() {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{user.name?.[0]?.toUpperCase() || 'U'}</Text>
             </View>
-            <Text style={styles.hint}>Update your contact details below</Text>
+            <Text style={styles.hint}>{t('profile.updateHint')}</Text>
           </View>
 
-          <Text style={styles.label}>Full Name</Text>
+          <Text style={styles.label}>{t('profile.name')}</Text>
           <View style={styles.inputContainer}>
             <Ionicons name="person-outline" size={20} color={Colors.textLight} />
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder="Your name"
+              placeholder={t('profile.namePlaceholderShort')}
               placeholderTextColor={Colors.textLight}
             />
           </View>
 
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{t('profile.email')}</Text>
           <View style={[styles.inputContainer, styles.inputDisabled]}>
             <Ionicons name="mail-outline" size={20} color={Colors.textLight} />
             <TextInput
@@ -113,16 +115,16 @@ export default function ProfileScreen() {
             />
             <Ionicons name="lock-closed" size={16} color={Colors.textLight} />
           </View>
-          <Text style={styles.fieldHint}>Email cannot be changed here</Text>
+          <Text style={styles.fieldHint}>{t('profile.emailLocked')}</Text>
 
-          <Text style={styles.label}>Phone Number</Text>
+          <Text style={styles.label}>{t('profile.phone')}</Text>
           <View style={styles.inputContainer}>
             <Ionicons name="call-outline" size={20} color={Colors.textLight} />
             <TextInput
               style={styles.input}
               value={phone}
               onChangeText={setPhone}
-              placeholder="10-digit mobile"
+              placeholder={t('profile.phonePlaceholder')}
               placeholderTextColor={Colors.textLight}
               keyboardType="phone-pad"
               maxLength={10}
@@ -133,7 +135,7 @@ export default function ProfileScreen() {
             {saving ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
-              <Text style={styles.buttonText}>Save Changes</Text>
+              <Text style={styles.buttonText}>{t('profile.saveChanges')}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>

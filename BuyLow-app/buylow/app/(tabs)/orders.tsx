@@ -16,6 +16,7 @@ import OrderTracking from '../../components/OrderTracking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Shadows } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { getMyOrders, formatINR, getOrderStatus } from '../../services/api';
 import { getDeliveryMessage, formatStatusLabel } from '../../utils/orderTracking';
 import { Order } from '../../types/api';
@@ -28,6 +29,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function OrdersScreen() {
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +76,9 @@ export default function OrdersScreen() {
       >
         <View style={styles.orderHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.orderId}>Order #{item._id.substring(0, 8).toUpperCase()}</Text>
+            <Text style={styles.orderId}>
+              {t('orders.orderId', { id: item._id.substring(0, 8).toUpperCase() })}
+            </Text>
             <Text style={styles.orderDate}>
               {new Date(item.createdAt).toLocaleDateString('en-IN', {
                 day: 'numeric',
@@ -107,46 +111,50 @@ export default function OrdersScreen() {
               <View style={styles.orderItemInfo}>
                 <Text style={styles.orderItemText} numberOfLines={2}>{prod.name}</Text>
                 <Text style={styles.orderItemQty}>
-                  Qty: {prod.quantity} · ₹{formatINR(prod.price * prod.quantity)}
+                  {t('orders.qty', { count: String(prod.quantity) })} · ₹{formatINR(prod.price * prod.quantity)}
                 </Text>
               </View>
             </View>
           ))}
           {!expanded && item.orderItems.length > 2 ? (
-            <Text style={styles.moreItems}>+{item.orderItems.length - 2} more items — tap for details</Text>
+            <Text style={styles.moreItems}>
+              {t('orders.moreItems', { count: String(item.orderItems.length - 2) })}
+            </Text>
           ) : null}
         </View>
 
         {expanded ? (
           <View style={styles.expandedSection}>
-            <Text style={styles.sectionLabel}>Order Tracking</Text>
+            <Text style={styles.sectionLabel}>{t('orders.orderTracking')}</Text>
             <OrderTracking order={item} />
 
-            <Text style={styles.sectionLabel}>Delivery Address</Text>
+            <Text style={styles.sectionLabel}>{t('orders.deliveryAddress')}</Text>
             <View style={styles.addressBox}>
               <Text style={styles.addressText}>{item.shippingAddress.address}</Text>
               <Text style={styles.addressText}>
                 {item.shippingAddress.city} - {item.shippingAddress.postalCode}
               </Text>
               <Text style={styles.addressText}>{item.shippingAddress.country}</Text>
-              <Text style={styles.addressPhone}>Phone: {item.shippingAddress.phone}</Text>
+              <Text style={styles.addressPhone}>
+                {t('orders.phoneLabel', { phone: item.shippingAddress.phone })}
+              </Text>
             </View>
 
-            <Text style={styles.sectionLabel}>Payment Summary</Text>
+            <Text style={styles.sectionLabel}>{t('orders.paymentSummary')}</Text>
             <View style={styles.summaryBox}>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Items</Text>
+                <Text style={styles.summaryLabel}>{t('orders.items')}</Text>
                 <Text style={styles.summaryValue}>₹{formatINR(item.itemsPrice)}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Delivery</Text>
+                <Text style={styles.summaryLabel}>{t('orders.delivery')}</Text>
                 <Text style={[styles.summaryValue, item.shippingPrice === 0 && { color: Colors.success }]}>
-                  {item.shippingPrice === 0 ? 'FREE' : `₹${formatINR(item.shippingPrice)}`}
+                  {item.shippingPrice === 0 ? t('common.free') : `₹${formatINR(item.shippingPrice)}`}
                 </Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryTotalLabel}>Grand Total</Text>
+                <Text style={styles.summaryTotalLabel}>{t('checkout.grandTotal')}</Text>
                 <Text style={styles.summaryTotalValue}>₹{formatINR(item.totalPrice)}</Text>
               </View>
               <View style={styles.payRowExpanded}>
@@ -156,13 +164,13 @@ export default function OrdersScreen() {
                   color={Colors.textLight}
                 />
                 <Text style={styles.payMethod}>{item.paymentMethod}</Text>
-                <Text style={styles.paidBadge}>{item.isPaid ? 'Paid' : 'Pending'}</Text>
+                <Text style={styles.paidBadge}>{item.isPaid ? t('common.paid') : t('common.pending')}</Text>
               </View>
             </View>
 
             {item.deliveryNote ? (
               <View style={styles.noteBox}>
-                <Text style={styles.noteLabel}>Delivery Note</Text>
+                <Text style={styles.noteLabel}>{t('orders.deliveryNote')}</Text>
                 <Text style={styles.noteText}>{item.deliveryNote}</Text>
               </View>
             ) : null}
@@ -170,7 +178,7 @@ export default function OrdersScreen() {
         ) : null}
 
         <View style={styles.orderFooter}>
-          <Text style={styles.tapHint}>{expanded ? 'Tap to collapse' : 'Tap for full tracking & details'}</Text>
+          <Text style={styles.tapHint}>{expanded ? t('orders.tapCollapse') : t('orders.tapExpand')}</Text>
           <Text style={styles.orderTotal}>₹{formatINR(item.totalPrice)}</Text>
         </View>
       </TouchableOpacity>
@@ -182,14 +190,14 @@ export default function OrdersScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <CustomHeader />
         <View style={styles.header}>
-          <Text style={styles.title}>My Orders</Text>
+          <Text style={styles.title}>{t('orders.title')}</Text>
         </View>
         <View style={styles.emptyState}>
           <Feather name="log-in" size={48} color={Colors.border} />
-          <Text style={styles.emptyTitle}>Please login</Text>
-          <Text style={styles.emptyText}>You need to be logged in to view your orders.</Text>
+          <Text style={styles.emptyTitle}>{t('orders.pleaseLogin')}</Text>
+          <Text style={styles.emptyText}>{t('orders.loginToView')}</Text>
           <TouchableOpacity style={styles.loginBtn} onPress={() => router.push('/(auth)/login')}>
-            <Text style={styles.loginBtnText}>Login</Text>
+            <Text style={styles.loginBtnText}>{t('common.login')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -200,8 +208,8 @@ export default function OrdersScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <CustomHeader />
       <View style={styles.header}>
-        <Text style={styles.title}>My Orders</Text>
-        <Text style={styles.headerSub}>Track packed, shipped, dispatched & delivered</Text>
+        <Text style={styles.title}>{t('orders.title')}</Text>
+        <Text style={styles.headerSub}>{t('orders.subtitle')}</Text>
       </View>
 
       {loading ? (
@@ -211,8 +219,8 @@ export default function OrdersScreen() {
       ) : orders.length === 0 ? (
         <View style={styles.emptyState}>
           <Feather name="shopping-bag" size={48} color={Colors.border} />
-          <Text style={styles.emptyTitle}>No orders yet</Text>
-          <Text style={styles.emptyText}>Your order history will appear here</Text>
+          <Text style={styles.emptyTitle}>{t('orders.noOrders')}</Text>
+          <Text style={styles.emptyText}>{t('orders.noOrdersSub')}</Text>
         </View>
       ) : (
         <FlatList

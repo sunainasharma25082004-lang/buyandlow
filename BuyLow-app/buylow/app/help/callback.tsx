@@ -15,18 +15,21 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Shadows } from '../../constants/colors';
-import { CALLBACK_TIME_SLOTS } from '../../constants/help';
+import { getCallbackSlots } from '../../constants/help';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import HelpHeader from '../../components/HelpHeader';
 
 export default function CallbackScreen() {
   const params = useLocalSearchParams<{ note?: string; source?: string }>();
   const fromChat = params.source === 'chat';
   const { user, token } = useAuth();
+  const { t } = useLanguage();
+  const callbackSlots = getCallbackSlots(t);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState('');
-  const [timeSlot, setTimeSlot] = useState(CALLBACK_TIME_SLOTS[0]);
+  const [timeSlot, setTimeSlot] = useState(callbackSlots[0]);
   const [note, setNote] = useState(typeof params.note === 'string' ? params.note : '');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -34,15 +37,15 @@ export default function CallbackScreen() {
   const handleSubmit = async () => {
     const trimmedPhone = phone.replace(/\D/g, '');
     if (!name.trim()) {
-      Alert.alert('Missing name', 'Please enter your name.');
+      Alert.alert(t('common.error'), t('help.callback.missingName'));
       return;
     }
     if (!email.trim()) {
-      Alert.alert('Missing email', 'Please enter your email address.');
+      Alert.alert(t('common.error'), t('help.callback.missingEmail'));
       return;
     }
     if (trimmedPhone.length < 10) {
-      Alert.alert('Invalid phone', 'Please enter a valid 10-digit mobile number.');
+      Alert.alert(t('common.error'), t('help.callback.invalidPhone'));
       return;
     }
 
@@ -62,12 +65,16 @@ export default function CallbackScreen() {
       );
       setSubmitted(true);
       Alert.alert(
-        'Request Received',
-        `Thanks ${name.trim()}! Our team will call you back ${timeSlot.toLowerCase()} on +91 ${trimmedPhone}.`,
+        t('help.callback.requestReceived'),
+        t('help.callback.requestReceivedMsg', {
+          name: name.trim(),
+          time: timeSlot.toLowerCase(),
+          phone: trimmedPhone,
+        }),
       );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not submit request. Try again.';
-      Alert.alert('Submission Failed', message);
+      const message = err instanceof Error ? err.message : t('help.callback.submitError');
+      Alert.alert(t('help.callback.submissionFailed'), message);
     } finally {
       setSubmitting(false);
     }
@@ -76,14 +83,14 @@ export default function CallbackScreen() {
   if (submitted) {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-        <HelpHeader title="Call Me Back" />
+        <HelpHeader title={t('help.callback.title')} />
         <View style={styles.successWrap}>
           <View style={styles.successIcon}>
             <Ionicons name="checkmark-circle" size={64} color={Colors.success} />
           </View>
-          <Text style={styles.successTitle}>We&apos;ll call you back!</Text>
+          <Text style={styles.successTitle}>{t('help.callback.successTitle')}</Text>
           <Text style={styles.successText}>
-            Our support team has received your request. You will get a call {timeSlot.toLowerCase()}.
+            {t('help.callback.successMsg', { time: timeSlot.toLowerCase() })}
           </Text>
         </View>
       </SafeAreaView>
@@ -92,7 +99,7 @@ export default function CallbackScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <HelpHeader title="Call Me Back" />
+      <HelpHeader title={t('help.callback.title')} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -104,32 +111,30 @@ export default function CallbackScreen() {
         >
           <View style={styles.intro}>
             <Ionicons name="call" size={32} color={Colors.primary} />
-            <Text style={styles.introTitle}>Request a callback</Text>
+            <Text style={styles.introTitle}>{t('help.callback.requestCallback')}</Text>
             <Text style={styles.introText}>
-              {fromChat
-                ? 'Chat ke baad call chahiye? Number dalen — team aapko phone karegi.'
-                : 'Share your number and we will call you at your preferred time.'}
+              {fromChat ? t('help.callback.introFromChat') : t('help.callback.introDefault')}
             </Text>
           </View>
 
-          <Text style={styles.label}>Your Name</Text>
+          <Text style={styles.label}>{t('help.callback.yourName')}</Text>
           <View style={styles.inputWrap}>
             <Ionicons name="person-outline" size={20} color={Colors.textLight} />
             <TextInput
               style={styles.input}
-              placeholder="Enter your name"
+              placeholder={t('help.callback.namePlaceholder')}
               placeholderTextColor={Colors.textLight}
               value={name}
               onChangeText={setName}
             />
           </View>
 
-          <Text style={styles.label}>Email Address</Text>
+          <Text style={styles.label}>{t('help.callback.emailAddress')}</Text>
           <View style={styles.inputWrap}>
             <Ionicons name="mail-outline" size={20} color={Colors.textLight} />
             <TextInput
               style={styles.input}
-              placeholder="Enter your email"
+              placeholder={t('help.callback.emailPlaceholder')}
               placeholderTextColor={Colors.textLight}
               value={email}
               onChangeText={setEmail}
@@ -138,12 +143,12 @@ export default function CallbackScreen() {
             />
           </View>
 
-          <Text style={styles.label}>Mobile Number</Text>
+          <Text style={styles.label}>{t('help.callback.mobileNumber')}</Text>
           <View style={styles.inputWrap}>
             <Text style={styles.prefix}>+91</Text>
             <TextInput
               style={styles.input}
-              placeholder="10-digit mobile number"
+              placeholder={t('help.callback.mobilePlaceholder')}
               placeholderTextColor={Colors.textLight}
               value={phone}
               onChangeText={setPhone}
@@ -152,9 +157,9 @@ export default function CallbackScreen() {
             />
           </View>
 
-          <Text style={styles.label}>Preferred Time</Text>
+          <Text style={styles.label}>{t('help.callback.preferredTime')}</Text>
           <View style={styles.slotsRow}>
-            {CALLBACK_TIME_SLOTS.map((slot) => (
+            {callbackSlots.map((slot) => (
               <TouchableOpacity
                 key={slot}
                 style={[styles.slotChip, timeSlot === slot && styles.slotChipActive]}
@@ -167,11 +172,11 @@ export default function CallbackScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>Note (optional)</Text>
+          <Text style={styles.label}>{t('help.callback.noteOptional')}</Text>
           <View style={[styles.inputWrap, styles.textAreaWrap]}>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Order ID or issue details..."
+              placeholder={t('help.callback.notePlaceholder')}
               placeholderTextColor={Colors.textLight}
               value={note}
               onChangeText={setNote}
@@ -188,7 +193,7 @@ export default function CallbackScreen() {
           >
             <Ionicons name="call" size={20} color={Colors.white} />
             <Text style={styles.submitText}>
-              {submitting ? 'Submitting...' : 'Request Call Back'}
+              {submitting ? t('help.callback.submitting') : t('help.callback.requestCallBack')}
             </Text>
           </TouchableOpacity>
         </ScrollView>
