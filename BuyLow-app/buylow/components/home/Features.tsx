@@ -1,14 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import { Colors } from '../../constants/colors';
+import { Colors, Shadows } from '../../constants/colors';
+import { FEATURE_IMAGES } from '../../constants/images';
 
 const features = [
-  { icon: 'award', text: 'Lowest\nPrices' },
-  { icon: 'check-circle', text: '100%\nOriginal' },
-  { icon: 'truck', text: 'Fast & Free\nDelivery' },
-  { icon: 'refresh-ccw', text: 'Easy\nReturns' },
-  { icon: 'headphones', text: '24x7\nSupport' },
+  { icon: 'award' as const, text: 'Lowest\nPrices', image: FEATURE_IMAGES.delivery },
+  { icon: 'check-circle' as const, text: '100%\nOriginal', image: FEATURE_IMAGES.secure },
+  { icon: 'truck' as const, text: 'Fast & Free\nDelivery', image: FEATURE_IMAGES.delivery },
+  { icon: 'refresh-ccw' as const, text: 'Easy\nReturns', image: FEATURE_IMAGES.returns },
+  { icon: 'headphones' as const, text: '24x7\nSupport', image: FEATURE_IMAGES.support },
 ];
 
 export default function Features() {
@@ -17,9 +20,20 @@ export default function Features() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {features.map((item, index) => (
           <View key={index} style={styles.featureItem}>
-            <View style={styles.iconContainer}>
-              <Feather name={item.icon as any} size={24} color={Colors.primary} />
-            </View>
+            <LinearGradient
+              colors={[Colors.lightBlue, Colors.white]}
+              style={styles.iconContainer}
+            >
+              <Image
+                source={{ uri: item.image }}
+                style={styles.featureImage}
+                contentFit="cover"
+                {...(Platform.OS === 'web' ? { referrerPolicy: 'no-referrer' as const } : {})}
+              />
+              <View style={styles.iconBadge}>
+                <Feather name={item.icon} size={14} color={Colors.primary} />
+              </View>
+            </LinearGradient>
             <Text style={styles.text}>{item.text}</Text>
           </View>
         ))}
@@ -31,32 +45,51 @@ export default function Features() {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.white,
-    paddingVertical: 16,
-    marginTop: 8,
+    paddingVertical: 14,
+    marginTop: 4,
   },
   scroll: {
     paddingHorizontal: 16,
-    gap: 20,
+    gap: 14,
     justifyContent: 'space-between',
     flexGrow: 1,
   },
   featureItem: {
     alignItems: 'center',
+    width: 72,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: Colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
+    overflow: 'hidden',
+    ...Shadows.small,
+  },
+  featureImage: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.35,
+  },
+  iconBadge: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.small,
   },
   text: {
-    fontSize: 11,
+    fontSize: 10,
     textAlign: 'center',
     color: Colors.text,
-    fontWeight: '500',
-  }
+    fontWeight: '600',
+    lineHeight: 14,
+  },
 });

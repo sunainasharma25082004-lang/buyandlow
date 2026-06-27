@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
-import { resolveMediaUrl } from '../../config/api';
 import { getCategories } from '../../services/api';
+import RemoteImage from '../RemoteImage';
+import { PLACEHOLDER_CATEGORY } from '../../constants/images';
 import type { Category } from '../../types/api';
 
 type CategoriesProps = {
@@ -36,10 +36,10 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
           setError('');
         }
       })
-      .catch(() => {
+      .catch((err: Error) => {
         if (active) {
           setCategories([]);
-          setError('Could not load categories. Check backend connection.');
+          setError(err.message || 'Could not load categories. Check backend connection.');
         }
       })
       .finally(() => {
@@ -86,11 +86,7 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
               onPress={() => router.push(`/category/${encodeURIComponent(item.name)}`)}
             >
               <View style={styles.imageCircle}>
-                <Image
-                  source={{ uri: resolveMediaUrl(item.image) }}
-                  style={styles.image}
-                  contentFit="cover"
-                />
+                <RemoteImage uri={item.image} style={styles.image} fallback={PLACEHOLDER_CATEGORY} />
               </View>
               <Text style={styles.name} numberOfLines={2}>
                 {getLabel(item)}

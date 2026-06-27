@@ -1,3 +1,11 @@
+const DEFAULT_DELIVERY_DAYS = 5;
+
+const computeExpectedDelivery = (fromDate = new Date(), days = DEFAULT_DELIVERY_DAYS) => {
+  const d = new Date(fromDate);
+  d.setDate(d.getDate() + days);
+  return d;
+};
+
 const CANCELLABLE_STATUSES = ['placed', 'confirmed', 'packed'];
 const POST_SHIPPING_STATUSES = ['shipped', 'out_for_delivery', 'delivered'];
 
@@ -37,6 +45,8 @@ const applyCancellation = (order, reason = '') => {
 };
 
 export {
+  DEFAULT_DELIVERY_DAYS,
+  computeExpectedDelivery,
   CANCELLABLE_STATUSES,
   POST_SHIPPING_STATUSES,
   getOrderStatus,

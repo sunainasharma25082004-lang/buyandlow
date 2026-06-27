@@ -510,11 +510,17 @@ router.get('/reviews', protect, admin, asyncHandler(async (req, res) => {
 }));
 
 router.put('/reviews/:id', protect, admin, asyncHandler(async (req, res) => {
-  const { rating, comment, userName } = req.body;
+  const { rating, comment, userName, images } = req.body;
 
   if (rating != null && (rating < 1 || rating > 5)) {
     return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
   }
+
+  const normalizeImages = (value, fallback = []) => {
+    if (value === undefined) return fallback;
+    if (!Array.isArray(value)) return fallback;
+    return value.filter((u) => typeof u === 'string' && u.trim()).slice(0, 5);
+  };
 
   if (!global.isDbConnected) {
     if (isProduction) {
@@ -529,6 +535,7 @@ router.put('/reviews/:id', protect, admin, asyncHandler(async (req, res) => {
       rating: rating != null ? Number(rating) : global.mockReviews[idx].rating,
       comment: comment !== undefined ? String(comment).trim().slice(0, 500) : global.mockReviews[idx].comment,
       userName: userName?.trim() || global.mockReviews[idx].userName,
+      images: normalizeImages(images, global.mockReviews[idx].images || []),
       updatedAt: new Date().toISOString(),
     };
     await recalculateProductRating(global.mockReviews[idx].product);
@@ -543,6 +550,7 @@ router.put('/reviews/:id', protect, admin, asyncHandler(async (req, res) => {
   if (rating != null) review.rating = Number(rating);
   if (comment !== undefined) review.comment = String(comment).trim().slice(0, 500);
   if (userName?.trim()) review.userName = userName.trim();
+  if (images !== undefined) review.images = normalizeImages(images);
 
   await review.save();
   await recalculateProductRating(review.product);

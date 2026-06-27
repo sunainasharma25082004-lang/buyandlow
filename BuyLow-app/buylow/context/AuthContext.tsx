@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '../utils/storage';
 import { User, AuthResponse, Product } from '../types/api';
 import * as api from '../services/api';
+
 
 type AuthContextType = {
   user: User | null;
   token: string | null;
   loading: boolean;
   login: (data: any) => Promise<AuthResponse>;
-  register: (data: any) => Promise<AuthResponse>;
+  register: (data: { name: string; email: string; password: string }) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   toggleWishlist: (productId: string) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
@@ -27,8 +28,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loadUser = async () => {
     try {
-      const storedToken = await AsyncStorage.getItem('token');
-      const storedUser = await AsyncStorage.getItem('user');
+      const storedToken = await storage.getItem('token');
+      const storedUser = await storage.getItem('user');
 
       if (storedToken && storedUser) {
         setToken(storedToken);
@@ -37,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         api.getProfile(storedToken).then((res) => {
           if (res.success) {
             setUser(res as User);
-            AsyncStorage.setItem('user', JSON.stringify(res));
+            storage.setItem('user', JSON.stringify(res));
           }
         }).catch(() => {});
       }
@@ -56,31 +57,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (res.token) {
       setToken(res.token);
       setUser(res as unknown as User);
-      await AsyncStorage.setItem('token', res.token);
-      await AsyncStorage.setItem('user', JSON.stringify(res));
+      await storage.setItem('token', res.token);
+      await storage.setItem('user', JSON.stringify(res));
     }
     return res;
   };
 
-  const register = async (data: any) => {
+  const register = async (data: { name: string; email: string; password: string }) => {
     const res = await api.register(data);
-    if (!res.success) {
-      throw new Error(res.message || 'Registration failed');
+    if (!res?.success) {
+      throw new Error(res?.message || 'Registration failed');
     }
-    if (res.token) {
-      setToken(res.token);
-      setUser(res as unknown as User);
-      await AsyncStorage.setItem('token', res.token);
-      await AsyncStorage.setItem('user', JSON.stringify(res));
+    if (!res.token) {
+      throw new Error('Account created but sign-in failed. Please log in manually.');
     }
-    return res;
+    setToken(res.token);
+    setUser(res as unknown as User);
+    await storage.setItem('token', res.token);
+    await storage.setItem('user', JSON.stringify(res));
+    return res as AuthResponse;
   };
+
 
   const logout = async () => {
     setToken(null);
     setUser(null);
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
+    await storage.removeItem('token');
+    await storage.removeItem('user');
   };
 
   const toggleWishlist = async (productId: string) => {
@@ -106,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const res = await api.getProfile(token);
       if (res.success) {
          setUser(res as User);
-         AsyncStorage.setItem('user', JSON.stringify(res));
+         storage.setItem('user', JSON.stringify(res));
       }
     } catch (e) {
       // Revert if API fails

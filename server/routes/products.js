@@ -244,7 +244,10 @@ router.get('/:id/reviews', asyncHandler(async (req, res) => {
 }));
 
 router.post('/:id/reviews', protect, asyncHandler(async (req, res) => {
-  const { rating, comment } = req.body;
+  const { rating, comment, images } = req.body;
+  const reviewImages = Array.isArray(images)
+    ? images.filter((u) => typeof u === 'string' && u.trim()).slice(0, 5)
+    : [];
 
   if (!rating || rating < 1 || rating > 5) {
     return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
@@ -272,6 +275,7 @@ router.post('/:id/reviews', protect, asyncHandler(async (req, res) => {
       product: productId,
       rating: Number(rating),
       comment: String(comment || '').trim().slice(0, 500),
+      images: reviewImages,
       userName: req.user.name,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -304,6 +308,7 @@ router.post('/:id/reviews', protect, asyncHandler(async (req, res) => {
       product: productId,
       rating: Number(rating),
       comment: String(comment || '').trim().slice(0, 500),
+      images: reviewImages,
       userName: req.user.name,
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }

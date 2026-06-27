@@ -1,4 +1,4 @@
-import { API_URL, resolveMediaUrl } from '../config/api';
+import { API_URL, isTunnelApi, resolveMediaUrl } from '../config/api';
 import type {
   CartItem,
   CategoriesResponse,
@@ -32,18 +32,57 @@ const buildQuery = (params: Record<string, string | number | boolean | undefined
   return query ? `?${query}` : '';
 };
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  });
+const REQUEST_TIMEOUT_MS = 12000;
 
-  const data = await response.json();
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  let response: Response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string> | undefined),
+  };
+  if (isTunnelApi()) {
+    headers['Bypass-Tunnel-Reminder'] = 'true';
+  }
+
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers,
+    });
+  } catch (err) {
+    const isTimeout = err instanceof Error && err.name === 'AbortError';
+    throw new Error(
+      isTimeout
+        ? `Server timeout (${API_URL}). Backend chal raha hai? npm run start:tunnel dubara try karo.`
+        : `Cannot connect to ${API_URL}. Backend running hona chahiye.`,
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  const raw = await response.text();
+  let data: { message?: string } = {};
+
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    throw new Error(
+      response.ok
+        ? 'Invalid response from server'
+        : `Request failed: ${response.status}`,
+    );
+  }
 
   if (!response.ok) {
+    if (response.status === 503 && isTunnelApi()) {
+      throw new Error(
+        `API tunnel band ho gaya (${API_URL}). Terminal mein "npm run start:tunnel" chalao, ya same WiFi pe "npm run start:phone".`,
+      );
+    }
     throw new Error(data.message || `Request failed: ${response.status}`);
   }
 
@@ -76,6 +115,11 @@ export const getProduct = async (id: string): Promise<Product> => {
 
 export const getSaleProducts = (limit = 10) =>
   getProducts({ sale: true, limit, sort: 'Popular' });
+
+export const getRelatedProducts = async (category: string, excludeId: string, limit = 8) => {
+  const res = await getProducts({ category, limit: limit + 4, sort: 'Popular' });
+  return (res.products || []).filter((p) => p._id !== excludeId).slice(0, limit);
+};
 
 // Auth
 export const login = (data: { email: string; password: string }) =>
@@ -150,3 +194,60 @@ export const syncWishlist = (wishlist: string[], token: string) =>
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ wishlist }),
   });
+
+export const getProductReviews = (productId: string, token?: string | null) => {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return request<any>(`/products/${productId}/reviews`, { headers });
+};
+
+export const addProductReview = (
+  productId: string,
+  rating: number,
+  comment: string,
+  token: string,
+  images: string[] = [],
+) =>
+  request<any>(`/products/${productId}/reviews`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ rating, comment, images }),
+  });
+
+export const uploadReviewImage = async (uri: string, token: string): Promise<string> => {
+  const formData = new FormData();
+  const filename = uri.split('/').pop() || 'review.jpg';
+  const match = /\.(\w+)$/.exec(filename);
+  const type = match ? `image/${match[1] === 'jpg' ? 'jpeg' : match[1]}` : 'image/jpeg';
+
+  formData.append('image', {
+    uri,
+    name: filename,
+    type,
+  } as unknown as Blob);
+
+  const uploadHeaders: Record<string, string> = { Authorization: `Bearer ${token}` };
+  if (isTunnelApi()) uploadHeaders['Bypass-Tunnel-Reminder'] = 'true';
+
+  const response = await fetch(`${API_URL}/upload/review`, {
+    method: 'POST',
+    headers: uploadHeaders,
+    body: formData,
+  });
+
+  const raw = await response.text();
+  let data: { success?: boolean; url?: string; message?: string } = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    throw new Error('Invalid upload response');
+  }
+
+  if (!response.ok || !data.url) {
+    throw new Error(data.message || 'Image upload failed');
+  }
+
+  return data.url;
+};

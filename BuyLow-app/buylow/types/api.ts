@@ -71,6 +71,9 @@ export type Order = {
   isDelivered: boolean;
   deliveredAt?: string;
   orderStatus: string;
+  expectedDeliveryDate?: string;
+  deliveryNote?: string;
+  cancelledAt?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -81,6 +84,7 @@ export type Review = {
   product: string;
   rating: number;
   comment: string;
+  images?: string[];
   userName: string;
   createdAt: string;
 };

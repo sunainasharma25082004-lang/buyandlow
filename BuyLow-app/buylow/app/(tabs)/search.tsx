@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import RemoteImage from '../../components/RemoteImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '../../utils/storage';
+
 import { Colors, Shadows } from '../../constants/colors';
-import { resolveMediaUrl } from '../../config/api';
 import { formatINR, getProducts } from '../../services/api';
 import type { Product } from '../../types/api';
 
@@ -25,7 +25,7 @@ export default function SearchScreen() {
 
   const loadRecentSearches = async () => {
     try {
-      const stored = await AsyncStorage.getItem('recent_searches');
+      const stored = await storage.getItem('recent_searches');
       if (stored) {
         setRecentSearches(JSON.parse(stored));
       }
@@ -35,18 +35,18 @@ export default function SearchScreen() {
   const saveRecentSearch = async (term: string) => {
     if (!term.trim()) return;
     try {
-      const stored = await AsyncStorage.getItem('recent_searches');
+      const stored = await storage.getItem('recent_searches');
       let recent: string[] = stored ? JSON.parse(stored) : [];
       recent = recent.filter(t => t.toLowerCase() !== term.toLowerCase());
       recent.unshift(term.trim());
       if (recent.length > 5) recent.pop();
-      await AsyncStorage.setItem('recent_searches', JSON.stringify(recent));
+      await storage.setItem('recent_searches', JSON.stringify(recent));
       setRecentSearches(recent);
     } catch (e) { console.error(e); }
   };
 
   const clearRecentSearches = async () => {
-    await AsyncStorage.removeItem('recent_searches');
+    await storage.removeItem('recent_searches');
     setRecentSearches([]);
   };
 
@@ -147,7 +147,7 @@ export default function SearchScreen() {
               onPress={() => router.push(`/product/${item._id}`)}
             >
               <View style={styles.imageWrap}>
-                <Image source={{ uri: resolveMediaUrl(item.image) }} style={styles.resultImage} contentFit="contain" />
+                <RemoteImage uri={item.image} style={styles.resultImage} contentFit="contain" />
               </View>
               <View style={styles.resultBody}>
                 <Text style={styles.resultBrand}>{item.brand}</Text>

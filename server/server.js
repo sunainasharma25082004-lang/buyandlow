@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import seedCategoriesIfEmpty from './utils/seedCategories.js';
-import { validateEnv, getCorsOrigins, isProduction } from './config/env.js';
+import { validateEnv, getCorsOrigins, isLocalDevOrigin, isProduction } from './config/env.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 
@@ -43,12 +43,24 @@ if (isProduction && corsOrigins.length) {
 app.use(cors({
   origin: (origin, callback) => {
     const normalized = origin ? origin.replace(/\/+$/, '') : origin;
-    if (!normalized || corsOrigins.length === 0 || corsOrigins.includes(normalized)) {
+
+    if (!normalized) {
       callback(null, true);
-    } else {
-      console.warn(`⚠️  CORS blocked for origin: ${normalized}`);
-      callback(null, false);
+      return;
     }
+
+    if (!isProduction && isLocalDevOrigin(normalized)) {
+      callback(null, true);
+      return;
+    }
+
+    if (corsOrigins.length === 0 || corsOrigins.includes(normalized)) {
+      callback(null, true);
+      return;
+    }
+
+    console.warn(`⚠️  CORS blocked for origin: ${normalized}`);
+    callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -82,6 +94,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/upload', uploadRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Optional: serve client build from the same service (single-service deploy).
 // For Render 3-service setup keep SERVE_CLIENT=false (default).
@@ -106,8 +119,9 @@ const startServer = async () => {
   await connectDB();
   await seedCategoriesIfEmpty();
 
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 BuyLow API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+    console.log(`📱 Phone se connect: http://<your-wifi-ip>:${PORT}/api`);
   });
 
   const shutdown = (signal) => {

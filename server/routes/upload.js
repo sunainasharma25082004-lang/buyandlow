@@ -6,22 +6,17 @@ import { fileURLToPath } from 'url';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import { uploadLimiter } from '../middleware/rateLimiter.js';
 import { getPublicBaseUrl } from '../utils/url.js';
+
 const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const uploadDir = path.join(__dirname, '../uploads/products');
 
-fs.mkdirSync(uploadDir, { recursive: true });
+const productUploadDir = path.join(__dirname, '../uploads/products');
+const reviewUploadDir = path.join(__dirname, '../uploads/reviews');
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || '.png';
-    const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, safeName);
-  },
-});
+fs.mkdirSync(productUploadDir, { recursive: true });
+fs.mkdirSync(reviewUploadDir, { recursive: true });
 
 const fileFilter = (_req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
@@ -31,34 +26,62 @@ const fileFilter = (_req, file, cb) => {
   }
 };
 
-const upload = multer({
-  storage,
+const makeStorage = (dir) =>
+  multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase() || '.png';
+      const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      cb(null, safeName);
+    },
+  });
+
+const productUpload = multer({
+  storage: makeStorage(productUploadDir),
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-router.post('/', protect, admin, uploadLimiter, (req, res) => {
-  upload.single('image')(req, res, (err) => {
-    if (err) {
-      const message = err.code === 'LIMIT_FILE_SIZE'
-        ? 'Image must be smaller than 5MB'
-        : err.message;
-      return res.status(400).json({ success: false, message });
-    }
+const reviewUpload = multer({
+  storage: makeStorage(reviewUploadDir),
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No image file provided' });
-    }
+const handleUpload = (subdir) => (req, res, err, file) => {
+  if (err) {
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'Image must be smaller than 5MB'
+      : err.message;
+    return res.status(400).json({ success: false, message });
+  }
 
-    const imageUrl = `${getPublicBaseUrl(req)}/uploads/products/${req.file.filename}`;
+  if (!file) {
+    return res.status(400).json({ success: false, message: 'No image file provided' });
+  }
 
-    res.status(201).json({
-      success: true,
-      url: imageUrl,
-      filename: req.file.filename,
-      size: req.file.size,
-    });
+  const imagePath = `/uploads/${subdir}/${file.filename}`;
+  const publicBase = getPublicBaseUrl(req);
+
+  res.status(201).json({
+    success: true,
+    url: imagePath,
+    fullUrl: `${publicBase}${imagePath}`,
+    filename: file.filename,
+    size: file.size,
   });
+};
+
+router.post('/', protect, admin, uploadLimiter, (req, res) => {
+  productUpload.single('image')(req, res, (err) =>
+    handleUpload('products')(req, res, err, req.file),
+  );
+});
+
+router.post('/review', protect, uploadLimiter, (req, res) => {
+  reviewUpload.single('image')(req, res, (err) =>
+    handleUpload('reviews')(req, res, err, req.file),
+  );
 });
 
 export default router;

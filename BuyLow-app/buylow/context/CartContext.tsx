@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import storage from '../utils/storage';
 import { CartItem, Product } from '../types/api';
 import { useAuth } from './AuthContext';
 import * as api from '../services/api';
+
 
 type CartContextType = {
   cart: CartItem[];
@@ -30,7 +31,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const loadLocalCart = async () => {
     try {
-      const stored = await AsyncStorage.getItem('localCart');
+      const stored = await storage.getItem('localCart');
       if (stored) setCart(JSON.parse(stored));
     } catch (e) {
       console.error(e);
@@ -49,7 +50,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         console.error('Failed to sync cart', e);
       }
     } else {
-      await AsyncStorage.setItem('localCart', JSON.stringify(newCart));
+      await storage.setItem('localCart', JSON.stringify(newCart));
     }
   };
 

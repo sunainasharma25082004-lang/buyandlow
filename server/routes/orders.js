@@ -7,7 +7,12 @@ import { protect } from '../middleware/authMiddleware.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { validateShippingAddress, validateOrderItems } from '../utils/validators.js';
 import { isProduction } from '../config/env.js';
-import { canCancelOrder, applyCancellation, getOrderStatus } from '../utils/orderHelpers.js';
+import {
+  canCancelOrder,
+  applyCancellation,
+  getOrderStatus,
+  computeExpectedDelivery,
+} from '../utils/orderHelpers.js';
 
 const router = express.Router();
 
@@ -89,6 +94,7 @@ router.post('/', protect, asyncHandler(async (req, res) => {
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
 
+    const createdAt = new Date().toISOString();
     const mockOrder = {
       _id: `mock_order_${Date.now()}`,
       user: req.user._id,
@@ -99,10 +105,13 @@ router.post('/', protect, asyncHandler(async (req, res) => {
       itemsPrice,
       shippingPrice,
       totalPrice: Number(totalPrice),
-      isPaid: false,
+      isPaid: isCod,
+      paidAt: isCod ? createdAt : undefined,
       isDelivered: false,
-      orderStatus: 'placed',
-      createdAt: new Date().toISOString(),
+      orderStatus: isCod ? 'confirmed' : 'placed',
+      expectedDeliveryDate: computeExpectedDelivery(new Date(createdAt)).toISOString(),
+      deliveryNote: '',
+      createdAt,
     };
 
     global.mockOrders.push(mockOrder);
@@ -127,8 +136,10 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     shippingPrice: Number(shippingPrice),
     totalPrice: Number(totalPrice),
     razorpayOrderId,
-    isPaid: false,
-    orderStatus: 'placed',
+    isPaid: isCod,
+    paidAt: isCod ? new Date() : undefined,
+    orderStatus: isCod ? 'confirmed' : 'placed',
+    expectedDeliveryDate: computeExpectedDelivery(),
   });
 
   res.status(201).json({
@@ -169,6 +180,11 @@ router.post('/verify', protect, asyncHandler(async (req, res) => {
     global.mockOrders[orderIndex].isPaid = true;
     global.mockOrders[orderIndex].paidAt = new Date().toISOString();
     global.mockOrders[orderIndex].orderStatus = 'confirmed';
+    if (!global.mockOrders[orderIndex].expectedDeliveryDate) {
+      global.mockOrders[orderIndex].expectedDeliveryDate = computeExpectedDelivery(
+        new Date(global.mockOrders[orderIndex].paidAt),
+      ).toISOString();
+    }
     global.mockOrders[orderIndex].razorpayPaymentId = razorpayPaymentId || `sim_pay_${Date.now()}`;
     global.mockOrders[orderIndex].razorpaySignature = razorpaySignature || `sim_sig_${Date.now()}`;
 
@@ -212,6 +228,9 @@ router.post('/verify', protect, asyncHandler(async (req, res) => {
   order.isPaid = true;
   order.paidAt = Date.now();
   order.orderStatus = 'confirmed';
+  if (!order.expectedDeliveryDate) {
+    order.expectedDeliveryDate = computeExpectedDelivery(order.paidAt);
+  }
   order.razorpayPaymentId = razorpayPaymentId || `sim_pay_${Date.now()}`;
   order.razorpaySignature = razorpaySignature || `sim_sig_${Date.now()}`;
   await order.save();

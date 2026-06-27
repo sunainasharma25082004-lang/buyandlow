@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
+import CustomHeader from '../../components/CustomHeader';
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <CustomHeader />
       <ScrollView showsVerticalScrollIndicator={false}>
         {user ? (
           <View style={styles.profileHeader}>
@@ -75,9 +77,10 @@ export default function AccountScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Settings</Text>
           <View style={styles.card}>
+            {renderMenuItem('heart-outline', 'My Wishlist', 'Saved products you love', () => router.push('/wishlist'))}
             {renderMenuItem('person-outline', 'Personal Information', user ? `${user.name} · ${user.email}` : 'Name, Email')}
             {renderMenuItem('location-outline', 'Saved Addresses', 'Add or remove delivery address')}
-            {renderMenuItem('card-outline', 'Payment Methods', 'Manage your saved cards')}
+            {renderMenuItem('card-outline', 'Payment Methods', 'Razorpay · UPI · Cards · COD')}
           </View>
         </View>
 

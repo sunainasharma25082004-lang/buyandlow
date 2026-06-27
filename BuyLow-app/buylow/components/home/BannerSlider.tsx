@@ -1,56 +1,44 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Carousel from 'react-native-reanimated-carousel';
-import { Colors } from '../../constants/colors';
+import { Colors, Shadows } from '../../constants/colors';
+import { BANNER_SLIDES } from '../../constants/images';
+import { SCREEN_WIDTH, horizontalPadding, isTablet } from '../../utils/responsive';
 
-const { width } = Dimensions.get('window');
-
-const BANNERS = [
-  {
-    id: 1,
-    label: 'LOWEST PRICES',
-    title: 'Buy More,\nPay Less!',
-    subtitle: 'Top Quality Products at\nUnbeatable Prices',
-    icon: 'shopping-bag',
-    color: Colors.lightBlue,
-  },
-  {
-    id: 2,
-    label: 'NEW ARRIVALS',
-    title: 'Trendy\nCollections',
-    subtitle: 'Check out what is new\nthis season',
-    icon: 'star',
-    color: '#F0E6FF', // Light purple
-  },
-  {
-    id: 3,
-    label: 'SALE 50% OFF',
-    title: 'Mega\nClearance',
-    subtitle: 'Limited time offer on\nselected items',
-    icon: 'tag',
-    color: '#FFE6E6', // Light red
-  }
-];
+const bannerHeight = isTablet ? 220 : Math.min(SCREEN_WIDTH * 0.48, 200);
 
 export default function BannerSlider() {
   const router = useRouter();
 
-  const renderItem = ({ item }: { item: typeof BANNERS[0] }) => (
-    <View style={[styles.banner, { backgroundColor: item.color }]}>
+  const renderItem = ({ item }: { item: typeof BANNER_SLIDES[0] }) => (
+    <View style={styles.bannerWrap}>
+      <Image
+        source={{ uri: item.image }}
+        style={styles.bannerImage}
+        contentFit="cover"
+        {...(Platform.OS === 'web' ? { referrerPolicy: 'no-referrer' as const } : {})}
+      />
+      <LinearGradient
+        colors={['rgba(13,71,161,0.85)', 'rgba(21,101,192,0.55)', 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.overlay}
+      />
       <View style={styles.content}>
         <Text style={styles.label}>{item.label}</Text>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.subtitle}>{item.subtitle}</Text>
-        <TouchableOpacity style={styles.button} onPress={() => router.push('/(tabs)/categories')}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push(item.route as any)}
+        >
           <Text style={styles.buttonText}>Shop Now</Text>
-          <Feather name="arrow-right" size={16} color={Colors.white} />
+          <Feather name="arrow-right" size={16} color={Colors.primary} />
         </TouchableOpacity>
-      </View>
-      
-      <View style={styles.imagePlaceholder}>
-          <Feather name={item.icon as any} size={60} color={Colors.primary} style={{opacity: 0.2}}/>
       </View>
     </View>
   );
@@ -59,18 +47,15 @@ export default function BannerSlider() {
     <View style={styles.container}>
       <Carousel
         loop
-        width={width - 32} // container has paddingHorizontal 16
-        height={180}
-        autoPlay={true}
-        data={BANNERS}
-        scrollAnimationDuration={1000}
-        autoPlayInterval={3000}
+        width={SCREEN_WIDTH - horizontalPadding * 2}
+        height={bannerHeight}
+        autoPlay
+        data={BANNER_SLIDES}
+        scrollAnimationDuration={900}
+        autoPlayInterval={3500}
         renderItem={renderItem}
         mode="parallax"
-        modeConfig={{
-          parallaxScrollingScale: 0.9,
-          parallaxScrollingOffset: 50,
-        }}
+        modeConfig={{ parallaxScrollingScale: 0.92, parallaxScrollingOffset: 42 }}
       />
     </View>
   );
@@ -78,63 +63,63 @@ export default function BannerSlider() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: horizontalPadding,
+    paddingVertical: 10,
     backgroundColor: Colors.white,
     alignItems: 'center',
   },
-  banner: {
-    borderRadius: 16,
-    padding: 20,
-    flexDirection: 'row',
+  bannerWrap: {
+    borderRadius: 18,
+    overflow: 'hidden',
     height: '100%',
     width: '100%',
-    overflow: 'hidden',
+    ...Shadows.medium,
+  },
+  bannerImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
   },
   content: {
     flex: 1,
-    zIndex: 2,
     justifyContent: 'center',
+    padding: 22,
+    maxWidth: '68%',
   },
   label: {
-    color: Colors.primary,
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    color: Colors.accent,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: 6,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '900',
-    color: Colors.primary,
-    marginBottom: 8,
+    color: Colors.white,
+    lineHeight: 30,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 12,
-    color: Colors.text,
-    marginBottom: 16,
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 14,
+    lineHeight: 18,
   },
   button: {
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.accent,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     alignSelf: 'flex-start',
     gap: 6,
   },
   buttonText: {
-    color: Colors.white,
-    fontWeight: 'bold',
+    color: Colors.primary,
+    fontWeight: '800',
     fontSize: 12,
-  },
-  imagePlaceholder: {
-    position: 'absolute',
-    right: 10,
-    bottom: -10,
-    width: 140,
-    height: 140,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

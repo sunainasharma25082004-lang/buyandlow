@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
 import { useRouter, useFocusEffect } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import RemoteImage from '../RemoteImage';
+import storage from '../../utils/storage';
+
 import { Colors, Shadows } from '../../constants/colors';
-import { resolveMediaUrl, formatINR } from '../../services/api';
+import { formatINR } from '../../services/api';
 import type { Product } from '../../types/api';
 
 export default function RecentlyViewed() {
@@ -17,7 +18,7 @@ export default function RecentlyViewed() {
       let active = true;
       const loadRecent = async () => {
         try {
-          const stored = await AsyncStorage.getItem('recently_viewed');
+          const stored = await storage.getItem('recently_viewed');
           if (stored && active) {
             setProducts(JSON.parse(stored));
           }
@@ -49,11 +50,7 @@ export default function RecentlyViewed() {
             onPress={() => router.push(`/product/${item._id}`)}
           >
             <View style={styles.imageWrap}>
-              <Image
-                source={{ uri: resolveMediaUrl(item.image) }}
-                style={styles.image}
-                contentFit="contain"
-              />
+              <RemoteImage uri={item.image} style={styles.image} contentFit="contain" />
             </View>
             <View style={styles.details}>
               <Text style={styles.productTitle} numberOfLines={2}>{item.name}</Text>

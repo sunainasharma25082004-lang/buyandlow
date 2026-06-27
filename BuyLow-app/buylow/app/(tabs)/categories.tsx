@@ -7,12 +7,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
-import { resolveMediaUrl } from '../../config/api';
 import { getCategories } from '../../services/api';
+import RemoteImage from '../../components/RemoteImage';
+import { PLACEHOLDER_CATEGORY } from '../../constants/images';
 import type { Category } from '../../types/api';
+import CustomHeader from '../../components/CustomHeader';
 
 import { useRouter } from 'expo-router';
 
@@ -51,9 +52,10 @@ export default function CategoriesScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <CustomHeader />
       <View style={styles.header}>
-        <Text style={styles.title}>Categories</Text>
-        <Text style={styles.subtitle}>Uploaded from admin panel</Text>
+        <Text style={styles.title}>All Categories</Text>
+        <Text style={styles.subtitle}>Browse collections uploaded from admin panel</Text>
       </View>
 
       {loading ? (
@@ -80,11 +82,7 @@ export default function CategoriesScreen() {
               style={styles.card}
               onPress={() => router.push(`/category/${encodeURIComponent(item.name)}`)}
             >
-              <Image
-                source={{ uri: resolveMediaUrl(item.image) }}
-                style={styles.cardImage}
-                contentFit="cover"
-              />
+              <RemoteImage uri={item.image} style={styles.cardImage} fallback={PLACEHOLDER_CATEGORY} />
               <View style={styles.cardBody}>
                 <Text style={styles.cardTitle} numberOfLines={2}>
                   {getLabel(item)}

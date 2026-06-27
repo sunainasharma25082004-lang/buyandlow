@@ -1,35 +1,65 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider } from '../context/AuthContext';
 import { CartProvider } from '../context/CartContext';
+import { Colors } from '../constants/colors';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+// Define a blue-theme for navigation
+const BlueTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: Colors.primary,
+    background: Colors.background,
+    card: Colors.white,
+    text: Colors.text,
+    border: Colors.border,
+  },
+};
 
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AuthProvider>
-        <CartProvider>
-          <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="product" options={{ headerShown: false }} />
-            <Stack.Screen name="category" options={{ headerShown: false }} />
-            <Stack.Screen name="cart" options={{ headerShown: true, title: 'Shopping Cart' }} />
-            <Stack.Screen name="checkout" options={{ headerShown: true, title: 'Checkout' }} />
-          </Stack>
-        </CartProvider>
-      </AuthProvider>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={BlueTheme}>
+        <AuthProvider>
+          <CartProvider>
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="category/[name]" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="cart"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="checkout"
+                options={{
+                  headerShown: true,
+                  title: 'Checkout',
+                  headerStyle: { backgroundColor: Colors.primary },
+                  headerTintColor: Colors.white,
+                  headerTitleStyle: { fontWeight: 'bold' },
+                }}
+              />
+              <Stack.Screen
+                name="wishlist"
+                options={{ headerShown: false }}
+              />
+            </Stack>
+          </CartProvider>
+        </AuthProvider>
+        <StatusBar style="light" backgroundColor={Colors.primary} />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

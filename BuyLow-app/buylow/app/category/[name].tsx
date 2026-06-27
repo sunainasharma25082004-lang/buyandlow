@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import RemoteImage from '../../components/RemoteImage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
-import { getProducts, resolveMediaUrl, formatINR } from '../../services/api';
+import { getProducts, formatINR } from '../../services/api';
 import { Product } from '../../types/api';
 
 export default function CategoryProductsScreen() {
@@ -67,7 +67,7 @@ export default function CategoryProductsScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} onPress={() => router.push(`/product/${item._id}`)}>
             <View style={styles.imageContainer}>
-              <Image source={{ uri: resolveMediaUrl(item.image) }} style={styles.image} contentFit="contain" />
+              <RemoteImage uri={item.image} style={styles.image} contentFit="contain" />
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.brand}>{item.brand}</Text>
