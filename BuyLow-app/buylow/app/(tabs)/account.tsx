@@ -7,9 +7,11 @@ import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import CustomHeader from '../../components/CustomHeader';
+import GoogleSignInButton from '../../components/GoogleSignInButton';
+
 export default function AccountScreen() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
 
   const requireLogin = (route: string) => {
@@ -78,6 +80,9 @@ export default function AccountScreen() {
           <View style={styles.loginBanner}>
             <Text style={styles.loginTitle}>{t('account.welcome')}</Text>
             <Text style={styles.loginSubtitle}>{t('account.welcomeSubtitle')}</Text>
+            <View style={styles.googleWrap}>
+              <GoogleSignInButton onSuccess={loginWithGoogle} />
+            </View>
             <View style={styles.loginButtons}>
               <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/(auth)/login')}>
                 <Text style={styles.primaryButtonText}>{t('common.login')}</Text>
@@ -201,8 +206,12 @@ const styles = StyleSheet.create({
   loginSubtitle: {
     fontSize: 14,
     color: Colors.textLight,
-    marginBottom: 20,
+    marginBottom: 16,
     textAlign: 'center',
+  },
+  googleWrap: {
+    width: '100%',
+    marginBottom: 16,
   },
   loginButtons: {
     flexDirection: 'row',
