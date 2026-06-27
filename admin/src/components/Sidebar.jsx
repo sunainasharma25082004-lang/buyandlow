@@ -12,13 +12,27 @@ const links = [
   { to: '/reviews', label: 'Reviews', icon: '⭐' },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = false, onClose }) => {
   const { admin, logout } = useContext(AuthContext);
 
+  const handleNavClick = () => {
+    if (onClose) onClose();
+  };
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-brand">
-        <Logo size="sm" />
+        <div className="sidebar-brand-row">
+          <Logo size="sm" />
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            aria-label="Close menu"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
         <span>Admin Panel</span>
       </div>
 
@@ -29,12 +43,19 @@ const Sidebar = () => {
             to={link.to}
             end={link.to === '/'}
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            onClick={handleNavClick}
           >
             <span>{link.icon}</span>
             {link.label}
           </NavLink>
         ))}
-        <a href={import.meta.env.VITE_STORE_URL || 'http://localhost:5173'} target="_blank" rel="noreferrer" className="nav-link">
+        <a
+          href={import.meta.env.VITE_STORE_URL || 'http://localhost:5173'}
+          target="_blank"
+          rel="noreferrer"
+          className="nav-link"
+          onClick={handleNavClick}
+        >
           <span>🛍️</span>
           View Store
         </a>
@@ -48,7 +69,13 @@ const Sidebar = () => {
             <div className="admin-email">{admin?.email}</div>
           </div>
         </div>
-        <button className="btn btn-outline btn-sm sidebar-logout" onClick={logout}>
+        <button
+          className="btn btn-outline btn-sm sidebar-logout"
+          onClick={() => {
+            handleNavClick();
+            logout();
+          }}
+        >
           Sign Out
         </button>
       </div>

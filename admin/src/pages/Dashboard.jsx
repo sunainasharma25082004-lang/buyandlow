@@ -49,7 +49,7 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+      <div className="stats-grid stats-grid-2">
         <div className="stat-card">
           <div className="stat-icon revenue">✅</div>
           <div>
@@ -75,7 +75,7 @@ const Dashboard = () => {
             <div className="empty-state">No orders yet</div>
           ) : (
             <div className="table-wrap">
-              <table>
+              <table className="admin-table">
                 <thead>
                   <tr>
                     <th>Order ID</th>
@@ -88,15 +88,15 @@ const Dashboard = () => {
                 <tbody>
                   {stats.recentOrders?.map((order) => (
                     <tr key={order._id}>
-                      <td><code style={{ fontSize: '11px' }}>{order._id?.slice(-8)}</code></td>
-                      <td>{order.user?.name || order.user?.email || '—'}</td>
-                      <td><strong>{formatINR(order.totalPrice)}</strong></td>
-                      <td>
+                      <td data-label="Order ID"><code style={{ fontSize: '11px' }}>{order._id?.slice(-8)}</code></td>
+                      <td data-label="Customer">{order.user?.name || order.user?.email || '—'}</td>
+                      <td data-label="Amount"><strong>{formatINR(order.totalPrice)}</strong></td>
+                      <td data-label="Status">
                         <span className={`badge ${order.isPaid ? 'badge-success' : 'badge-warning'}`}>
                           {order.isPaid ? 'Paid' : 'Pending'}
                         </span>
                       </td>
-                      <td>{formatDate(order.createdAt)}</td>
+                      <td data-label="Date">{formatDate(order.createdAt)}</td>
                     </tr>
                   ))}
                 </tbody>

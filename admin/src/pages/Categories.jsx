@@ -60,7 +60,7 @@ const Categories = () => {
             </div>
           ) : (
             <div className="table-wrap">
-              <table>
+              <table className="admin-table">
                 <thead>
                   <tr>
                     <th>Category</th>
@@ -74,36 +74,37 @@ const Categories = () => {
                 <tbody>
                   {categories.map((cat) => (
                     <tr key={cat._id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <td className="td-product-main" data-label="">
+                        <div className="product-cell">
                           <AdminImage
                             src={cat.image}
                             alt={cat.name}
-                            style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }}
+                            className="product-thumb"
                           />
                           <div>
-                            <div style={{ fontWeight: 600 }}>{cat.title || cat.name}</div>
-                            {cat.description && (
+                            <div className="product-name">{cat.title || cat.name}</div>
+                            {cat.description ? (
                               <div className="text-sub">
                                 {cat.description.slice(0, 60)}
                                 {cat.description.length > 60 ? '...' : ''}
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </td>
-                      <td>{cat.name}</td>
-                      <td>{cat.sortOrder ?? 0}</td>
-                      <td>{cat.showOnHome !== false ? 'Yes' : 'No'}</td>
-                      <td>
+                      <td data-label="Product name">{cat.name}</td>
+                      <td data-label="Order">{cat.sortOrder ?? 0}</td>
+                      <td data-label="Homepage">{cat.showOnHome !== false ? 'Yes' : 'No'}</td>
+                      <td data-label="Status">
                         <span className={`badge ${cat.isActive !== false ? 'badge-success' : 'badge-muted'}`}>
                           {cat.isActive !== false ? 'Active' : 'Hidden'}
                         </span>
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                      <td data-label="Actions">
+                        <div className="actions-cell">
                           <Link to={`/categories/edit/${cat._id}`} className="btn btn-outline btn-sm">Edit</Link>
                           <button
+                            type="button"
                             className="btn btn-danger btn-sm"
                             disabled={deleting === cat._id}
                             onClick={() => handleDelete(cat._id, cat.title || cat.name)}

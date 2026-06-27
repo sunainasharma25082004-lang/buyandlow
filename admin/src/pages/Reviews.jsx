@@ -1,7 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { getReviews, updateReview, deleteReview } from '../api';
 import AdminImage from '../components/AdminImage';
 import { resolveMediaUrl } from '../config/api';
+
+const getProductId = (product) => {
+  if (!product) return '';
+  if (typeof product === 'string') return product;
+  return String(product._id || '');
+};
+
+const matchesReviewSearch = (review, query) => {
+  const term = query.trim().toLowerCase();
+  if (!term) return true;
+
+  const reviewId = String(review._id || '').toLowerCase();
+  const productId = getProductId(review.product).toLowerCase();
+  const productName = (review.product?.name || '').toLowerCase();
+  const userName = (review.userName || '').toLowerCase();
+  const userEmail = (review.user?.email || '').toLowerCase();
+  const userId = String(review.user?._id || review.user || '').toLowerCase();
+  const orderId = String(review.order?._id || review.order || '').toLowerCase();
+  const comment = (review.comment || '').toLowerCase();
+  const rating = String(review.rating ?? '');
+
+  return (
+    reviewId.includes(term)
+    || productId.includes(term)
+    || productName.includes(term)
+    || userName.includes(term)
+    || userEmail.includes(term)
+    || userId.includes(term)
+    || orderId.includes(term)
+    || comment.includes(term)
+    || rating === term
+  );
+};
 
 const StarDisplay = ({ rating }) => (
   <span className="star-rating">{'★'.repeat(rating)}{'☆'.repeat(5 - rating)}</span>
@@ -42,6 +75,7 @@ const Reviews = () => {
   const [form, setForm] = useState({ rating: 5, comment: '', userName: '', images: [] });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [search, setSearch] = useState('');
 
   const fetchReviews = () => {
     setLoading(true);
@@ -52,6 +86,11 @@ const Reviews = () => {
   };
 
   useEffect(() => { fetchReviews(); }, []);
+
+  const filteredReviews = useMemo(
+    () => reviews.filter((r) => matchesReviewSearch(r, search)),
+    [reviews, search],
+  );
 
   const openEdit = (review) => {
     setEditing(review._id);
@@ -102,9 +141,32 @@ const Reviews = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Reviews</h1>
-          <p className="page-subtitle">Manage customer reviews — view photos, edit or delete</p>
+          <p className="page-subtitle">{reviews.length} reviews — search by review ID, product ID or customer</p>
         </div>
       </div>
+
+      {!loading && reviews.length > 0 ? (
+        <div className="search-toolbar">
+          <input
+            type="search"
+            className="search-input"
+            placeholder="Search by review ID, product ID, customer name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search reviews"
+          />
+          {search ? (
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setSearch('')}>
+              Clear
+            </button>
+          ) : null}
+          {search ? (
+            <span className="search-count">
+              {filteredReviews.length} of {reviews.length}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="card">
         <div className="card-body">
@@ -112,11 +174,16 @@ const Reviews = () => {
             <div className="loading-state">Loading reviews...</div>
           ) : reviews.length === 0 ? (
             <div className="empty-state">No reviews yet. They will appear when customers rate products.</div>
+          ) : filteredReviews.length === 0 ? (
+            <div className="empty-state">
+              No reviews match &quot;{search}&quot;. Try review ID, product ID or customer name.
+            </div>
           ) : (
             <div className="table-wrap">
-              <table>
+              <table className="admin-table">
                 <thead>
                   <tr>
+                    <th>Review ID</th>
                     <th>Customer</th>
                     <th>Product</th>
                     <th>Rating</th>
@@ -127,10 +194,10 @@ const Reviews = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {reviews.map((r) => (
+                  {filteredReviews.map((r) => (
                     <tr key={r._id}>
                       {editing === r._id ? (
-                        <td colSpan={7}>
+                        <td colSpan={8} className="td-full-row">
                           <div className="review-edit-panel">
                             <div className="form-row" style={{ marginBottom: 12 }}>
                               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -184,20 +251,29 @@ const Reviews = () => {
                         </td>
                       ) : (
                         <>
-                          <td><strong>{r.userName}</strong></td>
-                          <td>{r.product?.name || '—'}</td>
-                          <td><StarDisplay rating={r.rating} /></td>
-                          <td style={{ maxWidth: 240 }}>
+                          <td data-label="Review ID">
+                            <code className="review-id-code">{r._id}</code>
+                          </td>
+                          <td data-label="Customer"><strong>{r.userName}</strong></td>
+                          <td data-label="Product">
+                            <div>{r.product?.name || '—'}</div>
+                            {getProductId(r.product) ? (
+                              <div className="text-sub product-id-line">Product ID: {getProductId(r.product)}</div>
+                            ) : null}
+                          </td>
+                          <td data-label="Rating"><StarDisplay rating={r.rating} /></td>
+                          <td data-label="Comment" style={{ maxWidth: 240 }}>
                             {r.comment ? `"${r.comment}"` : <span className="text-muted">No comment</span>}
                           </td>
-                          <td style={{ minWidth: 140 }}>
+                          <td data-label="Photos" style={{ minWidth: 140 }}>
                             <ReviewPhotoStrip images={r.images} />
                           </td>
-                          <td>{new Date(r.createdAt).toLocaleDateString()}</td>
-                          <td>
+                          <td data-label="Date">{new Date(r.createdAt).toLocaleDateString()}</td>
+                          <td data-label="Actions">
                             <div className="actions-cell">
-                              <button className="btn btn-outline btn-sm" onClick={() => openEdit(r)}>Edit</button>
+                              <button type="button" className="btn btn-outline btn-sm" onClick={() => openEdit(r)}>Edit</button>
                               <button
+                                type="button"
                                 className="btn btn-danger btn-sm"
                                 onClick={() => handleDelete(r._id, r.userName)}
                                 disabled={deleting === r._id}
