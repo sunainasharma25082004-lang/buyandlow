@@ -14,10 +14,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Shadows } from '../../constants/colors';
-import { useAuth } from '../../context/AuthContext';
-import { useLanguage } from '../../context/LanguageContext';
-import HelpHeader from '../../components/HelpHeader';
+import { Colors, Shadows } from '../../../constants/colors';
+import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
+import HelpHeader from '../../../components/HelpHeader';
 
 export default function ProfileScreen() {
   const router = useRouter();

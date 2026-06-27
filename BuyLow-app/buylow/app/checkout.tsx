@@ -246,7 +246,7 @@ export default function CheckoutScreen() {
             <Feather name="map-pin" size={18} color={Colors.primary} />
             <Text style={styles.sectionTitle}>{t('checkout.shippingAddress')}</Text>
             {savedAddresses.length > 0 && (
-              <TouchableOpacity onPress={() => router.push('/account/addresses' as any)}>
+              <TouchableOpacity onPress={() => router.push('/(tabs)/account/addresses' as any)}>
                 <Text style={styles.manageLink}>{t('common.manage')}</Text>
               </TouchableOpacity>
             )}

@@ -27,15 +27,17 @@ export default function TabLayout() {
           shadowRadius: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
         },
         tabBarActiveBackgroundColor: Colors.lightBlue,
         tabBarItemStyle: {
           borderRadius: 10,
-          marginHorizontal: 2,
+          marginHorizontal: 0,
           marginBottom: 2,
+          paddingHorizontal: 0,
         },
+        tabBarShowLabel: true,
       }}
     >
       <Tabs.Screen

@@ -3,11 +3,11 @@ import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
-import { useAuth } from '../../context/AuthContext';
-import { useLanguage } from '../../context/LanguageContext';
-import CustomHeader from '../../components/CustomHeader';
-import GoogleSignInButton from '../../components/GoogleSignInButton';
+import { Colors } from '../../../constants/colors';
+import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
+import CustomHeader from '../../../components/CustomHeader';
+import GoogleSignInButton from '../../../components/GoogleSignInButton';
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -118,16 +118,16 @@ export default function AccountScreen() {
               user
                 ? `${user.name}${user.phone ? ` · +91 ${user.phone}` : ''}`
                 : t('account.personalInfoSub'),
-              () => requireLogin('/account/profile'),
+              () => requireLogin('/(tabs)/account/profile'),
             )}
             {renderMenuItem('location-outline', t('account.savedAddresses'), addressSubtitle, () =>
-              requireLogin('/account/addresses'),
+              requireLogin('/(tabs)/account/addresses'),
             )}
             {renderMenuItem(
               'card-outline',
               t('account.paymentMethods'),
               user ? paymentLabel : t('account.paymentDefault'),
-              () => requireLogin('/account/payment'),
+              () => requireLogin('/(tabs)/account/payment'),
             )}
           </View>
         </View>

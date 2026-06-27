@@ -48,7 +48,6 @@ function AppStack() {
       />
       <Stack.Screen name="wishlist" options={{ headerShown: false }} />
       <Stack.Screen name="help" options={{ headerShown: false }} />
-      <Stack.Screen name="account" options={{ headerShown: false }} />
     </Stack>
   );
 }
