@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import BannerSkeleton from '../ui/BannerSkeleton';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -8,13 +9,67 @@ import Carousel from 'react-native-reanimated-carousel';
 import { Colors, Shadows } from '../../constants/colors';
 import { BANNER_SLIDES } from '../../constants/images';
 import { SCREEN_WIDTH, horizontalPadding, isTablet } from '../../utils/responsive';
+import { getAppBanners, resolveMediaUrl } from '../../services/api';
+import type { AppBanner } from '../../types/api';
 
 const bannerHeight = isTablet ? 220 : Math.min(SCREEN_WIDTH * 0.48, 200);
 
+type BannerSlide = {
+  id: string;
+  label: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  route: string;
+};
+
+const toSlide = (banner: AppBanner): BannerSlide => ({
+  id: banner._id,
+  label: banner.label,
+  title: banner.title,
+  subtitle: banner.subtitle,
+  image: resolveMediaUrl(banner.image),
+  route: banner.route,
+});
+
+const fallbackSlides: BannerSlide[] = BANNER_SLIDES.map((item) => ({
+  id: item.id,
+  label: item.label,
+  title: item.title,
+  subtitle: item.subtitle,
+  image: item.image,
+  route: item.route,
+}));
+
 export default function BannerSlider() {
   const router = useRouter();
+  const [slides, setSlides] = useState<BannerSlide[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const renderItem = ({ item }: { item: typeof BANNER_SLIDES[0] }) => (
+  useEffect(() => {
+    let mounted = true;
+
+    getAppBanners()
+      .then((res) => {
+        if (!mounted) return;
+        const next = (res.banners || []).map(toSlide);
+        setSlides(next.length > 0 ? next : fallbackSlides);
+      })
+      .catch(() => {
+        setSlides(fallbackSlides);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const data = useMemo(() => slides, [slides]);
+
+  const renderItem = ({ item }: { item: BannerSlide }) => (
     <View style={styles.bannerWrap}>
       <Image
         source={{ uri: item.image }}
@@ -43,6 +98,10 @@ export default function BannerSlider() {
     </View>
   );
 
+  if (loading) {
+    return <BannerSkeleton />;
+  }
+
   return (
     <View style={styles.container}>
       <Carousel
@@ -50,7 +109,7 @@ export default function BannerSlider() {
         width={SCREEN_WIDTH - horizontalPadding * 2}
         height={bannerHeight}
         autoPlay
-        data={BANNER_SLIDES}
+        data={data}
         scrollAnimationDuration={900}
         autoPlayInterval={3500}
         renderItem={renderItem}

@@ -35,12 +35,20 @@ export const getReviews = () => API.get('/admin/reviews');
 export const updateReview = (id, data) => API.put(`/admin/reviews/${id}`, data);
 export const deleteReview = (id) => API.delete(`/admin/reviews/${id}`);
 
+export const getAppBanners = () => API.get('/admin/app-banners');
+export const createAppBanner = (data) => API.post('/admin/app-banners', data);
+export const updateAppBanner = (id, data) => API.put(`/admin/app-banners/${id}`, data);
+export const deleteAppBanner = (id) => API.delete(`/admin/app-banners/${id}`);
+
+export const getCallbacks = () => API.get('/admin/callbacks');
+export const updateCallback = (id, data) => API.put(`/admin/callbacks/${id}`, data);
+export const deleteCallback = (id) => API.delete(`/admin/callbacks/${id}`);
+
 export const uploadImage = (file) => {
   const formData = new FormData();
   formData.append('image', file);
-  return API.post('/admin/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  // Let axios set multipart boundary automatically — manual Content-Type breaks uploads
+  return API.post('/admin/upload', formData);
 };
 
 export default API;

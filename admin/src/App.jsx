@@ -11,6 +11,8 @@ import Categories from './pages/Categories';
 import CategoryForm from './pages/CategoryForm';
 import Orders from './pages/Orders';
 import Reviews from './pages/Reviews';
+import Callbacks from './pages/Callbacks';
+import AppBanners from './pages/AppBanners';
 
 const ProtectedRoute = ({ children }) => {
   const { admin, loading } = useContext(AuthContext);
@@ -41,6 +43,8 @@ const App = () => {
       <Route path="/categories/edit/:id" element={<ProtectedRoute><CategoryForm /></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
       <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
+      <Route path="/callbacks" element={<ProtectedRoute><Callbacks /></ProtectedRoute>} />
+      <Route path="/app-banners" element={<ProtectedRoute><AppBanners /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

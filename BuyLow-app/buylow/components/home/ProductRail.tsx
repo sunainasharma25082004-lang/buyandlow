@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
+import ProductRailSkeleton from '../ui/ProductRailSkeleton';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../constants/colors';
@@ -66,9 +66,7 @@ export default function ProductRail({
       </View>
 
       {loading ? (
-        <View style={styles.stateBox}>
-          <ActivityIndicator color={Colors.primary} />
-        </View>
+        <ProductRailSkeleton />
       ) : products.length === 0 ? (
         <View style={styles.stateBox}>
           <Text style={styles.emptyText}>{emptyText}</Text>

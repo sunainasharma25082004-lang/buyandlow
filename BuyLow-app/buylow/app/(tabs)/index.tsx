@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import { bottomTabPadding, horizontalPadding } from '../../utils/responsive';
 import Screen from '../../components/Screen';
 import { getProducts } from '../../services/api';
 import type { Product } from '../../types/api';
+import ProductCardSkeleton from '../../components/ui/ProductCardSkeleton';
 
 import Header from '../../components/home/Header';
 import BannerSlider from '../../components/home/BannerSlider';
@@ -23,6 +23,7 @@ import SavedPicks from '../../components/home/SavedPicks';
 import ProductGridCard from '../../components/home/ProductGridCard';
 
 const PAGE_SIZE = 12;
+const INITIAL_SKELETON_ROWS = 4;
 
 export default function HomeScreen() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -78,8 +79,14 @@ export default function HomeScreen() {
       </View>
 
       {loading && products.length === 0 ? (
-        <View style={styles.initialLoader}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+        <View style={styles.skeletonSection}>
+          <Text style={styles.loadingHint}>Products load ho rahe hain...</Text>
+          {Array.from({ length: INITIAL_SKELETON_ROWS }).map((_, rowIndex) => (
+            <View key={`product-skeleton-row-${rowIndex}`} style={styles.column}>
+              <ProductCardSkeleton />
+              <ProductCardSkeleton />
+            </View>
+          ))}
         </View>
       ) : null}
 
@@ -94,7 +101,13 @@ export default function HomeScreen() {
   const renderFooter = () => (
     <View style={styles.footer}>
       {loadingMore ? (
-        <ActivityIndicator color={Colors.primary} style={styles.footerLoader} />
+        <View style={styles.footerSkeletonWrap}>
+          <Text style={styles.loadingHint}>Aur products load ho rahe hain...</Text>
+          <View style={styles.column}>
+            <ProductCardSkeleton />
+            <ProductCardSkeleton />
+          </View>
+        </View>
       ) : page >= totalPages && products.length > 0 ? (
         <Text style={styles.endText}>Saare products load ho gaye</Text>
       ) : null}
@@ -151,9 +164,21 @@ const styles = StyleSheet.create({
     color: Colors.textLight,
     marginTop: 4,
   },
-  initialLoader: {
-    paddingVertical: 40,
+  skeletonSection: {
     backgroundColor: Colors.white,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  loadingHint: {
+    fontSize: 12,
+    color: Colors.textLight,
+    textAlign: 'center',
+    paddingVertical: 10,
+    fontWeight: '600',
+  },
+  footerSkeletonWrap: {
+    width: '100%',
+    paddingBottom: 4,
   },
   errorBox: {
     marginHorizontal: horizontalPadding,
@@ -173,9 +198,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingTop: 8,
     alignItems: 'center',
-  },
-  footerLoader: {
-    marginVertical: 16,
   },
   endText: {
     fontSize: 12,

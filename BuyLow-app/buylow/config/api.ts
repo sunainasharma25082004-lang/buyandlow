@@ -36,8 +36,30 @@ const getMetroHost = () => {
 
 const isLocaltunnelUrl = (url: string) => /loca\.lt/i.test(url);
 
+const getWebDevApiUrl = () => {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return 'http://localhost:5000/api';
+  }
+  if (isUsableApiHost(host)) {
+    return `http://${host}:5000/api`;
+  }
+  return null;
+};
+
 const resolveApiUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+  // Expo web in browser — same machine as backend; tunnel causes CORS errors
+  const webApiUrl = getWebDevApiUrl();
+  if (webApiUrl) {
+    if (!envUrl || isLocaltunnelUrl(envUrl)) {
+      return webApiUrl;
+    }
+  }
+
   const metroHost = getMetroHost();
 
   // Same WiFi (LAN): direct PC IP is faster and won't die like localtunnel

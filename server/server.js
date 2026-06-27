@@ -18,6 +18,8 @@ import categoryRoutes from './routes/categories.js';
 import orderRoutes from './routes/orders.js';
 import adminRoutes from './routes/admin.js';
 import uploadRoutes from './routes/upload.js';
+import supportRoutes from './routes/support.js';
+import appRoutes from './routes/app.js';
 
 dotenv.config();
 validateEnv();
@@ -63,9 +65,17 @@ app.use(cors({
     callback(null, false);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Bypass-Tunnel-Reminder',
+    'X-Requested-With',
+  ],
+  optionsSuccessStatus: 204,
 }));
+
+app.options('*', cors());
 
 app.use(compression());
 app.use(morgan(isProduction ? 'combined' : 'dev'));
@@ -92,6 +102,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/support', supportRoutes);
+app.use('/api/app', appRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/upload', uploadRoutes);
 app.use('/api/upload', uploadRoutes);

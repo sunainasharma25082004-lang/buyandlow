@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -20,8 +20,26 @@ import { FREE_SHIPPING_MIN, getShippingPrice } from '../constants/shop';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import RazorpayCheckout from '../components/RazorpayCheckout';
 import { openRazorpayOnWeb, RazorpaySuccess, supportsWebRazorpay } from '../utils/razorpay';
+import type { SavedAddress } from '../types/api';
+import LocationSelectCard, { CURRENT_LOCATION_ID } from '../components/LocationSelectCard';
+import type { GeocodedAddress } from '../utils/location';
 
 type PaymentMethod = 'razorpay' | 'cod';
+
+const applyAddress = (
+  addr: SavedAddress,
+  setters: {
+    setAddress: (v: string) => void;
+    setCity: (v: string) => void;
+    setPostalCode: (v: string) => void;
+    setPhone: (v: string) => void;
+  },
+) => {
+  setters.setAddress(addr.address);
+  setters.setCity(addr.city);
+  setters.setPostalCode(addr.postalCode);
+  setters.setPhone(addr.phone);
+};
 
 export default function CheckoutScreen() {
   const router = useRouter();
@@ -37,6 +55,48 @@ export default function CheckoutScreen() {
   const [postalCode, setPostalCode] = useState('');
   const country = 'India';
   const [phone, setPhone] = useState('');
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [locationPreview, setLocationPreview] = useState<GeocodedAddress | null>(null);
+
+  const savedAddresses = user?.addresses || [];
+
+  const handleSelectCurrentLocation = (loc: GeocodedAddress) => {
+    setSelectedAddressId(CURRENT_LOCATION_ID);
+    setLocationPreview(loc);
+    setAddress(loc.address);
+    setCity(loc.city);
+    setPostalCode(loc.postalCode);
+    if (!phone && user?.phone) {
+      setPhone(user.phone);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.paymentPreference) {
+      setPaymentMethod(user.paymentPreference);
+    }
+  }, [user?.paymentPreference]);
+
+  useEffect(() => {
+    if (savedAddresses.length === 0) {
+      if (user?.phone && !phone) {
+        setPhone(user.phone);
+      }
+      return;
+    }
+
+    const defaultAddr = savedAddresses.find((item) => item.isDefault) || savedAddresses[0];
+    if (defaultAddr && !selectedAddressId) {
+      setSelectedAddressId(defaultAddr._id || null);
+      applyAddress(defaultAddr, { setAddress, setCity, setPostalCode, setPhone });
+    }
+  }, [savedAddresses, user?.phone]);
+
+  const handleSelectAddress = (addr: SavedAddress) => {
+    setSelectedAddressId(addr._id || null);
+    setLocationPreview(null);
+    applyAddress(addr, { setAddress, setCity, setPostalCode, setPhone });
+  };
 
   const shippingPrice = getShippingPrice(cartTotal);
   const grandTotal = cartTotal + shippingPrice;
@@ -183,7 +243,44 @@ export default function CheckoutScreen() {
           <View style={styles.sectionHeader}>
             <Feather name="map-pin" size={18} color={Colors.primary} />
             <Text style={styles.sectionTitle}>Shipping Address</Text>
+            {savedAddresses.length > 0 && (
+              <TouchableOpacity onPress={() => router.push('/account/addresses' as any)}>
+                <Text style={styles.manageLink}>Manage</Text>
+              </TouchableOpacity>
+            )}
           </View>
+
+          <Text style={styles.chooseHint}>
+            Saved address choose karo ya apni current location select karo
+          </Text>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.savedScroll}
+            contentContainerStyle={styles.savedScrollContent}
+          >
+            <LocationSelectCard
+              selected={selectedAddressId === CURRENT_LOCATION_ID}
+              preview={locationPreview}
+              onSelect={handleSelectCurrentLocation}
+            />
+            {savedAddresses.map((addr) => {
+              const active = selectedAddressId === addr._id;
+              return (
+                <TouchableOpacity
+                  key={addr._id || addr.address}
+                  style={[styles.savedCard, active && styles.savedCardActive]}
+                  onPress={() => handleSelectAddress(addr)}
+                >
+                  <Text style={styles.savedLabel}>{addr.label}</Text>
+                  <Text style={styles.savedText} numberOfLines={2}>{addr.address}</Text>
+                  <Text style={styles.savedMeta}>{addr.city} · {addr.postalCode}</Text>
+                  {addr.isDefault && <Text style={styles.savedDefault}>Default</Text>}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
 
           <Text style={styles.label}>Full Address</Text>
           <View style={styles.inputContainer}>
@@ -322,7 +419,32 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20, paddingBottom: 40 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: Colors.text },
+  sectionTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: Colors.text },
+  manageLink: { fontSize: 13, fontWeight: '700', color: Colors.primary },
+  savedScroll: { marginBottom: 14, marginHorizontal: -4 },
+  savedScrollContent: { gap: 10, paddingHorizontal: 4 },
+  savedCard: {
+    width: 160,
+    backgroundColor: Colors.white,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    padding: 12,
+  },
+  savedCardActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.lightBlue,
+  },
+  savedLabel: { fontSize: 13, fontWeight: '700', color: Colors.text, marginBottom: 4 },
+  savedText: { fontSize: 12, color: Colors.textLight, lineHeight: 16 },
+  savedMeta: { fontSize: 11, color: Colors.textLight, marginTop: 4 },
+  savedDefault: { fontSize: 10, fontWeight: '700', color: Colors.primary, marginTop: 6 },
+  chooseHint: {
+    fontSize: 12,
+    color: Colors.textLight,
+    marginBottom: 10,
+    lineHeight: 17,
+  },
   label: { fontSize: 12, fontWeight: '700', color: Colors.text, marginBottom: 8, textTransform: 'uppercase' },
   inputContainer: {
     backgroundColor: Colors.white,

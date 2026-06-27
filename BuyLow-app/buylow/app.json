@@ -9,12 +9,19 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "BuyLow uses your location to automatically fill your delivery address."
+      }
     },
     "android": {
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -26,6 +33,12 @@
         {
           "photosPermission": "Allow BuyLow to access your photos for product reviews.",
           "cameraPermission": "Allow BuyLow to use your camera for product review photos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow BuyLow to use your live location to fill your delivery address automatically."
         }
       ],
       "expo-router",

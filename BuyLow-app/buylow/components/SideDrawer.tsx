@@ -81,12 +81,13 @@ export default function SideDrawer({ visible, onClose }: Props) {
     { icon: 'search-outline', iconFamily: 'Ionicons', label: 'Search', route: '/(tabs)/search' },
     { icon: 'bag-outline', iconFamily: 'Ionicons', label: 'My Orders', route: '/(tabs)/orders' },
     { icon: 'cart-outline', iconFamily: 'Ionicons', label: 'Shopping Cart', route: '/cart', badge: cartCount },
+    { icon: 'help-circle-outline', iconFamily: 'Ionicons', label: 'Help & Support', route: '/help' },
   ];
 
   const accountItems: DrawerItem[] = [
     { icon: 'person-outline', iconFamily: 'Ionicons', label: 'My Account', route: '/(tabs)/account' },
     { icon: 'heart-outline', iconFamily: 'Ionicons', label: 'Wishlist', route: '/wishlist' },
-    { icon: 'location-outline', iconFamily: 'Ionicons', label: 'My Addresses', route: '/(tabs)/account' },
+    { icon: 'location-outline', iconFamily: 'Ionicons', label: 'My Addresses', route: '/account/addresses' },
   ];
 
   const renderIcon = (item: DrawerItem, color: string) => {

@@ -55,6 +55,14 @@ export default function RootLayout() {
                 name="wishlist"
                 options={{ headerShown: false }}
               />
+              <Stack.Screen
+                name="help"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="account"
+                options={{ headerShown: false }}
+              />
             </Stack>
           </CartProvider>
         </AuthProvider>

@@ -2,6 +2,37 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
+const addressSchema = new mongoose.Schema({
+  label: {
+    type: String,
+    default: 'Home',
+  },
+  address: {
+    type: String,
+    required: true,
+  },
+  city: {
+    type: String,
+    required: true,
+  },
+  postalCode: {
+    type: String,
+    required: true,
+  },
+  country: {
+    type: String,
+    default: 'India',
+  },
+  phone: {
+    type: String,
+    required: true,
+  },
+  isDefault: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const cartItemSchema = new mongoose.Schema({
   product: {
     type: mongoose.Schema.Types.ObjectId,
@@ -43,6 +74,16 @@ const userSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
+  },
+  phone: {
+    type: String,
+    trim: true,
+  },
+  addresses: [addressSchema],
+  paymentPreference: {
+    type: String,
+    enum: ['razorpay', 'cod'],
+    default: 'razorpay',
   },
   role: {
     type: String,

@@ -19,17 +19,96 @@ const router = express.Router();
 const generateToken = (id) =>
   jwt.sign({ id }, getJwtSecret(), { expiresIn: process.env.JWT_EXPIRES_IN || '30d' });
 
-const sendUserResponse = (res, user, statusCode = 200) => {
-  res.status(statusCode).json({
+const getMockProfileExtras = (userId) => {
+  if (!global.mockUserExtras) {
+    global.mockUserExtras = {};
+  }
+  if (!global.mockUserExtras[userId]) {
+    global.mockUserExtras[userId] = {
+      phone: '',
+      addresses: [],
+      paymentPreference: 'razorpay',
+    };
+  }
+  return global.mockUserExtras[userId];
+};
+
+const formatAddress = (addr) => ({
+  _id: addr._id,
+  label: addr.label || 'Home',
+  address: addr.address,
+  city: addr.city,
+  postalCode: addr.postalCode,
+  country: addr.country || 'India',
+  phone: addr.phone,
+  isDefault: Boolean(addr.isDefault),
+});
+
+const buildUserPayload = (user, includeToken = false) => {
+  const payload = {
     success: true,
     _id: user._id,
     name: user.name,
     email: user.email,
     role: user.role,
-    token: generateToken(user._id),
+    phone: user.phone || '',
+    addresses: (user.addresses || []).map(formatAddress),
+    paymentPreference: user.paymentPreference || 'razorpay',
     cart: user.cart || [],
     wishlist: user.wishlist || [],
-  });
+  };
+
+  if (includeToken) {
+    payload.token = generateToken(user._id);
+  }
+
+  return payload;
+};
+
+const sendUserResponse = (res, user, statusCode = 200) => {
+  res.status(statusCode).json(buildUserPayload(user, true));
+};
+
+const normalizeAddresses = (addresses) => {
+  if (!Array.isArray(addresses)) {
+    return null;
+  }
+
+  const cleaned = addresses
+    .map((item) => ({
+      _id: item._id,
+      label: (item.label || 'Home').trim(),
+      address: (item.address || '').trim(),
+      city: (item.city || '').trim(),
+      postalCode: (item.postalCode || '').trim(),
+      country: (item.country || 'India').trim(),
+      phone: (item.phone || '').replace(/\D/g, ''),
+      isDefault: Boolean(item.isDefault),
+    }))
+    .filter((item) => item.address && item.city && item.postalCode && item.phone.length >= 10);
+
+  if (cleaned.length === 0) {
+    return [];
+  }
+
+  const hasDefault = cleaned.some((item) => item.isDefault);
+  if (!hasDefault) {
+    cleaned[0].isDefault = true;
+  } else {
+    let defaultSet = false;
+    cleaned.forEach((item) => {
+      if (item.isDefault && !defaultSet) {
+        defaultSet = true;
+      } else {
+        item.isDefault = false;
+      }
+    });
+    if (!defaultSet) {
+      cleaned[0].isDefault = true;
+    }
+  }
+
+  return cleaned;
 };
 
 router.post('/register', authLimiter, asyncHandler(async (req, res) => {
@@ -45,6 +124,7 @@ router.post('/register', authLimiter, asyncHandler(async (req, res) => {
     if (isProduction) {
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
+    const extras = getMockProfileExtras('mock_user_id_12345');
     return sendUserResponse(res, {
       _id: 'mock_user_id_12345',
       name: name.trim(),
@@ -52,6 +132,7 @@ router.post('/register', authLimiter, asyncHandler(async (req, res) => {
       role: 'user',
       cart: [],
       wishlist: [],
+      ...extras,
     }, 201);
   }
 
@@ -79,13 +160,16 @@ router.post('/login', authLimiter, asyncHandler(async (req, res) => {
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
     const isAdmin = email === configuredAdminEmail && password === ADMIN_PASSWORD;
+    const mockId = isAdmin ? 'mock_admin_id' : 'mock_user_id_12345';
+    const extras = getMockProfileExtras(mockId);
     return sendUserResponse(res, {
-      _id: isAdmin ? 'mock_admin_id' : 'mock_user_id_12345',
+      _id: mockId,
       name: isAdmin ? 'Admin' : 'Demo User',
       email,
       role: isAdmin ? 'admin' : 'user',
       cart: [],
       wishlist: [],
+      ...extras,
     });
   }
 
@@ -155,6 +239,7 @@ router.post('/google', authLimiter, asyncHandler(async (req, res) => {
     if (isProduction) {
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
+    const extras = getMockProfileExtras('mock_google_user');
     return sendUserResponse(res, {
       _id: 'mock_google_user',
       name: googleUser.name,
@@ -162,6 +247,7 @@ router.post('/google', authLimiter, asyncHandler(async (req, res) => {
       role: 'user',
       cart: [],
       wishlist: [],
+      ...extras,
     });
   }
 
@@ -203,15 +289,13 @@ router.get('/profile', protect, asyncHandler(async (req, res) => {
     if (isProduction) {
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
-    return res.json({
-      success: true,
-      _id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      role: req.user.role,
+    const extras = getMockProfileExtras(req.user._id);
+    return res.json(buildUserPayload({
+      ...req.user,
       cart: [],
       wishlist: [],
-    });
+      ...extras,
+    }));
   }
 
   const user = await User.findById(req.user._id).populate('cart.product').populate('wishlist');
@@ -219,14 +303,88 @@ router.get('/profile', protect, asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'User not found' });
   }
 
+  res.json(buildUserPayload(user));
+}));
+
+router.put('/profile', protect, asyncHandler(async (req, res) => {
+  const name = typeof req.body.name === 'string' ? req.body.name.trim() : undefined;
+  const phone = typeof req.body.phone === 'string' ? req.body.phone.replace(/\D/g, '') : undefined;
+  const paymentPreference = req.body.paymentPreference;
+
+  if (name !== undefined && name.length < 2) {
+    return res.status(400).json({ success: false, message: 'Name must be at least 2 characters' });
+  }
+
+  if (phone !== undefined && phone.length > 0 && phone.length < 10) {
+    return res.status(400).json({ success: false, message: 'Please enter a valid 10-digit phone number' });
+  }
+
+  if (paymentPreference !== undefined && !['razorpay', 'cod'].includes(paymentPreference)) {
+    return res.status(400).json({ success: false, message: 'Invalid payment preference' });
+  }
+
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const extras = getMockProfileExtras(req.user._id);
+    if (name !== undefined) req.user.name = name;
+    if (phone !== undefined) extras.phone = phone;
+    if (paymentPreference !== undefined) extras.paymentPreference = paymentPreference;
+    return res.json(buildUserPayload({
+      ...req.user,
+      cart: [],
+      wishlist: [],
+      ...extras,
+    }));
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  if (name !== undefined) user.name = name;
+  if (phone !== undefined) user.phone = phone;
+  if (paymentPreference !== undefined) user.paymentPreference = paymentPreference;
+  await user.save();
+
+  const populated = await User.findById(user._id).populate('cart.product').populate('wishlist');
+  res.json(buildUserPayload(populated));
+}));
+
+router.put('/addresses', protect, asyncHandler(async (req, res) => {
+  const normalized = normalizeAddresses(req.body.addresses);
+  if (normalized === null) {
+    return res.status(400).json({ success: false, message: 'Addresses must be an array' });
+  }
+
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const extras = getMockProfileExtras(req.user._id);
+    extras.addresses = normalized.map((item, index) => ({
+      ...item,
+      _id: item._id || `mock_addr_${Date.now()}_${index}`,
+    }));
+    return res.json({
+      success: true,
+      addresses: extras.addresses.map(formatAddress),
+    });
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  user.addresses = normalized;
+  await user.save();
+
   res.json({
     success: true,
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    cart: user.cart,
-    wishlist: user.wishlist,
+    addresses: user.addresses.map(formatAddress),
   });
 }));
 

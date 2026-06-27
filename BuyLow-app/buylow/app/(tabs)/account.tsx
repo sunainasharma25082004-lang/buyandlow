@@ -11,6 +11,20 @@ export default function AccountScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
 
+  const requireLogin = (route: string) => {
+    if (!user) {
+      Alert.alert('Login Required', 'Please login to access this section.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Login', onPress: () => router.push('/(auth)/login') },
+      ]);
+      return;
+    }
+    router.push(route as any);
+  };
+
+  const addressCount = user?.addresses?.length || 0;
+  const paymentLabel = user?.paymentPreference === 'cod' ? 'Cash on Delivery' : 'Razorpay · UPI · Cards';
+
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
@@ -78,16 +92,31 @@ export default function AccountScreen() {
           <Text style={styles.sectionTitle}>Account Settings</Text>
           <View style={styles.card}>
             {renderMenuItem('heart-outline', 'My Wishlist', 'Saved products you love', () => router.push('/wishlist'))}
-            {renderMenuItem('person-outline', 'Personal Information', user ? `${user.name} · ${user.email}` : 'Name, Email')}
-            {renderMenuItem('location-outline', 'Saved Addresses', 'Add or remove delivery address')}
-            {renderMenuItem('card-outline', 'Payment Methods', 'Razorpay · UPI · Cards · COD')}
+            {renderMenuItem(
+              'person-outline',
+              'Personal Information',
+              user ? `${user.name}${user.phone ? ` · +91 ${user.phone}` : ''}` : 'Name, email & phone',
+              () => requireLogin('/account/profile'),
+            )}
+            {renderMenuItem(
+              'location-outline',
+              'Saved Addresses',
+              user && addressCount > 0 ? `${addressCount} saved address${addressCount > 1 ? 'es' : ''}` : 'Add or remove delivery address',
+              () => requireLogin('/account/addresses'),
+            )}
+            {renderMenuItem(
+              'card-outline',
+              'Payment Methods',
+              user ? paymentLabel : 'Razorpay · UPI · Cards · COD',
+              () => requireLogin('/account/payment'),
+            )}
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.card}>
-            {renderMenuItem('help-circle-outline', 'Help Center', 'FAQs and customer support')}
+            {renderMenuItem('help-circle-outline', 'Help Center', 'Chat with us or request a callback', () => router.push('/help' as any))}
             {renderMenuItem('document-text-outline', 'Terms & Policies')}
           </View>
         </View>

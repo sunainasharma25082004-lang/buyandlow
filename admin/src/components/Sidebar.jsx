@@ -8,8 +8,10 @@ const links = [
   { to: '/users', label: 'Users', icon: '👥' },
   { to: '/categories', label: 'Categories', icon: '🏷️' },
   { to: '/products', label: 'Products', icon: '📦' },
+  { to: '/app-banners', label: 'App Home Banners', icon: '📱' },
   { to: '/orders', label: 'Orders & Transactions', icon: '💳' },
   { to: '/reviews', label: 'Reviews', icon: '⭐' },
+  { to: '/callbacks', label: 'Support Requests', icon: '📞' },
 ];
 
 const Sidebar = ({ isOpen = false, onClose }) => {

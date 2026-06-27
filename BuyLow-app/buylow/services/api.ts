@@ -1,11 +1,16 @@
 import { API_URL, isTunnelApi, resolveMediaUrl } from '../config/api';
 import type {
+  AppBanner,
+  AppBannersResponse,
   CartItem,
   CategoriesResponse,
   Order,
   OrdersResponse,
+  PaymentPreference,
   Product,
   ProductsResponse,
+  SavedAddress,
+  User,
 } from '../types/api';
 
 export { resolveMediaUrl };
@@ -92,6 +97,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 const getProductId = (product: CartItem['product']) =>
   typeof product === 'string' ? product : product._id;
 
+export const getAppBanners = () =>
+  request<AppBannersResponse>('/app/banners');
+
 export const getCategories = (homeOnly = false) =>
   request<CategoriesResponse>(`/categories${buildQuery({ home: homeOnly ? true : undefined })}`);
 
@@ -129,7 +137,24 @@ export const register = (data: { name: string; email: string; password: string }
   request<any>('/auth/register', { method: 'POST', body: JSON.stringify(data) });
 
 export const getProfile = (token: string) =>
-  request<any>('/auth/profile', { headers: { Authorization: `Bearer ${token}` } });
+  request<User>('/auth/profile', { headers: { Authorization: `Bearer ${token}` } });
+
+export const updateProfile = (
+  data: { name?: string; phone?: string; paymentPreference?: PaymentPreference },
+  token: string,
+) =>
+  request<User>('/auth/profile', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+
+export const updateAddresses = (addresses: SavedAddress[], token: string) =>
+  request<{ success: boolean; addresses: SavedAddress[] }>('/auth/addresses', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ addresses }),
+  });
 
 // Cart
 export const syncCart = (cart: CartItem[], token: string) => {
@@ -215,6 +240,52 @@ export const addProductReview = (
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ rating, comment, images }),
   });
+
+export type CallbackRequestPayload = {
+  name: string;
+  email?: string;
+  phone: string;
+  preferredTime?: string;
+  note?: string;
+};
+
+export type ChatSupportPayload = {
+  name?: string;
+  email?: string;
+  phone?: string;
+  note?: string;
+  chatSummary: string;
+};
+
+export const submitCallbackRequest = (
+  data: CallbackRequestPayload & { chatSummary?: string; source?: string },
+  token?: string | null,
+) => {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return request<{ success: boolean; request: Record<string, unknown> }>('/support/callback', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data),
+  });
+};
+
+export const submitChatSupportRequest = (
+  data: ChatSupportPayload,
+  token?: string | null,
+) => {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return request<{ success: boolean; request: Record<string, unknown> }>('/support/chat', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data),
+  });
+};
 
 export const uploadReviewImage = async (uri: string, token: string): Promise<string> => {
   const formData = new FormData();

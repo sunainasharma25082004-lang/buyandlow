@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import storage from '../utils/storage';
-import { User, AuthResponse, Product } from '../types/api';
+import { User, AuthResponse, SavedAddress, PaymentPreference } from '../types/api';
 import * as api from '../services/api';
 
 
@@ -11,6 +11,9 @@ type AuthContextType = {
   login: (data: any) => Promise<AuthResponse>;
   register: (data: { name: string; email: string; password: string }) => Promise<AuthResponse>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  updateProfile: (data: { name?: string; phone?: string; paymentPreference?: PaymentPreference }) => Promise<void>;
+  saveAddresses: (addresses: SavedAddress[]) => Promise<SavedAddress[]>;
   toggleWishlist: (productId: string) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
 };
@@ -36,8 +39,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(JSON.parse(storedUser));
         
         api.getProfile(storedToken).then((res) => {
-          if (res.success) {
-            setUser(res as User);
+          if (res._id) {
+            setUser(res);
             storage.setItem('user', JSON.stringify(res));
           }
         }).catch(() => {});
@@ -86,6 +89,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await storage.removeItem('user');
   };
 
+  const persistUser = async (nextUser: User) => {
+    setUser(nextUser);
+    await storage.setItem('user', JSON.stringify(nextUser));
+  };
+
+  const refreshUser = async () => {
+    if (!token) return;
+    const res = await api.getProfile(token);
+    if (res._id) {
+      await persistUser(res);
+    }
+  };
+
+  const updateProfile = async (data: { name?: string; phone?: string; paymentPreference?: PaymentPreference }) => {
+    if (!token) throw new Error('Please login first');
+    const res = await api.updateProfile(data, token);
+    await persistUser(res);
+  };
+
+  const saveAddresses = async (addresses: SavedAddress[]) => {
+    if (!token) throw new Error('Please login first');
+    const res = await api.updateAddresses(addresses, token);
+    if (user) {
+      await persistUser({ ...user, addresses: res.addresses });
+    }
+    return res.addresses;
+  };
+
   const toggleWishlist = async (productId: string) => {
     if (!user || !token) throw new Error('Please login to add to wishlist');
     
@@ -107,9 +138,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await api.syncWishlist(newWishlistIds, token);
       const res = await api.getProfile(token);
-      if (res.success) {
-         setUser(res as User);
-         storage.setItem('user', JSON.stringify(res));
+      if (res._id) {
+        setUser(res);
+        storage.setItem('user', JSON.stringify(res));
       }
     } catch (e) {
       // Revert if API fails
@@ -124,7 +155,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, toggleWishlist, isInWishlist }}>
+    <AuthContext.Provider value={{
+      user,
+      token,
+      loading,
+      login,
+      register,
+      logout,
+      refreshUser,
+      updateProfile,
+      saveAddresses,
+      toggleWishlist,
+      isInWishlist,
+    }}>
       {children}
     </AuthContext.Provider>
   );

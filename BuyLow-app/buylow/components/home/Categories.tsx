@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
+import CategorySkeleton from '../ui/CategorySkeleton';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
@@ -66,10 +66,7 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
       )}
 
       {loading ? (
-        <View style={styles.stateBox}>
-          <ActivityIndicator color={Colors.primary} />
-          <Text style={styles.stateText}>Loading categories...</Text>
-        </View>
+        <CategorySkeleton />
       ) : categories.length === 0 ? (
         <View style={styles.stateBox}>
           <Ionicons name="grid-outline" size={28} color={Colors.textLight} />

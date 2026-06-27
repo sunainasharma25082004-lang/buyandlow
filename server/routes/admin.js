@@ -4,6 +4,13 @@ import Category from '../models/Category.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import Review from '../models/Review.js';
+import CallbackRequest from '../models/CallbackRequest.js';
+import AppBanner from '../models/AppBanner.js';
+import {
+  DEFAULT_APP_BANNERS,
+  formatBanner,
+  normalizeBannerBody,
+} from '../data/appBanners.js';
 import { recalculateProductRating } from '../utils/reviews.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import { products as staticProducts } from '../data/products.js';
@@ -587,6 +594,203 @@ router.delete('/reviews/:id', protect, admin, asyncHandler(async (req, res) => {
   await recalculateProductRating(productId);
 
   res.json({ success: true, message: 'Review deleted' });
+}));
+
+router.get('/callbacks', protect, admin, asyncHandler(async (req, res) => {
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const callbacks = [...(global.mockCallbacks || [])].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
+    return res.json(callbacks);
+  }
+
+  const callbacks = await CallbackRequest.find()
+    .sort({ createdAt: -1 })
+    .populate('user', 'name email');
+
+  res.json(callbacks);
+}));
+
+router.put('/callbacks/:id', protect, admin, asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const allowed = ['pending', 'contacted', 'resolved'];
+
+  if (status && !allowed.includes(status)) {
+    return res.status(400).json({ success: false, message: 'Invalid status' });
+  }
+
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const idx = global.mockCallbacks.findIndex((c) => c._id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ success: false, message: 'Callback request not found' });
+    }
+    if (status) global.mockCallbacks[idx].status = status;
+    global.mockCallbacks[idx].updatedAt = new Date().toISOString();
+    return res.json(global.mockCallbacks[idx]);
+  }
+
+  const callback = await CallbackRequest.findById(req.params.id);
+  if (!callback) {
+    return res.status(404).json({ success: false, message: 'Callback request not found' });
+  }
+
+  if (status) callback.status = status;
+  await callback.save();
+
+  const populated = await CallbackRequest.findById(callback._id).populate('user', 'name email');
+  res.json(populated);
+}));
+
+router.delete('/callbacks/:id', protect, admin, asyncHandler(async (req, res) => {
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const idx = global.mockCallbacks.findIndex((c) => c._id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ success: false, message: 'Callback request not found' });
+    }
+    global.mockCallbacks.splice(idx, 1);
+    return res.json({ success: true, message: 'Callback request deleted' });
+  }
+
+  const callback = await CallbackRequest.findById(req.params.id);
+  if (!callback) {
+    return res.status(404).json({ success: false, message: 'Callback request not found' });
+  }
+
+  await callback.deleteOne();
+  res.json({ success: true, message: 'Callback request deleted' });
+}));
+
+const getMockAppBanners = () => {
+  if (!global.mockAppBanners) {
+    global.mockAppBanners = DEFAULT_APP_BANNERS.map((item, index) => ({
+      ...item,
+      _id: `mock_banner_${index + 1}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+  return global.mockAppBanners;
+};
+
+const seedAppBannersIfEmpty = async () => {
+  const count = await AppBanner.countDocuments();
+  if (count > 0) return;
+  await AppBanner.insertMany(DEFAULT_APP_BANNERS);
+};
+
+const validateBannerPayload = (payload) => {
+  if (!payload.label) return 'Banner label is required';
+  if (!payload.title) return 'Banner title is required';
+  if (!payload.image) return 'Banner image is required';
+  return null;
+};
+
+router.get('/app-banners', protect, admin, asyncHandler(async (_req, res) => {
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const banners = [...getMockAppBanners()]
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .map(formatBanner);
+    return res.json(banners);
+  }
+
+  await seedAppBannersIfEmpty();
+  const banners = await AppBanner.find().sort({ sortOrder: 1, createdAt: 1 });
+  res.json(banners.map(formatBanner));
+}));
+
+router.post('/app-banners', protect, admin, asyncHandler(async (req, res) => {
+  const payload = normalizeBannerBody(req.body);
+  const validationError = validateBannerPayload(payload);
+  if (validationError) {
+    return res.status(400).json({ success: false, message: validationError });
+  }
+
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const banner = {
+      ...payload,
+      _id: `mock_banner_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    global.mockAppBanners = [...getMockAppBanners(), banner];
+    return res.status(201).json(formatBanner(banner));
+  }
+
+  const banner = await AppBanner.create(payload);
+  res.status(201).json(formatBanner(banner));
+}));
+
+router.put('/app-banners/:id', protect, admin, asyncHandler(async (req, res) => {
+  const payload = normalizeBannerBody(req.body);
+  const validationError = validateBannerPayload(payload);
+  if (validationError) {
+    return res.status(400).json({ success: false, message: validationError });
+  }
+
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const banners = getMockAppBanners();
+    const idx = banners.findIndex((item) => item._id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ success: false, message: 'App banner not found' });
+    }
+    banners[idx] = {
+      ...banners[idx],
+      ...payload,
+      updatedAt: new Date().toISOString(),
+    };
+    global.mockAppBanners = banners;
+    return res.json(formatBanner(banners[idx]));
+  }
+
+  const banner = await AppBanner.findByIdAndUpdate(req.params.id, payload, {
+    new: true,
+    runValidators: true,
+  });
+  if (!banner) {
+    return res.status(404).json({ success: false, message: 'App banner not found' });
+  }
+  res.json(formatBanner(banner));
+}));
+
+router.delete('/app-banners/:id', protect, admin, asyncHandler(async (req, res) => {
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    const banners = getMockAppBanners();
+    const idx = banners.findIndex((item) => item._id === req.params.id);
+    if (idx === -1) {
+      return res.status(404).json({ success: false, message: 'App banner not found' });
+    }
+    global.mockAppBanners = banners.filter((item) => item._id !== req.params.id);
+    return res.json({ success: true, message: 'App banner deleted' });
+  }
+
+  const banner = await AppBanner.findById(req.params.id);
+  if (!banner) {
+    return res.status(404).json({ success: false, message: 'App banner not found' });
+  }
+
+  await banner.deleteOne();
+  res.json({ success: true, message: 'App banner deleted' });
 }));
 
 router.delete('/products/:id', protect, admin, asyncHandler(async (req, res) => {

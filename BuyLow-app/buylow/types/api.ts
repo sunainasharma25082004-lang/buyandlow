@@ -26,12 +26,28 @@ export type Product = {
   description?: string;
 };
 
+export type SavedAddress = {
+  _id?: string;
+  label: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+  isDefault: boolean;
+};
+
+export type PaymentPreference = 'razorpay' | 'cod';
+
 export type User = {
   _id: string;
   name: string;
   email: string;
   role: string;
   token?: string;
+  phone?: string;
+  addresses?: SavedAddress[];
+  paymentPreference?: PaymentPreference;
   cart?: CartItem[];
   wishlist?: Product[] | string[];
 };
@@ -87,6 +103,22 @@ export type Review = {
   images?: string[];
   userName: string;
   createdAt: string;
+};
+
+export type AppBanner = {
+  _id: string;
+  label: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  route: string;
+  sortOrder?: number;
+  isActive?: boolean;
+};
+
+export type AppBannersResponse = {
+  success: boolean;
+  banners: AppBanner[];
 };
 
 export type CategoriesResponse = {
