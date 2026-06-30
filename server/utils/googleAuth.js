@@ -10,15 +10,21 @@ const getGoogleClient = () => {
   return googleClient;
 };
 
+const getAllowedAudiences = () =>
+  [process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_ANDROID_CLIENT_ID]
+    .map((value) => value?.trim())
+    .filter(Boolean);
+
 export const verifyGoogleCredential = async (credential) => {
   const client = getGoogleClient();
   if (!client) {
     throw new Error('Google sign-in is not configured');
   }
 
+  const audience = getAllowedAudiences();
   const ticket = await client.verifyIdToken({
     idToken: credential,
-    audience: process.env.GOOGLE_CLIENT_ID,
+    audience: audience.length === 1 ? audience[0] : audience,
   });
 
   const payload = ticket.getPayload();

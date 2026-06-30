@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import CategorySkeleton from '../ui/CategorySkeleton';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/colors';
@@ -14,7 +14,6 @@ import { getCategories } from '../../services/api';
 import RemoteImage from '../RemoteImage';
 import { PLACEHOLDER_CATEGORY } from '../../constants/images';
 import type { Category } from '../../types/api';
-import { useLanguage } from '../../context/LanguageContext';
 
 type CategoriesProps = {
   homeOnly?: boolean;
@@ -23,7 +22,6 @@ type CategoriesProps = {
 
 export default function Categories({ homeOnly = true, showHeader = true }: CategoriesProps) {
   const router = useRouter();
-  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -59,21 +57,24 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
     <View style={styles.container}>
       {showHeader && (
         <View style={styles.header}>
-          <Text style={styles.title}>{t('home.topCategories')}</Text>
+          <Text style={styles.title}>Top Categories</Text>
           <TouchableOpacity style={styles.viewAll} onPress={() => router.push('/(tabs)/categories')}>
-            <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
+            <Text style={styles.viewAllText}>View All</Text>
             <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
           </TouchableOpacity>
         </View>
       )}
 
       {loading ? (
-        <CategorySkeleton />
+        <View style={styles.stateBox}>
+          <ActivityIndicator color={Colors.primary} />
+          <Text style={styles.stateText}>Loading categories...</Text>
+        </View>
       ) : categories.length === 0 ? (
         <View style={styles.stateBox}>
           <Ionicons name="grid-outline" size={28} color={Colors.textLight} />
           <Text style={styles.stateText}>
-            {error || t('home.categoriesEmptyHint')}
+            {error || 'Categories will appear here once added from the admin panel.'}
           </Text>
         </View>
       ) : (

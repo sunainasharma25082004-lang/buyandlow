@@ -61,7 +61,7 @@ export const en: TranslationTree = {
     googleNoToken: 'Could not get Google sign-in token.',
     googleNotConfiguredTitle: 'Google Sign-In',
     googleNotConfiguredMsg:
-      'Add EXPO_PUBLIC_GOOGLE_CLIENT_ID to BuyLow-app/buylow/.env (same as server GOOGLE_CLIENT_ID).',
+      'Set GOOGLE_CLIENT_ID in server/.env and EXPO_PUBLIC_GOOGLE_CLIENT_ID in the app .env. In Google Console, add http://YOUR-PC-IP:5000 as an authorized JavaScript origin.',
     loginRequired: 'Login Required',
     loginRequiredGeneric: 'Please login to access this section.',
     loginToWishlist: 'Please login to add items to your wishlist.',

@@ -40,6 +40,8 @@ services:
         value: "false"
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
 
   # ── Customer Store ───────────────────────────────────────────
   # SPA: rewrite all paths to index.html (fixes reload 404 on /products etc.)

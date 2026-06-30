@@ -20,6 +20,7 @@ import adminRoutes from './routes/admin.js';
 import uploadRoutes from './routes/upload.js';
 import supportRoutes from './routes/support.js';
 import appRoutes from './routes/app.js';
+import googleAuthPageRoutes from './routes/googleAuthPage.js';
 
 dotenv.config();
 validateEnv();
@@ -87,6 +88,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 }));
 
 app.use('/api', apiLimiter);
+
+app.use('/auth', googleAuthPageRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({

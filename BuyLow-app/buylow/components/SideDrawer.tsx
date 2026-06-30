@@ -89,7 +89,7 @@ export default function SideDrawer({ visible, onClose }: Props) {
   const accountItems: DrawerItem[] = [
     { icon: 'person-outline', iconFamily: 'Ionicons', label: t('account.myAccount'), route: '/(tabs)/account' },
     { icon: 'heart-outline', iconFamily: 'Ionicons', label: t('drawer.wishlist'), route: '/wishlist' },
-    { icon: 'location-outline', iconFamily: 'Ionicons', label: t('drawer.myAddresses'), route: '/account/addresses' },
+    { icon: 'location-outline', iconFamily: 'Ionicons', label: t('drawer.myAddresses'), route: '/(tabs)/account/addresses' },
   ];
 
   const renderIcon = (item: DrawerItem, color: string) => {
