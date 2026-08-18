@@ -63,8 +63,8 @@
 }
 
 .product-card-badge.badge-hot {
-  background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  color: var(--brown-dark);
+  background: linear-gradient(135deg, #E51E25 0%, #C8102E 100%);
+  color: #FFFFFF;
 }
 
 .product-card-discount {
@@ -72,14 +72,14 @@
   top: 10px;
   right: 48px;
   z-index: 2;
-  background: var(--gold);
-  color: var(--brown-dark);
+  background: linear-gradient(135deg, #E51E25 0%, #C8102E 100%);
+  color: #FFFFFF;
   font-size: 10px;
   font-weight: 800;
   padding: 3px 8px;
   border-radius: var(--radius-pill);
   margin: 0;
-  box-shadow: var(--shadow-yellow);
+  box-shadow: 0 2px 8px rgba(229, 30, 37, 0.25);
 }
 
 .product-card-wish {
@@ -98,63 +98,65 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-sm);
-  transition: color 0.2s, transform 0.2s;
-  padding: 0;
-  margin: 0;
+  transition: all 0.2s ease;
 }
 
-.product-card-wish:hover,
-.product-card-wish.active {
-  color: var(--brown-mid);
-  transform: scale(1.08);
+.product-card-wish.active,
+.product-card-wish:hover {
+  color: #E51E25;
+  background: #FFF;
+  box-shadow: 0 2px 8px rgba(229, 30, 37, 0.2);
 }
 
 .product-card-actions {
   position: absolute;
+  bottom: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  display: flex;
-  gap: 6px;
+  z-index: 4;
   padding: 10px;
-  background: linear-gradient(to top, rgba(15, 52, 96, 0.85) 0%, rgba(15, 52, 96, 0.4) 55%, transparent 100%);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.75), transparent);
+  transform: translateY(100%);
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: all 0.3s ease;
 }
 
 .product-card:hover .product-card-actions {
-  opacity: 1;
   transform: translateY(0);
+  opacity: 1;
 }
 
 .product-card-action {
-  flex: 1;
+  padding: 9px 8px;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 9px 8px;
   font-family: 'Poppins', sans-serif;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   background: var(--white);
-  color: var(--brown-dark);
+  color: var(--text-dark);
   transition: all 0.2s;
   margin: 0;
 }
 
 .product-card-action:hover {
-  background: var(--cream-light);
+  background: var(--surface-soft);
 }
 
 .product-card-action--gold {
-  background: linear-gradient(135deg, var(--gold), var(--gold-light));
-  color: var(--brown-dark);
+  background: linear-gradient(135deg, #E51E25 0%, #C8102E 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(229, 30, 37, 0.3);
 }
 
 .product-card-action--gold:hover {
-  filter: brightness(1.08);
+  background: linear-gradient(135deg, #FF3B3F 0%, #E51E25 100%);
+  box-shadow: 0 6px 16px rgba(229, 30, 37, 0.45);
 }
 
 .product-card-body {

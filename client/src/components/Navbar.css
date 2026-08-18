@@ -1,6 +1,8 @@
 .navbar {
-  position: relative;
-  background: var(--cream);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--white);
   width: 100%;
   box-shadow: var(--shadow-sm);
   border-bottom: 1px solid var(--border);
@@ -123,37 +125,38 @@
 .nav-cart-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  gap: 8px;
+  background: linear-gradient(135deg, #E51E25 0%, #C8102E 100%);
   border: none;
-  color: var(--brown-dark);
+  color: #FFFFFF;
   font-family: 'Poppins', sans-serif;
   font-size: 12px;
   font-weight: 700;
-  padding: 0 14px;
+  padding: 0 16px;
   height: 40px;
   border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
-  box-shadow: var(--shadow-yellow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(229, 30, 37, 0.32);
   position: relative;
 }
 
 .nav-cart-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #FF3B3F 0%, #E51E25 100%);
+  box-shadow: 0 6px 20px rgba(229, 30, 37, 0.45);
 }
 
 .nav-cart-count {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  background: var(--brown-dark);
-  color: var(--white);
-  font-size: 10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: #0F172A;
+  color: #FFFFFF;
+  font-size: 10.5px;
   font-weight: 800;
   border-radius: var(--radius-pill);
 }
