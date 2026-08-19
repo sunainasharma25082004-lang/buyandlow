@@ -1,11 +1,10 @@
 import React from 'react';
+import logoImg from '../assets/logo.png';
 import './Logo.css';
-
-const LOGO_SRC = '/logo.png';
 
 const Logo = ({ className = '', size = 'default' }) => (
   <div className={`brand-logo-wrap size-${size} ${className}`}>
-    <img src={LOGO_SRC} alt="buylowindia" className="brand-logo-img" />
+    <img src={logoImg} alt="buylowindia" className="brand-logo-img" />
   </div>
 );
 
