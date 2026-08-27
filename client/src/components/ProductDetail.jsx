@@ -152,9 +152,14 @@ const ProductDetail = () => {
           <div className="pd-gallery">
             <div className="pd-main-img-wrap">
               <img
-                src={images[activeImg]}
+                src={images[activeImg] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80'}
                 alt={product.name}
                 className="pd-main-img"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
+                }}
               />
 
               {product.badge && (
@@ -179,7 +184,15 @@ const ProductDetail = () => {
                   }`}
                   onClick={() => setActiveImg(i)}
                 >
-                  <img src={img} alt={`thumb-${i}`} />
+                  <img
+                    src={img}
+                    alt={`thumb-${i}`}
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
+                    }}
+                  />
                 </button>
               ))}
             </div>

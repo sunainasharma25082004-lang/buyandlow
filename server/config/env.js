@@ -66,21 +66,16 @@ const isLocalDevOrigin = (origin) => {
 };
 
 const getCorsOrigins = () => {
-  if (process.env.CLIENT_URL) {
-    const configured = process.env.CLIENT_URL
-      .split(',')
-      .map(normalizeOrigin)
-      .filter(Boolean);
+  const envOrigins = (process.env.CLIENT_URL || '')
+    .split(',')
+    .map(normalizeOrigin)
+    .filter(Boolean);
 
-    if (!isProduction) {
-      return [...new Set([...configured, ...DEV_DEFAULT_ORIGINS])];
-    }
-    return configured;
-  }
-  if (isProduction) {
+  if (envOrigins.includes('*')) {
     return [];
   }
-  return DEV_DEFAULT_ORIGINS;
+
+  return [...new Set([...envOrigins, ...DEV_DEFAULT_ORIGINS])];
 };
 
 export { isProduction, validateEnv, getCorsOrigins, isLocalDevOrigin };

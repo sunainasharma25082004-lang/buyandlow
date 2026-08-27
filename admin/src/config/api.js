@@ -51,8 +51,8 @@ export const resolveMediaUrl = (url) => {
     return rewriteStaleUploadUrl(rewriteLocalhostUrl(url));
   }
 
-  if (url.startsWith('/')) return `${API_ORIGIN}${url}`;
-  return url;
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${API_ORIGIN}${cleanPath}`;
 };
 
 export default API_URL;

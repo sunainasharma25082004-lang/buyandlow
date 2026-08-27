@@ -49,30 +49,39 @@ const getWebDevApiUrl = () => {
   return null;
 };
 
+const PRODUCTION_API_URL = 'https://buyandlow-api.onrender.com/api';
+
 const resolveApiUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 
-  // Expo web in browser — same machine as backend; tunnel causes CORS errors
+  // If envUrl is set to a production HTTPS URL (like Render), use it directly
+  if (envUrl && /^https:\/\//i.test(envUrl)) {
+    return trimTrailingSlash(envUrl);
+  }
+
+  // In production standalone builds (APK/AAB), default to live Render backend
+  if (!__DEV__) {
+    return envUrl && !isLocaltunnelUrl(envUrl) ? trimTrailingSlash(envUrl) : PRODUCTION_API_URL;
+  }
+
+  // Expo web in browser — same machine as backend
   const webApiUrl = getWebDevApiUrl();
   if (webApiUrl) {
-    if (!envUrl || isLocaltunnelUrl(envUrl)) {
+    if (!envUrl || isLocaltunnelUrl(envUrl) || /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.)/i.test(envUrl)) {
       return webApiUrl;
     }
   }
 
   const metroHost = getMetroHost();
 
-  // Same WiFi (LAN): direct PC IP is faster and won't die like localtunnel
+  // Same WiFi (LAN): direct PC IP is detected dynamically from Metro
   if (metroHost) {
-    const lanUrl = `http://${metroHost}:5000/api`;
-    if (!envUrl || isLocaltunnelUrl(envUrl)) return lanUrl;
+    return `http://${metroHost}:5000/api`;
   }
 
   if (envUrl) return trimTrailingSlash(envUrl);
 
-  return Platform.OS === 'android'
-    ? 'http://10.0.2.2:5000/api'
-    : 'http://localhost:5000/api';
+  return PRODUCTION_API_URL;
 };
 
 export const API_URL = resolveApiUrl();
@@ -114,6 +123,6 @@ export const resolveMediaUrl = (url?: string | null) => {
     return rewriteStaleUploadUrl(rewriteLocalhostUrl(url));
   }
 
-  if (url.startsWith('/')) return `${API_ORIGIN}${url}`;
-  return url;
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${API_ORIGIN}${cleanPath}`;
 };

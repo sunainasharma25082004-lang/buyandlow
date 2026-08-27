@@ -58,7 +58,16 @@ const NewArrivals = () => {
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="arrival-img-wrap">
-                    <img src={resolveMediaUrl(item.image)} alt={item.name} className="arrival-img" />
+                    <img
+                      src={resolveMediaUrl(item.image) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80'}
+                      alt={item.name}
+                      className="arrival-img"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
+                      }}
+                    />
                     {item.badge && <span className="arrival-badge">{item.badge}</span>}
                   </div>
                   <div className="arrival-info">

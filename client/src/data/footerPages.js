@@ -206,28 +206,61 @@ const footerPages = {
   },
   'privacy-policy': {
     title: 'Privacy Policy',
-    subtitle: 'Last updated: June 2026',
+    subtitle: 'Effective Date: August 27, 2026 | App Package: com.buylowindia.app',
     sections: [
       {
-        heading: 'Information We Collect',
-        body: 'We collect information you provide when creating an account, placing orders, or contacting support — including name, email, shipping address, and phone number.',
+        heading: '1. Introduction',
+        body: 'Welcome to BuyLow ("we", "our", or "us"). We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (buylow-store.onrender.com) and mobile application (com.buylowindia.app).',
       },
       {
-        heading: 'How We Use Your Data',
+        heading: '2. Information We Collect',
+        body: 'When you use BuyLow, we may collect the following personal information:',
         list: [
-          'Process and deliver your orders',
-          'Send order confirmations and shipping updates',
-          'Improve our website and customer experience',
-          'Prevent fraud and ensure platform security',
+          'Account Information: Name, email address, phone number, and password when you register or sign in via Google OAuth.',
+          'Order & Delivery Information: Shipping address, billing address, order history, and contact details required to fulfill your orders.',
+          'Location Data: With your explicit permission, we access device location (Fine & Coarse location) solely to auto-fill your delivery address for faster checkout.',
+          'Device & Usage Data: IP address, device model, operating system, and browser type for security and app optimization.',
         ],
       },
       {
-        heading: 'Data Security',
-        body: 'We use industry-standard encryption and secure payment gateways. We never store your full card details on our servers.',
+        heading: '3. Payment & Billing Information',
+        body: 'We support online payments via Razorpay and Cash on Delivery (COD). All online transaction details are handled securely by Razorpay. We do NOT store your bank details, credit/debit card numbers, or UPI PINs on our servers.',
       },
       {
-        heading: 'Your Rights',
-        body: 'You may request access, correction, or deletion of your personal data by emailing privacy@buylowindia.com.',
+        heading: '4. How We Use Your Information',
+        list: [
+          'To create and manage your account and profile',
+          'To process, fulfill, and deliver your orders and manage returns',
+          'To send order updates, invoices, and support notifications',
+          'To auto-fill delivery addresses via device location permissions',
+          'To detect and prevent fraudulent transactions or security incidents',
+        ],
+      },
+      {
+        heading: '5. Third-Party Services & Data Sharing',
+        body: 'We do not sell or rent your personal data to third parties. We share data only with trusted third-party service providers required for app operations:',
+        list: [
+          'Google Authentication (Google Sign-In for user authorization)',
+          'Razorpay (Secure payment processing gateway)',
+          'Courier & Delivery Partners (For shipping and delivering physical orders)',
+          'Render (Cloud hosting & backend infrastructure)',
+        ],
+      },
+      {
+        heading: '6. Cookies and Local Storage',
+        body: 'We use essential cookies and browser local storage to maintain your user session, remember cart items, and keep you securely logged in.',
+      },
+      {
+        heading: '7. Data Security & Retention',
+        body: 'We implement industry-standard technical measures (HTTPS encryption, JWT authorization) to protect your data against unauthorized access. We retain personal data as long as your account is active or needed to satisfy order and legal requirements.',
+      },
+      {
+        heading: '8. Account Deletion & Data Rights',
+        body: 'You have the right to access, update, or request deletion of your personal account data at any time. To request account or data deletion, email our support team at support@buylow.store.',
+      },
+      {
+        heading: '9. Contact Us',
+        body: 'If you have any questions or concerns about this Privacy Policy, please contact us at:\n\nEmail: support@buylow.store\nApp Package: com.buylowindia.app\nWebsite: https://buylow-store.onrender.com',
       },
     ],
   },

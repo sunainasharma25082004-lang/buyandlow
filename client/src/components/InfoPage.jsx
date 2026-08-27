@@ -3,10 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import footerPages from '../data/footerPages';
 import './InfoPage.css';
 
-const InfoPage = () => {
+const InfoPage = ({ slugOverride }) => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const page = footerPages[slug];
+  const pageKey = slugOverride || slug;
+  const page = footerPages[pageKey];
 
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);

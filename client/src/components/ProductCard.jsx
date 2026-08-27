@@ -52,7 +52,17 @@ const ProductCard = ({ product, className = '' }) => {
       onClick={goToProduct}
     >
       <div className="product-card-media">
-        <img src={resolveMediaUrl(product.image)} alt={product.name} className="product-card-img" loading="lazy" />
+        <img
+          src={resolveMediaUrl(product.image) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80'}
+          alt={product.name}
+          className="product-card-img"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
+          }}
+        />
 
         {product.badge && (
           <span className={`product-card-badge ${badgeClass(product.badge)}`}>

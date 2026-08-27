@@ -52,7 +52,7 @@ app.use(cors({
       return;
     }
 
-    if (!isProduction && isLocalDevOrigin(normalized)) {
+    if (isLocalDevOrigin(normalized)) {
       callback(null, true);
       return;
     }

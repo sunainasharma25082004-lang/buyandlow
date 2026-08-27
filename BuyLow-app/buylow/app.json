@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "buylow",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -15,6 +15,7 @@
       }
     },
     "android": {
+      "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
@@ -23,7 +24,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.viz_eas_001.buylow"
+      "package": "com.buylowindia.app"
     },
     "web": {
       "bundler": "metro",
@@ -60,9 +61,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d920f0ec-e6eb-44a5-9159-9edd123c4d54"
+        "projectId": "fccfa9b3-05ac-414f-a818-ea327bf560c3"
       }
     },
-    "owner": "viz_eas_001"
+    "owner": "terii9918"
   }
 }

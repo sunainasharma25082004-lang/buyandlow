@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../constants/colors';
-import { useLanguage } from '../context/LanguageContext';
-import type { Language } from '../i18n/types';
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import {
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { Colors } from "../constants/colors";
+import { useLanguage } from "../context/LanguageContext";
+import type { Language } from "../i18n/types";
 
 type Props = {
   visible: boolean;
@@ -19,10 +26,15 @@ export default function LanguagePicker({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>{t('account.selectLanguage')}</Text>
+          <Text style={styles.title}>{t("account.selectLanguage")}</Text>
           {languages.map((item) => {
             const selected = language === item.code;
             return (
@@ -36,7 +48,11 @@ export default function LanguagePicker({ visible, onClose }: Props) {
                   <Text style={styles.optionSub}>{item.label}</Text>
                 </View>
                 {selected ? (
-                  <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={22}
+                    color={Colors.primary}
+                  />
                 ) : null}
               </TouchableOpacity>
             );
@@ -50,8 +66,8 @@ export default function LanguagePicker({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-end",
   },
   sheet: {
     backgroundColor: Colors.white,
@@ -62,15 +78,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 12,
@@ -84,7 +100,7 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text,
   },
   optionSub: {

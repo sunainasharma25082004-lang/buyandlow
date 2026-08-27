@@ -81,7 +81,16 @@ const ShopCategories = () => {
                 style={{ cursor: 'pointer' }}
               >
                 <div className="cat-img-wrap">
-                  <img src={resolveMediaUrl(cat.image)} alt={cat.title || cat.name} className="cat-img" />
+                  <img
+                    src={resolveMediaUrl(cat.image) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80'}
+                    alt={cat.title || cat.name}
+                    className="cat-img"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80';
+                    }}
+                  />
                   <div className="cat-overlay" />
                 </div>
                 <div className="cat-info">

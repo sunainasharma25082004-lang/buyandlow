@@ -178,6 +178,7 @@ const HeroSection = () => {
                               alt={product.name}
                               className="hero-card-img"
                               loading="lazy"
+                              referrerPolicy="no-referrer"
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.src = DEFAULT_FALLBACK_IMG;

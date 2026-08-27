@@ -66,6 +66,7 @@ function App() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/orders" element={<OrderHistory />} />
               <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="/privacy-policy" element={<InfoPage slugOverride="privacy-policy" />} />
               <Route path="/page/:slug" element={<InfoPage />} />
             </Routes>
             </main>
