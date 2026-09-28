@@ -19,8 +19,9 @@ export const authLimiter = rateLimit({
 
 export const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 30,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => Boolean(req.headers.authorization),
   message: { success: false, message: 'Upload limit reached, try again later' },
 });

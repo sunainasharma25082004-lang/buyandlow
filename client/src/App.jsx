@@ -30,13 +30,19 @@ import ScrollToTop from "./components/ScrollToTop";
 import "./index.css";
 
 const HomePage = () => {
+  const [featuredIds, setFeaturedIds] = React.useState([]);
+
   return (
     <>
       <HeroSection />
       <ShopCategories />
-      <FeaturedProducts />
-      <SummerCollection />
-      <NewArrivals />
+      <FeaturedProducts
+        onLoadedProducts={(prods) =>
+          setFeaturedIds((prods || []).map((p) => String(p._id || p.id || '')))
+        }
+      />
+      <SummerCollection excludeIds={featuredIds} />
+      <NewArrivals excludeIds={featuredIds} />
       <CustomerReviews />
       <Newsletter />
     </>

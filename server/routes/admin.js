@@ -302,7 +302,11 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
 
   const finalPrice = price !== undefined && price !== '' && !isNaN(Number(price)) ? Math.max(0, Number(price)) : 0;
   const defaultImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80';
-  const finalImage = (image && String(image).trim()) || defaultImage;
+  const cleanImages = Array.isArray(images)
+    ? images.map((i) => (typeof i === 'string' ? i.trim() : '')).filter(Boolean)
+    : [];
+  const finalImage = (image && String(image).trim()) || (cleanImages.length > 0 ? cleanImages[0] : defaultImage);
+  const finalImages = cleanImages.length > 0 ? cleanImages : [finalImage];
 
   let resolvedCategory = (category && String(category).trim()) || '';
   const resolvedSubcategory = (subcategory && String(subcategory).trim()) || '';
@@ -375,7 +379,7 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
     rating: rating !== undefined && !isNaN(Number(rating)) ? Number(rating) : 4.5,
     reviews: reviews !== undefined && !isNaN(Number(reviews)) ? Number(reviews) : 0,
     image: finalImage,
-    images: images?.length ? images : [finalImage],
+    images: finalImages,
     badge: badge || null,
     category: resolvedCategory,
     subcategory: resolvedSubcategory,
@@ -417,15 +421,34 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
     const idx = global.adminProducts.findIndex((p) => p._id === req.params.id);
     if (idx === -1) return res.status(404).json({ success: false, message: 'Product not found' });
 
+    const cleanImgs = req.body.images !== undefined
+      ? (Array.isArray(req.body.images) ? req.body.images.filter(Boolean) : [])
+      : global.adminProducts[idx].images || [];
+
     global.adminProducts[idx] = {
       ...global.adminProducts[idx],
       ...req.body,
+      images: cleanImgs.length > 0 ? cleanImgs : (req.body.image ? [req.body.image] : global.adminProducts[idx].images),
+      image: req.body.image || (cleanImgs.length > 0 ? cleanImgs[0] : global.adminProducts[idx].image),
       price: req.body.price !== undefined ? Number(req.body.price) : global.adminProducts[idx].price,
       oldPrice: req.body.oldPrice !== undefined ? (req.body.oldPrice ? Number(req.body.oldPrice) : null) : global.adminProducts[idx].oldPrice,
       stock: req.body.stock !== undefined ? Number(req.body.stock) : global.adminProducts[idx].stock,
       subcategory: req.body.subcategory !== undefined ? String(req.body.subcategory).trim() : global.adminProducts[idx].subcategory || '',
       updatedAt: new Date().toISOString(),
     };
+
+    if (global.adminProducts[idx].subcategory && global.adminProducts[idx].category) {
+      const catObj = (global.adminCategories || []).find(
+        (c) => c.name.toLowerCase() === global.adminProducts[idx].category.toLowerCase()
+      );
+      if (catObj) {
+        catObj.subcategories = catObj.subcategories || [];
+        if (!catObj.subcategories.includes(global.adminProducts[idx].subcategory)) {
+          catObj.subcategories.push(global.adminProducts[idx].subcategory);
+        }
+      }
+    }
+
     return res.json(global.adminProducts[idx]);
   }
 
@@ -440,6 +463,14 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
   fields.forEach((field) => {
     if (req.body[field] !== undefined) product[field] = req.body[field];
   });
+
+  if (Array.isArray(req.body.images)) {
+    const clean = req.body.images.map((i) => (typeof i === 'string' ? i.trim() : '')).filter(Boolean);
+    product.images = clean;
+    if (!product.image && clean.length > 0) {
+      product.image = clean[0];
+    }
+  }
 
   product = await product.save();
 

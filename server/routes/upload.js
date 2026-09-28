@@ -52,19 +52,19 @@ const makeStorage = (dir) =>
 const productUpload = multer({
   storage: makeStorage(productUploadDir),
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 const reviewUpload = multer({
   storage: makeStorage(reviewUploadDir),
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 const handleUpload = (subdir) => (req, res, err, file) => {
   if (err) {
     const message = err.code === 'LIMIT_FILE_SIZE'
-      ? 'Image must be smaller than 5MB'
+      ? 'Image must be smaller than 10MB'
       : err.message;
     return res.status(400).json({ success: false, message });
   }
@@ -80,15 +80,72 @@ const handleUpload = (subdir) => (req, res, err, file) => {
     success: true,
     url: imagePath,
     fullUrl: `${publicBase}${imagePath}`,
+    urls: [imagePath],
+    fullUrls: [`${publicBase}${imagePath}`],
     filename: file.filename,
     size: file.size,
   });
 };
 
+const handleMultipleUpload = (subdir) => (req, res, err, files) => {
+  if (err) {
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'Each image must be smaller than 10MB'
+      : err.message;
+    return res.status(400).json({ success: false, message });
+  }
+
+  const fileList = Array.isArray(files) ? files : (files ? [files] : []);
+  if (fileList.length === 0) {
+    return res.status(400).json({ success: false, message: 'No image file provided' });
+  }
+
+  const publicBase = getPublicBaseUrl(req);
+  const uploadedFiles = fileList.map((file) => {
+    const imagePath = `/uploads/${subdir}/${file.filename}`;
+    return {
+      url: imagePath,
+      fullUrl: `${publicBase}${imagePath}`,
+      filename: file.filename,
+      size: file.size,
+    };
+  });
+
+  const urls = uploadedFiles.map((f) => f.url);
+  const fullUrls = uploadedFiles.map((f) => f.fullUrl);
+
+  return res.status(201).json({
+    success: true,
+    urls,
+    fullUrls,
+    files: uploadedFiles,
+    url: urls[0],
+    fullUrl: fullUrls[0],
+    filename: uploadedFiles[0].filename,
+    size: uploadedFiles[0].size,
+  });
+};
+
+router.post('/multiple', protect, admin, uploadLimiter, (req, res) => {
+  productUpload.array('images', 30)(req, res, (err) => {
+    if (err) {
+      return handleMultipleUpload('products')(req, res, err, null);
+    }
+    return handleMultipleUpload('products')(req, res, null, req.files);
+  });
+});
+
 router.post('/', protect, admin, uploadLimiter, (req, res) => {
-  productUpload.single('image')(req, res, (err) =>
-    handleUpload('products')(req, res, err, req.file),
-  );
+  productUpload.any()(req, res, (err) => {
+    if (err) {
+      return handleUpload('products')(req, res, err, null);
+    }
+    if (req.files && req.files.length > 1) {
+      return handleMultipleUpload('products')(req, res, null, req.files);
+    }
+    const singleFile = req.files && req.files.length === 1 ? req.files[0] : null;
+    return handleUpload('products')(req, res, null, singleFile);
+  });
 });
 
 router.post('/review', protect, uploadLimiter, (req, res) => {

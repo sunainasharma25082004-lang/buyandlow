@@ -50,4 +50,13 @@ export const uploadImage = (file) => {
   return API.post('/admin/upload', formData);
 };
 
+export const uploadMultipleImages = (files) => {
+  const formData = new FormData();
+  const fileArray = Array.from(files || []);
+  fileArray.forEach((file) => {
+    formData.append('images', file);
+  });
+  return API.post('/admin/upload/multiple', formData);
+};
+
 export default API;

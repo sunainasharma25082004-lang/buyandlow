@@ -10,7 +10,7 @@ const getDiscount = (product) => {
   return Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100);
 };
 
-const SummerCollection = () => {
+const SummerCollection = ({ excludeIds = [] }) => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,10 +18,28 @@ const SummerCollection = () => {
   useEffect(() => {
     axios
       .get(`${API_URL}/products`, { params: { limit: 8, sale: true, sort: 'Price: High to Low' } })
-      .then((res) => setProducts(res.data.products || []))
+      .then((res) => {
+        const list = res.data.products || [];
+        const seen = new Set();
+        const unique = list.filter((p) => {
+          const id = String(p._id || p.id || '');
+          if (!id || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        setProducts(unique);
+      })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const availableProducts = (products || []).filter(
+    (p) => !excludeIds.includes(String(p._id || p.id))
+  );
+
+  if (!loading && availableProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="summer-collection sale-section">
@@ -42,11 +60,11 @@ const SummerCollection = () => {
 
         {loading ? (
           <div className="sale-loading">Loading sale items...</div>
-        ) : products.length === 0 ? (
+        ) : availableProducts.length === 0 ? (
           <div className="sale-empty">No sale items right now. Check back soon!</div>
         ) : (
           <div className="sale-products-grid">
-            {products.map((product) => (
+            {availableProducts.map((product) => (
               <div key={product._id || product.id} className="sale-card-wrap">
                 {getDiscount(product) > 0 && (
                   <span className="sale-discount-tag">-{getDiscount(product)}%</span>

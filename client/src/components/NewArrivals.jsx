@@ -10,7 +10,7 @@ const StarRating = ({ rating }) => (
   <span className="stars">{'★'.repeat(Math.floor(rating))}{'☆'.repeat(5 - Math.floor(rating))}</span>
 );
 
-const NewArrivals = () => {
+const NewArrivals = ({ excludeIds = [] }) => {
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
   const [products, setProducts] = useState([]);
@@ -18,11 +18,29 @@ const NewArrivals = () => {
 
   useEffect(() => {
     axios
-      .get(`${API_URL}/products`, { params: { sort: 'Newest', limit: 6 } })
-      .then((res) => setProducts(res.data.products || []))
+      .get(`${API_URL}/products`, { params: { sort: 'Newest', limit: 8 } })
+      .then((res) => {
+        const list = res.data.products || [];
+        const seen = new Set();
+        const unique = list.filter((p) => {
+          const id = String(p._id || p.id || '');
+          if (!id || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        setProducts(unique);
+      })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const availableProducts = (products || []).filter(
+    (p) => !excludeIds.includes(String(p._id || p.id))
+  );
+
+  if (!loading && availableProducts.length === 0) {
+    return null;
+  }
 
   return (
     <section className="new-arrivals">
@@ -40,11 +58,11 @@ const NewArrivals = () => {
 
         {loading ? (
           <div className="arrivals-loading">Loading latest products...</div>
-        ) : products.length === 0 ? (
+        ) : availableProducts.length === 0 ? (
           <div className="arrivals-empty">No new products yet. Check back soon!</div>
         ) : (
           <div className="arrivals-list">
-            {products.map((item) => {
+            {availableProducts.map((item) => {
               const prodId = item._id || item.id;
               const desc = typeof item.description === 'string'
                 ? item.description.slice(0, 80) + (item.description.length > 80 ? '…' : '')

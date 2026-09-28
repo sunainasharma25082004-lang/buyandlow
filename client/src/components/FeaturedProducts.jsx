@@ -5,7 +5,7 @@ import API_URL from '../config/api';
 import ProductCard from './ProductCard';
 import './FeaturedProducts.css';
 
-const FeaturedProducts = () => {
+const FeaturedProducts = ({ onLoadedProducts }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('All');
   const [tabs, setTabs] = useState(['All']);
@@ -22,7 +22,18 @@ const FeaturedProducts = () => {
 
     axios
       .get(`${API_URL}/products`, { params: { limit: 8, sort: 'Popular' } })
-      .then((res) => setProducts(res.data.products || []))
+      .then((res) => {
+        const list = res.data.products || [];
+        const seen = new Set();
+        const unique = list.filter((p) => {
+          const id = String(p._id || p.id || '');
+          if (!id || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        setProducts(unique);
+        if (onLoadedProducts) onLoadedProducts(unique);
+      })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, []);

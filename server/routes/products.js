@@ -26,7 +26,14 @@ const filterStaticProducts = (queryOptions) => {
     _id: `static_id_${p.id || index}`,
     ...p,
   }));
-  let list = [...adminAdded, ...staticMapped];
+  const combined = [...adminAdded, ...staticMapped];
+  const seenMap = new Set();
+  let list = combined.filter((p) => {
+    const id = String(p._id || p.id || '');
+    if (!id || seenMap.has(id)) return false;
+    seenMap.add(id);
+    return true;
+  });
 
   if (keyword) {
     const kw = keyword.toLowerCase();
@@ -121,9 +128,17 @@ router.get('/', asyncHandler(async (req, res) => {
     Product.find(query).sort(sortOptions).skip(skip).limit(limit),
   ]);
 
+  const seenDbIds = new Set();
+  const uniqueProducts = products.filter((p) => {
+    const id = String(p._id || p.id || '');
+    if (!id || seenDbIds.has(id)) return false;
+    seenDbIds.add(id);
+    return true;
+  });
+
   res.json({
     success: true,
-    products,
+    products: uniqueProducts,
     page,
     pages: Math.ceil(count / limit) || 1,
     total: count,

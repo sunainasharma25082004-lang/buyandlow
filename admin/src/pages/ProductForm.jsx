@@ -1,7 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getProducts, getCategories, createProduct, updateProduct, uploadImage } from '../api';
+import {
+  getProducts,
+  getCategories,
+  createProduct,
+  updateProduct,
+  uploadImage,
+  uploadMultipleImages,
+} from '../api';
 import AdminImage from '../components/AdminImage';
+
 const BADGES = ['', 'SALE', 'NEW', 'HOT'];
 
 const emptyForm = {
@@ -16,6 +24,7 @@ const emptyForm = {
   rating: 4.5,
   reviews: 0,
   image: '',
+  images: [],
   description: '',
   badge: '',
   colors: '',
@@ -27,15 +36,19 @@ const ProductForm = () => {
   const isEdit = Boolean(id);
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [imageMode, setImageMode] = useState('url');
+  const [uploadingText, setUploadingText] = useState('');
+  const [imageMode, setImageMode] = useState('upload'); // default to device upload
+  const [urlInput, setUrlInput] = useState('');
   const [error, setError] = useState('');
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [customSubcategoryMode, setCustomSubcategoryMode] = useState(false);
+  const [allExistingProducts, setAllExistingProducts] = useState([]);
 
   useEffect(() => {
     getCategories()
@@ -48,90 +61,177 @@ const ProductForm = () => {
       })
       .catch(() => setError('Failed to load categories. Add categories first.'))
       .finally(() => setCategoriesLoading(false));
+
+    getProducts()
+      .then((res) => {
+        setAllExistingProducts(res.data || []);
+      })
+      .catch(() => {});
   }, [isEdit]);
 
   useEffect(() => {
     if (!isEdit) return;
     getProducts()
       .then((res) => {
-        const product = res.data.find((p) => p._id === id);
+        const product = (res.data || []).find((p) => p._id === id);
         if (!product) {
           setError('Product not found');
           return;
         }
+
+        const prodImages = Array.isArray(product.images) && product.images.length > 0
+          ? product.images.filter(Boolean)
+          : (product.image ? [product.image] : []);
+        const mainImg = product.image || (prodImages.length > 0 ? prodImages[0] : '');
+
         setForm({
           name: product.name || '',
-          price: product.price || '',
-          oldPrice: product.oldPrice || '',
-          category: product.category || 'Electronics',
+          price: product.price ?? '',
+          oldPrice: product.oldPrice ?? '',
+          category: product.category || 'General',
           subcategory: product.subcategory || '',
-          brand: product.brand || '',
+          brand: product.brand || 'Truemart',
           sku: product.sku || '',
           stock: product.stock ?? 10,
           rating: product.rating ?? 4.5,
           reviews: product.reviews ?? 0,
-          image: product.image || '',
+          image: mainImg,
+          images: prodImages,
           description: product.description || '',
           badge: product.badge || '',
           colors: (product.colors || []).join(', '),
           tags: (product.tags || []).join(', '),
         });
-        setImageMode(product.image?.includes('/uploads/') ? 'upload' : 'url');
       })
       .catch(() => setError('Failed to load product. Check that the backend server is running.'))
       .finally(() => setLoading(false));
   }, [id, isEdit]);
-
-  const [localPreview, setLocalPreview] = useState('');
-
-  useEffect(() => {
-    return () => {
-      if (localPreview && localPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(localPreview);
-      }
-    };
-  }, [localPreview]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileSelect = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFilesSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file (JPG, PNG, WEBP, GIF)');
+    const invalid = files.filter((f) => !f.type.startsWith('image/'));
+    if (invalid.length > 0) {
+      setError('Please select valid image files (JPG, PNG, WEBP, GIF)');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be smaller than 5MB');
+    const oversized = files.filter((f) => f.size > 10 * 1024 * 1024);
+    if (oversized.length > 0) {
+      setError('Each image must be smaller than 10MB');
       return;
     }
-
-    // Immediately show local preview from file
-    if (localPreview && localPreview.startsWith('blob:')) {
-      URL.revokeObjectURL(localPreview);
-    }
-    const previewUrl = URL.createObjectURL(file);
-    setLocalPreview(previewUrl);
 
     setError('');
     setUploading(true);
+    setUploadingText(files.length > 1 ? `Uploading ${files.length} images...` : 'Uploading image...');
 
     try {
-      const { data } = await uploadImage(file);
-      const serverUrl = data.url || data.fullUrl;
-      setForm((prev) => ({ ...prev, image: serverUrl }));
-      setImageMode('upload');
+      let uploadedUrls = [];
+      if (files.length === 1) {
+        const { data } = await uploadImage(files[0]);
+        const url = data.url || data.fullUrl;
+        if (url) uploadedUrls = [url];
+      } else {
+        const { data } = await uploadMultipleImages(files);
+        uploadedUrls = data.urls || data.files?.map((f) => f.url) || [];
+      }
+
+      if (uploadedUrls.length > 0) {
+        setForm((prev) => {
+          const currentList = Array.isArray(prev.images) ? prev.images : [];
+          const updated = [...currentList, ...uploadedUrls];
+          return {
+            ...prev,
+            images: updated,
+            image: prev.image || updated[0],
+          };
+        });
+      }
     } catch (err) {
-      setLocalPreview('');
-      setError(err.response?.data?.message || 'Image upload failed');
+      setError(err.response?.data?.message || 'Images upload failed. Please try again.');
     } finally {
       setUploading(false);
+      setUploadingText('');
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAddUrl = () => {
+    if (!urlInput.trim()) return;
+    const urls = urlInput
+      .split(/[\n,]+/)
+      .map((u) => u.trim())
+      .filter(Boolean);
+
+    if (urls.length > 0) {
+      setForm((prev) => {
+        const currentList = Array.isArray(prev.images) ? prev.images : [];
+        const updated = [...currentList, ...urls];
+        return {
+          ...prev,
+          images: updated,
+          image: prev.image || updated[0],
+        };
+      });
+      setUrlInput('');
+    }
+  };
+
+  const handleSetMainImage = (index) => {
+    setForm((prev) => {
+      const currentList = [...(prev.images || [])];
+      if (index < 0 || index >= currentList.length) return prev;
+      const [selected] = currentList.splice(index, 1);
+      currentList.unshift(selected); // Put at index 0
+      return {
+        ...prev,
+        images: currentList,
+        image: selected,
+      };
+    });
+  };
+
+  const handleRemoveImage = (index) => {
+    setForm((prev) => {
+      const currentList = [...(prev.images || [])];
+      const removed = currentList.splice(index, 1)[0];
+      const newMain = currentList.length > 0
+        ? (prev.image === removed ? currentList[0] : prev.image)
+        : '';
+      return {
+        ...prev,
+        images: currentList,
+        image: newMain,
+      };
+    });
+  };
+
+  const handleMoveImage = (index, direction) => {
+    setForm((prev) => {
+      const currentList = [...(prev.images || [])];
+      const target = index + direction;
+      if (target < 0 || target >= currentList.length) return prev;
+      const temp = currentList[index];
+      currentList[index] = currentList[target];
+      currentList[target] = temp;
+      return {
+        ...prev,
+        images: currentList,
+        image: currentList[0],
+      };
+    });
+  };
+
+  const handleClearAllImages = () => {
+    if (window.confirm('Remove all images for this product?')) {
+      setForm((prev) => ({ ...prev, images: [], image: '' }));
     }
   };
 
@@ -147,7 +247,9 @@ const ProductForm = () => {
     setSaving(true);
 
     const defaultImg = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80';
-    const finalImg = form.image || defaultImg;
+    const cleanImages = (form.images || []).map((img) => String(img).trim()).filter(Boolean);
+    const finalMainImg = form.image?.trim() || (cleanImages.length > 0 ? cleanImages[0] : defaultImg);
+    const finalImages = cleanImages.length > 0 ? cleanImages : [finalMainImg];
     const finalCat = form.category || (categories.length > 0 ? categories[0].name : 'General');
 
     const payload = {
@@ -161,8 +263,8 @@ const ProductForm = () => {
       stock: form.stock !== '' && !isNaN(Number(form.stock)) ? Number(form.stock) : 10,
       rating: form.rating !== '' && !isNaN(Number(form.rating)) ? Number(form.rating) : 4.5,
       reviews: Number(form.reviews) || 0,
-      image: finalImg,
-      images: [finalImg],
+      image: finalMainImg,
+      images: finalImages,
       description: form.description || '',
       badge: form.badge || null,
       colors: form.colors ? form.colors.split(',').map((c) => c.trim()).filter(Boolean) : [],
@@ -183,7 +285,7 @@ const ProductForm = () => {
         (err.response?.status === 401 ? 'Session expired. Please log in again.' : null) ||
         (err.response?.status === 403 ? 'Not authorized as admin' : null) ||
         (err.code === 'ERR_NETWORK' || !err.response
-          ? 'Cannot reach backend server. If you are on Render, wait ~30s for the free service to wake up and try again.'
+          ? 'Cannot reach backend server. Please verify the backend is running.'
           : err.message || 'Failed to save product');
       setError(errorMsg);
       console.error('Failed to save product:', err);
@@ -197,14 +299,30 @@ const ProductForm = () => {
   const selectedCat = categories.find(
     (c) => String(c.name).toLowerCase() === String(form.category || '').toLowerCase()
   );
-  const availableSubcategories = selectedCat?.subcategories || [];
+  const categorySubcategories = selectedCat?.subcategories || [];
+
+  // Also collect any subcategories used by existing products in this category
+  const productSubcategories = Array.from(
+    new Set(
+      allExistingProducts
+        .filter((p) => String(p.category || '').toLowerCase() === String(form.category || '').toLowerCase())
+        .map((p) => p.subcategory?.trim())
+        .filter(Boolean)
+    )
+  );
+
+  const mergedSubcategories = Array.from(
+    new Set([...categorySubcategories, ...productSubcategories])
+  );
+
+  const imagesList = Array.isArray(form.images) ? form.images : (form.image ? [form.image] : []);
 
   return (
     <div className="product-form-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">{isEdit ? 'Edit Product' : 'Add New Product'}</h1>
-          <p className="page-subtitle">Product will appear on the store immediately</p>
+          <p className="page-subtitle">Product and all uploaded images will appear on the store immediately</p>
         </div>
         <button className="btn btn-outline" onClick={() => navigate('/products')}>← Back</button>
       </div>
@@ -215,23 +333,46 @@ const ProductForm = () => {
         <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
           <div className="form-group">
             <label>Product Name *</label>
-            <input name="name" value={form.name} onChange={handleChange} required placeholder="Premium Wireless Headphones" />
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              placeholder="e.g. Premium Wireless Noise-Cancelling Headphones"
+            />
           </div>
 
           <div className="form-row">
             <div className="form-group">
               <label>Price (₹)</label>
-              <input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleChange} placeholder="0" />
+              <input
+                name="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.price}
+                onChange={handleChange}
+                placeholder="0"
+              />
             </div>
             <div className="form-group">
               <label>Old Price (₹)</label>
-              <input name="oldPrice" type="number" step="0.01" min="0" value={form.oldPrice} onChange={handleChange} placeholder="Optional" />
+              <input
+                name="oldPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.oldPrice}
+                onChange={handleChange}
+                placeholder="Optional strike-through price"
+              />
             </div>
           </div>
 
+          {/* Category & Subcategory */}
           <div className="form-row">
             <div className="form-group">
-              <label>Category</label>
+              <label>Category *</label>
               <select
                 name="category"
                 value={form.category}
@@ -241,9 +382,11 @@ const ProductForm = () => {
                 }}
                 disabled={categoriesLoading}
               >
-                <option value="">{categoriesLoading ? 'Loading...' : 'Select category (Optional)'}</option>
+                <option value="">{categoriesLoading ? 'Loading...' : 'Select category'}</option>
                 {categories.map((c) => (
-                  <option key={c._id} value={c.name}>{c.title || c.name}</option>
+                  <option key={c._id || c.name} value={c.name}>
+                    {c.title || c.name}
+                  </option>
                 ))}
               </select>
               {!categoriesLoading && categories.length === 0 && (
@@ -252,14 +395,34 @@ const ProductForm = () => {
                 </small>
               )}
             </div>
+
             <div className="form-group">
-              <label>Subcategory (Optional)</label>
-              {availableSubcategories.length > 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label style={{ margin: 0 }}>Subcategory (Optional)</label>
+                {form.subcategory ? (
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, subcategory: '' }))}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#d4af37',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    Clear selection
+                  </button>
+                ) : null}
+              </div>
+
+              {mergedSubcategories.length > 0 ? (
                 <div>
                   <select
                     name="subcategory"
                     value={
-                      availableSubcategories.includes(form.subcategory)
+                      mergedSubcategories.includes(form.subcategory)
                         ? form.subcategory
                         : form.subcategory
                         ? '__custom__'
@@ -267,7 +430,6 @@ const ProductForm = () => {
                     }
                     onChange={(e) => {
                       if (e.target.value === '__custom__') {
-                        setForm((prev) => ({ ...prev, subcategory: '' }));
                         setCustomSubcategoryMode(true);
                       } else {
                         setCustomSubcategoryMode(false);
@@ -275,30 +437,55 @@ const ProductForm = () => {
                       }
                     }}
                   >
-                    <option value="">Select subcategory (Optional)</option>
-                    {availableSubcategories.map((sub) => (
-                      <option key={sub} value={sub}>{sub}</option>
+                    <option value="">Select a subcategory (Optional)</option>
+                    {mergedSubcategories.map((sub) => (
+                      <option key={sub} value={sub}>
+                        {sub}
+                      </option>
                     ))}
                     <option value="__custom__">+ Enter custom subcategory...</option>
                   </select>
-                  {(customSubcategoryMode || (form.subcategory && !availableSubcategories.includes(form.subcategory))) && (
+
+                  {/* Quick suggestion chips */}
+                  <div className="subcat-chips-row">
+                    {mergedSubcategories.slice(0, 8).map((sub) => (
+                      <button
+                        key={sub}
+                        type="button"
+                        className={`subcat-chip-btn ${form.subcategory === sub ? 'active' : ''}`}
+                        onClick={() => {
+                          setCustomSubcategoryMode(false);
+                          setForm((prev) => ({ ...prev, subcategory: sub }));
+                        }}
+                      >
+                        {form.subcategory === sub ? `✓ ${sub}` : sub}
+                      </button>
+                    ))}
+                  </div>
+
+                  {(customSubcategoryMode || (form.subcategory && !mergedSubcategories.includes(form.subcategory))) && (
                     <input
                       name="subcategory"
                       value={form.subcategory}
                       onChange={handleChange}
                       placeholder="Type custom subcategory name..."
-                      style={{ marginTop: '8px' }}
+                      style={{ marginTop: '10px' }}
                       autoFocus
                     />
                   )}
                 </div>
               ) : (
-                <input
-                  name="subcategory"
-                  value={form.subcategory}
-                  onChange={handleChange}
-                  placeholder="e.g. Mobiles, Laptops, Audio (Optional)"
-                />
+                <div>
+                  <input
+                    name="subcategory"
+                    value={form.subcategory}
+                    onChange={handleChange}
+                    placeholder="e.g. Mobiles, Laptops, Headphones, Shirts (Optional)"
+                  />
+                  <small className="text-muted" style={{ display: 'block', marginTop: '4px', fontSize: '11px' }}>
+                    Tip: Subcategory entered here will automatically be linked to this category.
+                  </small>
+                </div>
               )}
             </div>
           </div>
@@ -311,7 +498,11 @@ const ProductForm = () => {
             <div className="form-group">
               <label>Badge</label>
               <select name="badge" value={form.badge} onChange={handleChange}>
-                {BADGES.map((b) => <option key={b} value={b}>{b || 'None'}</option>)}
+                {BADGES.map((b) => (
+                  <option key={b} value={b}>
+                    {b || 'None'}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -330,110 +521,238 @@ const ProductForm = () => {
           <div className="form-row">
             <div className="form-group">
               <label>Rating</label>
-              <input name="rating" type="number" step="0.1" min="0" max="5" value={form.rating} onChange={handleChange} placeholder="4.5" />
+              <input
+                name="rating"
+                type="number"
+                step="0.1"
+                min="0"
+                max="5"
+                value={form.rating}
+                onChange={handleChange}
+                placeholder="4.5"
+              />
             </div>
             <div className="form-group">
               <label>Reviews Count</label>
-              <input name="reviews" type="number" min="0" value={form.reviews} onChange={handleChange} placeholder="0" />
+              <input
+                name="reviews"
+                type="number"
+                min="0"
+                value={form.reviews}
+                onChange={handleChange}
+                placeholder="0"
+              />
             </div>
           </div>
 
-          {/* Image section */}
-          <div className="form-group image-upload-section">
-            <label>Product Image</label>
+          {/* Multiple Product Images Upload & Gallery Section */}
+          <div className="form-group image-upload-section" style={{ marginTop: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>
+                Product Images (Multiple Upload Supported)
+              </label>
+              {imagesList.length > 0 && (
+                <span className="multi-image-count">
+                  {imagesList.length} Image{imagesList.length > 1 ? 's' : ''} Uploaded
+                </span>
+              )}
+            </div>
+            <p className="text-muted" style={{ fontSize: '12px', marginBottom: '12px' }}>
+              Upload multiple photos from your device or paste URLs. The 1st photo (marked "Main Cover") will be displayed on product cards and search results.
+            </p>
 
             <div className="image-mode-tabs">
-              <button
-                type="button"
-                className={`mode-tab ${imageMode === 'url' ? 'active' : ''}`}
-                onClick={() => setImageMode('url')}
-              >
-                🔗 Image URL
-              </button>
               <button
                 type="button"
                 className={`mode-tab ${imageMode === 'upload' ? 'active' : ''}`}
                 onClick={() => setImageMode('upload')}
               >
-                📁 Upload from Device
+                📁 Upload from Device (Multiple Files)
+              </button>
+              <button
+                type="button"
+                className={`mode-tab ${imageMode === 'url' ? 'active' : ''}`}
+                onClick={() => setImageMode('url')}
+              >
+                🔗 Add by Image URL
               </button>
             </div>
 
-            {imageMode === 'url' ? (
-              <input
-                name="image"
-                value={form.image}
-                onChange={handleChange}
-                placeholder="https://images.unsplash.com/..."
-              />
-            ) : (
+            {imageMode === 'upload' ? (
               <div className="upload-dropzone">
                 <input
                   ref={fileInputRef}
                   type="file"
+                  multiple
                   accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleFileSelect}
+                  onChange={handleFilesSelect}
                   className="file-input-hidden"
-                  id="product-image-upload"
+                  id="product-images-upload"
+                  disabled={uploading}
                 />
-                <label htmlFor="product-image-upload" className="upload-label">
+                <label htmlFor="product-images-upload" className="upload-label">
                   {uploading ? (
-                    <span>Uploading...</span>
+                    <>
+                      <div className="spinner" style={{ width: 24, height: 24 }} />
+                      <span style={{ fontWeight: 600, color: 'var(--gold)' }}>{uploadingText || 'Uploading images...'}</span>
+                    </>
                   ) : (
                     <>
-                      <span className="upload-icon">📷</span>
-                      <span>Click to choose image from your computer</span>
-                      <span className="upload-hint">JPG, PNG, WEBP, GIF — max 5MB</span>
+                      <span className="upload-icon">📸</span>
+                      <span style={{ fontSize: '14px', fontWeight: 600 }}>Click to select images from your computer</span>
+                      <span className="upload-hint">
+                        You can select multiple photos at once (JPG, PNG, WEBP, GIF — max 10MB per image)
+                      </span>
                     </>
                   )}
                 </label>
-                {form.image && imageMode === 'upload' && (
-                  <p className="upload-success">✓ Image uploaded successfully</p>
-                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                <input
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddUrl();
+                    }
+                  }}
+                  placeholder="Paste image URL (https://images.unsplash.com/...) and click Add"
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={handleAddUrl}
+                  style={{ whiteSpace: 'nowrap', padding: '0 20px' }}
+                >
+                  + Add URL
+                </button>
               </div>
             )}
 
-            {(localPreview || form.image) && (
-              <div className="image-preview-wrap">
-                <AdminImage src={localPreview || form.image} alt="Preview" className="image-preview" />
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  onClick={() => {
-                    if (localPreview && localPreview.startsWith('blob:')) {
-                      URL.revokeObjectURL(localPreview);
-                    }
-                    setLocalPreview('');
-                    setForm((prev) => ({ ...prev, image: '' }));
-                  }}
-                >
-                  Remove Image
-                </button>
+            {/* Visual Image Manager Grid */}
+            {imagesList.length > 0 && (
+              <div className="multi-image-container">
+                <div className="multi-image-header">
+                  <h4>
+                    <span>🖼️ Product Gallery</span>
+                    <span className="multi-image-count">{imagesList.length} photos</span>
+                  </h4>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={handleClearAllImages}
+                    style={{ fontSize: '11px', color: '#ff6b6b', borderColor: 'rgba(255, 107, 107, 0.4)' }}
+                  >
+                    Clear All Images
+                  </button>
+                </div>
+
+                <div className="multi-image-grid">
+                  {imagesList.map((imgUrl, index) => {
+                    const isMain = index === 0 || form.image === imgUrl;
+                    return (
+                      <div key={`${imgUrl}-${index}`} className={`image-tile ${isMain ? 'is-main' : ''}`}>
+                        {isMain ? (
+                          <span className="main-image-tag">★ Main Cover</span>
+                        ) : (
+                          <span className="image-tile-index">#{index + 1}</span>
+                        )}
+
+                        <AdminImage src={imgUrl} alt={`Product ${index + 1}`} className="image-tile-img" />
+
+                        <div className="image-tile-actions">
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            {index > 0 && (
+                              <button
+                                type="button"
+                                className="tile-action-btn"
+                                onClick={() => handleMoveImage(index, -1)}
+                                title="Move Left"
+                              >
+                                ◀
+                              </button>
+                            )}
+                            {index < imagesList.length - 1 && (
+                              <button
+                                type="button"
+                                className="tile-action-btn"
+                                onClick={() => handleMoveImage(index, 1)}
+                                title="Move Right"
+                              >
+                                ▶
+                              </button>
+                            )}
+                            {!isMain && (
+                              <button
+                                type="button"
+                                className="tile-action-btn btn-make-main"
+                                onClick={() => handleSetMainImage(index)}
+                                title="Set as Main Cover Photo"
+                              >
+                                ★ Set Cover
+                              </button>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            className="tile-action-btn btn-delete-img"
+                            onClick={() => handleRemoveImage(index)}
+                            title="Remove this photo"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
 
-          <div className="form-group">
+          <div className="form-group" style={{ marginTop: '20px' }}>
             <label>Description</label>
-            <textarea name="description" value={form.description} onChange={handleChange} placeholder="Product description..." rows={4} />
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Detailed product features, specifications, and details..."
+              rows={4}
+            />
           </div>
 
           <div className="form-row">
             <div className="form-group">
               <label>Colors (comma separated)</label>
-              <input name="colors" value={form.colors} onChange={handleChange} placeholder="#1a1a1a, #C9A84C" />
+              <input
+                name="colors"
+                value={form.colors}
+                onChange={handleChange}
+                placeholder="Black, Silver, Gold or #1a1a1a, #C9A84C"
+              />
             </div>
             <div className="form-group">
               <label>Tags (comma separated)</label>
-              <input name="tags" value={form.tags} onChange={handleChange} placeholder="Wireless, Premium" />
+              <input
+                name="tags"
+                value={form.tags}
+                onChange={handleChange}
+                placeholder="Wireless, Premium, Trending, Bluetooth"
+              />
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
             <button type="submit" className="btn btn-gold" disabled={saving || uploading}>
               {saving ? 'Saving...' : isEdit ? 'Update Product' : 'Add Product'}
             </button>
-            <button type="button" className="btn btn-outline" onClick={() => navigate('/products')}>Cancel</button>
+            <button type="button" className="btn btn-outline" onClick={() => navigate('/products')}>
+              Cancel
+            </button>
           </div>
         </form>
       </div>

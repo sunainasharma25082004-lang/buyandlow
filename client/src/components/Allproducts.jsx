@@ -167,7 +167,14 @@ const Allproducts = () => {
 
         const res = await axios.get(`${API_URL}/products`, { params });
         const list = res.data.products || [];
-        setProductsList(list);
+        const seen = new Set();
+        const unique = list.filter((p) => {
+          const id = String(p._id || p.id || '');
+          if (!id || seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
+        setProductsList(unique);
         setTotalPages(res.data.pages);
         setTotalProducts(res.data.total);
       } catch (err) {
