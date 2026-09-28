@@ -36,6 +36,11 @@ if (isProduction) {
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginEmbedderPolicy: false,
+  xContentTypeOptions: true,
+  xFrameOptions: { action: 'sameorigin' },
+  xXssProtection: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   contentSecurityPolicy: false,
 }));
 

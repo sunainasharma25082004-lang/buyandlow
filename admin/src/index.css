@@ -127,6 +127,42 @@ button, input, select, textarea {
   color: var(--text);
 }
 
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrap input {
+  padding-right: 42px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color 0.2s ease, transform 0.1s ease;
+  border-radius: 4px;
+}
+
+.password-toggle-btn:hover {
+  color: var(--brand-dark);
+}
+
+.password-toggle-btn:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {

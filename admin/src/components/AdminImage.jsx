@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { resolveMediaUrl } from '../config/api';
 
 const FALLBACK =
@@ -12,6 +12,11 @@ const FALLBACK =
 
 const AdminImage = ({ src, alt = '', className, style }) => {
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
   const resolved = failed ? FALLBACK : resolveMediaUrl(src) || FALLBACK;
 
   return (

@@ -236,10 +236,22 @@ router.put('/orders/:id', protect, admin, asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
+  const prevStatus = order.orderStatus;
   const err = applyOrderUpdates(order, req.body);
   if (err) return res.status(400).json({ success: false, message: err });
 
   const updated = await order.save();
+
+  if (prevStatus !== 'cancelled' && updated.orderStatus === 'cancelled') {
+    for (const item of updated.orderItems || []) {
+      if (item.product) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: Number(item.quantity) || 1 },
+        });
+      }
+    }
+  }
+
   res.json(updated);
 }));
 

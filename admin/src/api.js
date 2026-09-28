@@ -48,7 +48,13 @@ export const uploadImage = (file) => {
   const formData = new FormData();
   formData.append('image', file);
   // Let axios set multipart boundary automatically — manual Content-Type breaks uploads
-  return API.post('/admin/upload', formData);
+  return API.post('/admin/upload', formData).then((res) => {
+    // Use the full URL returned by the backend for reliable image display
+    if (res?.data?.fullUrl) {
+      res.data.url = res.data.fullUrl;
+    }
+    return res;
+  });
 };
 
 export default API;

@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import Product from '../models/Product.js';
 import { protect } from '../middleware/authMiddleware.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { validateShippingAddress, validateOrderItems } from '../utils/validators.js';
@@ -69,7 +70,36 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: addressError });
   }
 
-  if (totalPrice == null || Number(totalPrice) <= 0) {
+  let verifiedItemsPrice = Number(itemsPrice) || 0;
+  const verifiedShippingPrice = Number(shippingPrice) || 0;
+
+  // Server-side price & stock verification when DB is connected
+  if (global.isDbConnected) {
+    let calculatedItemsPrice = 0;
+    for (const item of orderItems) {
+      const dbProduct = await Product.findById(item.product);
+      if (!dbProduct) {
+        return res.status(400).json({
+          success: false,
+          message: `Product "${item.name}" not found`,
+        });
+      }
+      if (dbProduct.stock != null && dbProduct.stock < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for "${dbProduct.name}". Only ${dbProduct.stock} left.`,
+        });
+      }
+      calculatedItemsPrice += Number(dbProduct.price) * Number(item.quantity);
+      // Ensure unit price is genuine
+      item.price = dbProduct.price;
+    }
+    verifiedItemsPrice = Math.round(calculatedItemsPrice * 100) / 100;
+  }
+
+  const verifiedTotalPrice = Math.round((verifiedItemsPrice + verifiedShippingPrice) * 100) / 100;
+
+  if (verifiedTotalPrice <= 0) {
     return res.status(400).json({ success: false, message: 'Invalid order total' });
   }
 
@@ -80,7 +110,7 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     razorpayOrderId = undefined;
   } else if (razorpay) {
     const rzpOrder = await razorpay.orders.create({
-      amount: Math.round(Number(totalPrice) * 100),
+      amount: Math.round(Number(verifiedTotalPrice) * 100),
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
     });
@@ -102,11 +132,11 @@ router.post('/', protect, asyncHandler(async (req, res) => {
       shippingAddress,
       paymentMethod: resolvedPaymentMethod,
       razorpayOrderId,
-      itemsPrice,
-      shippingPrice,
-      totalPrice: Number(totalPrice),
-      isPaid: isCod,
-      paidAt: isCod ? createdAt : undefined,
+      itemsPrice: verifiedItemsPrice,
+      shippingPrice: verifiedShippingPrice,
+      totalPrice: verifiedTotalPrice,
+      isPaid: false, // COD is only paid upon delivery
+      paidAt: undefined,
       isDelivered: false,
       orderStatus: isCod ? 'confirmed' : 'placed',
       expectedDeliveryDate: computeExpectedDelivery(new Date(createdAt)).toISOString(),
@@ -120,7 +150,7 @@ router.post('/', protect, asyncHandler(async (req, res) => {
       success: true,
       order: mockOrder,
       razorpayOrderId,
-      amount: Math.round(Number(totalPrice) * 100),
+      amount: Math.round(Number(verifiedTotalPrice) * 100),
       currency: 'INR',
       key_id: process.env.RAZORPAY_KEY_ID || 'simulated_key_id',
       simulated: !razorpay,
@@ -132,21 +162,31 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     orderItems,
     shippingAddress,
     paymentMethod: resolvedPaymentMethod,
-    itemsPrice: Number(itemsPrice),
-    shippingPrice: Number(shippingPrice),
-    totalPrice: Number(totalPrice),
+    itemsPrice: verifiedItemsPrice,
+    shippingPrice: verifiedShippingPrice,
+    totalPrice: verifiedTotalPrice,
     razorpayOrderId,
-    isPaid: isCod,
-    paidAt: isCod ? new Date() : undefined,
+    isPaid: false, // COD orders are marked paid by admin/courier on delivery
+    paidAt: undefined,
     orderStatus: isCod ? 'confirmed' : 'placed',
     expectedDeliveryDate: computeExpectedDelivery(),
   });
+
+  // For COD orders, decrement stock immediately and clear user cart
+  if (isCod) {
+    for (const item of orderItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: -Number(item.quantity) },
+      });
+    }
+    await User.findByIdAndUpdate(req.user._id, { cart: [] });
+  }
 
   res.status(201).json({
     success: true,
     order,
     razorpayOrderId,
-    amount: Math.round(Number(totalPrice) * 100),
+    amount: Math.round(Number(verifiedTotalPrice) * 100),
     currency: 'INR',
     key_id: process.env.RAZORPAY_KEY_ID || '',
     simulated: !razorpay,
@@ -154,7 +194,7 @@ router.post('/', protect, asyncHandler(async (req, res) => {
 }));
 
 router.post('/verify', protect, asyncHandler(async (req, res) => {
-  const { razorpayOrderId, razorpayPaymentId, razorpaySignature, simulated } = req.body;
+  const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
   if (!razorpayOrderId) {
     return res.status(400).json({ success: false, message: 'razorpayOrderId is required' });
@@ -209,7 +249,8 @@ router.post('/verify', protect, asyncHandler(async (req, res) => {
     return res.json({ success: true, message: 'Order already paid', order });
   }
 
-  const useSimulation = simulated || isSimulatedPayment();
+  // Simulation is only permitted when Razorpay is genuinely not configured and in dev mode
+  const useSimulation = !isProduction && isSimulatedPayment();
 
   if (!useSimulation) {
     if (!razorpayPaymentId || !razorpaySignature) {
@@ -234,6 +275,13 @@ router.post('/verify', protect, asyncHandler(async (req, res) => {
   order.razorpayPaymentId = razorpayPaymentId || `sim_pay_${Date.now()}`;
   order.razorpaySignature = razorpaySignature || `sim_sig_${Date.now()}`;
   await order.save();
+
+  // Deduct stock for verified online paid orders
+  for (const item of order.orderItems || []) {
+    await Product.findByIdAndUpdate(item.product, {
+      $inc: { stock: -Number(item.quantity) },
+    });
+  }
 
   await User.findByIdAndUpdate(req.user._id, { cart: [] });
 
@@ -280,6 +328,15 @@ router.put('/:id/cancel', protect, asyncHandler(async (req, res) => {
 
   applyCancellation(order, reason);
   await order.save();
+
+  // Restore inventory stock on cancellation
+  for (const item of order.orderItems || []) {
+    if (item.product) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: Number(item.quantity) || 1 },
+      });
+    }
+  }
 
   res.json({
     success: true,

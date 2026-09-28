@@ -18,11 +18,23 @@ const reviewUploadDir = path.join(__dirname, '../uploads/reviews');
 fs.mkdirSync(productUploadDir, { recursive: true });
 fs.mkdirSync(reviewUploadDir, { recursive: true });
 
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+]);
+
+const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
+
 const fileFilter = (_req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) {
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  const mime = (file.mimetype || '').toLowerCase();
+
+  if (ALLOWED_MIME_TYPES.has(mime) && ALLOWED_EXTENSIONS.has(ext)) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed (jpg, png, webp, gif)'), false);
+    cb(new Error('Only JPG, PNG, WEBP, and GIF images are allowed'), false);
   }
 };
 
@@ -30,8 +42,9 @@ const makeStorage = (dir) =>
   multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, dir),
     filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase() || '.png';
-      const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      const ext = path.extname(file.originalname || '').toLowerCase();
+      const safeExt = ALLOWED_EXTENSIONS.has(ext) ? ext : '.png';
+      const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`;
       cb(null, safeName);
     },
   });
