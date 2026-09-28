@@ -16,6 +16,7 @@ const productSchema = new mongoose.Schema({
   images: [{ type: String }],
   badge: { type: String, default: null },
   category: { type: String, default: 'General' },
+  subcategory: { type: String, default: '', trim: true },
   brand: { type: String, default: 'Truemart' },
   sku: { type: String, unique: true, sparse: true },
   stock: { type: Number, default: 10 },

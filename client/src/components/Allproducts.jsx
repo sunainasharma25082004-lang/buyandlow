@@ -28,10 +28,12 @@ const Allproducts = () => {
   const [searchParams] = useSearchParams();
   const [productsList, setProductsList] = useState([]);
   const [categories, setCategories] = useState(['All']);
+  const [categoryObjects, setCategoryObjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [activeCategory, setActiveCategory] = useState('All');
+  const [activeSubcategory, setActiveSubcategory] = useState('All');
   const [sortBy, setSortBy] = useState('Featured');
   const [activePriceRange, setActivePriceRange] = useState(null);
   const [activeRating, setActiveRating] = useState(null);
@@ -55,10 +57,15 @@ const Allproducts = () => {
   useEffect(() => {
     axios.get(`${API_URL}/categories`)
       .then((res) => {
-        const names = (res.data.categories || []).map((c) => c.name);
+        const catList = res.data.categories || [];
+        setCategoryObjects(catList);
+        const names = catList.map((c) => c.name);
         setCategories(['All', ...names]);
       })
-      .catch(() => setCategories(['All']));
+      .catch(() => {
+        setCategoryObjects([]);
+        setCategories(['All']);
+      });
   }, []);
 
   useEffect(() => {
@@ -77,12 +84,14 @@ const Allproducts = () => {
     const sort = searchParams.get('sort');
     const sale = searchParams.get('sale');
     const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
     const keyword = searchParams.get('keyword')?.trim() || '';
     const title = searchParams.get('title');
     const desc = searchParams.get('desc');
 
     setSortBy(sort && sortOptions.includes(sort) ? sort : 'Featured');
     setActiveCategory(category || 'All');
+    setActiveSubcategory(subcategory || 'All');
     setSearchKeyword(keyword);
     setSearchField(keyword);
     setSaleOnly(sale === 'true');
@@ -96,6 +105,8 @@ const Allproducts = () => {
       setPageTitle(title);
     } else if (keyword) {
       setPageTitle(`Search: ${keyword}`);
+    } else if (category && subcategory && subcategory !== 'All') {
+      setPageTitle(`${category} — ${subcategory}`);
     } else if (category) {
       setPageTitle(category);
     } else {
@@ -106,6 +117,8 @@ const Allproducts = () => {
       setPageDesc(desc);
     } else if (keyword) {
       setPageDesc(`Results matching "${keyword}"`);
+    } else if (category && subcategory && subcategory !== 'All') {
+      setPageDesc(`Browse ${subcategory} products in ${category}`);
     } else if (category) {
       setPageDesc(`Browse our ${category} collection`);
     } else {
@@ -129,6 +142,10 @@ const Allproducts = () => {
 
         if (activeCategory && activeCategory !== 'All') {
           params.category = activeCategory;
+        }
+
+        if (activeSubcategory && activeSubcategory !== 'All') {
+          params.subcategory = activeSubcategory;
         }
 
         if (searchKeyword.trim()) {
@@ -162,7 +179,7 @@ const Allproducts = () => {
     };
 
     fetchProducts();
-  }, [activeCategory, sortBy, activePriceRange, activeRating, searchKeyword, currentPage, saleOnly]);
+  }, [activeCategory, activeSubcategory, sortBy, activePriceRange, activeRating, searchKeyword, currentPage, saleOnly]);
 
   const handleCategorySelect = (cat) => {
     setShowMobileFilters(false);
@@ -191,6 +208,29 @@ const Allproducts = () => {
     navigate(`/allproducts?${params.toString()}`);
   };
 
+  const handleSubcategorySelect = (sub) => {
+    setShowMobileFilters(false);
+    setCurrentPage(1);
+
+    const params = new URLSearchParams(searchParams);
+    if (sub === 'All') {
+      params.delete('subcategory');
+      if (activeCategory !== 'All') {
+        params.set('title', activeCategory);
+        params.set('desc', `Browse our ${activeCategory} collection`);
+      } else {
+        params.delete('title');
+        params.delete('desc');
+      }
+    } else {
+      params.set('subcategory', sub);
+      const titlePrefix = activeCategory !== 'All' ? `${activeCategory} — ` : '';
+      params.set('title', `${titlePrefix}${sub}`);
+      params.set('desc', `Explore ${sub} collection`);
+    }
+    navigate(`/allproducts?${params.toString()}`);
+  };
+
   const buildSearchUrl = (query) => {
     const q = query.trim();
     if (!q) return '/allproducts';
@@ -209,6 +249,7 @@ const Allproducts = () => {
 
   const handleClearFilters = () => {
     setActiveCategory('All');
+    setActiveSubcategory('All');
     setActivePriceRange(null);
     setActiveRating(null);
     setSearchKeyword('');
@@ -218,6 +259,11 @@ const Allproducts = () => {
     setShowMobileFilters(false);
     navigate('/allproducts');
   };
+
+  const currentCatObj = categoryObjects.find(
+    (c) => String(c.name).toLowerCase() === String(activeCategory).toLowerCase()
+  );
+  const activeSubcategories = currentCatObj?.subcategories || [];
 
   return (
     <div className="all-products-page">
@@ -280,6 +326,47 @@ const Allproducts = () => {
           </button>
         </div>
 
+        {/* Subcategories strip if active category has subcategories */}
+        {activeCategory !== 'All' && activeSubcategories.length > 0 && (
+          <div
+            className="subcategory-strip"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '8px',
+              margin: '8px 0 20px',
+              padding: '10px 14px',
+              background: '#18181c',
+              border: '1px solid #2a2a32',
+              borderRadius: '12px',
+            }}
+          >
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#d4af37', marginRight: '4px' }}>
+              Subcategories:
+            </span>
+            <button
+              type="button"
+              className={`chip-btn ${activeSubcategory === 'All' ? 'active' : ''}`}
+              style={{ padding: '4px 12px', fontSize: '12px', borderRadius: '16px' }}
+              onClick={() => handleSubcategorySelect('All')}
+            >
+              All {activeCategory}
+            </button>
+            {activeSubcategories.map((sub) => (
+              <button
+                key={sub}
+                type="button"
+                className={`chip-btn ${activeSubcategory.toLowerCase() === sub.toLowerCase() ? 'active' : ''}`}
+                style={{ padding: '4px 12px', fontSize: '12px', borderRadius: '16px' }}
+                onClick={() => handleSubcategorySelect(sub)}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="ap-layout">
           {/* Sidebar */}
           <aside className={`ap-sidebar ${showMobileFilters ? 'mobile-show' : ''}`}>
@@ -307,6 +394,34 @@ const Allproducts = () => {
                 ))}
               </ul>
             </div>
+
+            {/* Subcategories (Sidebar) */}
+            {activeCategory !== 'All' && activeSubcategories.length > 0 && (
+              <div className="sidebar-section">
+                <h4 className="sidebar-title">{activeCategory} Subcategories</h4>
+                <ul className="sidebar-list">
+                  <li>
+                    <button
+                      className={`sidebar-item ${activeSubcategory === 'All' ? 'active' : ''}`}
+                      onClick={() => handleSubcategorySelect('All')}
+                    >
+                      <span>All {activeCategory}</span>
+                    </button>
+                  </li>
+                  {activeSubcategories.map((sub) => (
+                    <li key={sub}>
+                      <button
+                        className={`sidebar-item ${activeSubcategory.toLowerCase() === sub.toLowerCase() ? 'active' : ''}`}
+                        onClick={() => handleSubcategorySelect(sub)}
+                        style={{ paddingLeft: '16px' }}
+                      >
+                        <span>↳ {sub}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Price Range */}
             <div className="sidebar-section">

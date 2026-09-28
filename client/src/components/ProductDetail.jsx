@@ -140,6 +140,32 @@ const ProductDetail = () => {
             <span className="bc-link" onClick={() => navigate('/')}>Home</span>
             <span className="bc-sep">›</span>
             <span className="bc-link" onClick={() => navigate('/allproducts')}>Shop</span>
+            {product.category && (
+              <>
+                <span className="bc-sep">›</span>
+                <span
+                  className="bc-link"
+                  onClick={() => navigate(`/allproducts?category=${encodeURIComponent(product.category)}`)}
+                >
+                  {product.category}
+                </span>
+              </>
+            )}
+            {product.subcategory && (
+              <>
+                <span className="bc-sep">›</span>
+                <span
+                  className="bc-link"
+                  onClick={() =>
+                    navigate(
+                      `/allproducts?category=${encodeURIComponent(product.category)}&subcategory=${encodeURIComponent(product.subcategory)}`
+                    )
+                  }
+                >
+                  {product.subcategory}
+                </span>
+              </>
+            )}
             <span className="bc-sep">›</span>
             <span className="bc-current">{product.name}</span>
           </div>
@@ -204,6 +230,41 @@ const ProductDetail = () => {
               <span className="pd-brand">
                 {product.brand || "Artisanal"}
               </span>
+
+              {product.category && (
+                <span
+                  style={{
+                    fontSize: '12px',
+                    color: '#d4af37',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                  onClick={() => navigate(`/allproducts?category=${encodeURIComponent(product.category)}`)}
+                >
+                  {product.category}
+                </span>
+              )}
+
+              {product.subcategory && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    color: '#bbb',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() =>
+                    navigate(
+                      `/allproducts?category=${encodeURIComponent(product.category)}&subcategory=${encodeURIComponent(product.subcategory)}`
+                    )
+                  }
+                >
+                  {product.subcategory}
+                </span>
+              )}
 
               {product.badge && (
                 <span className={`pd-badge ${badgeClass(product.badge)}`}>

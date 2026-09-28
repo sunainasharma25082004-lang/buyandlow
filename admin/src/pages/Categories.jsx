@@ -77,6 +77,7 @@ const Categories = () => {
                   <tr>
                     <th>Category</th>
                     <th>Name (for products)</th>
+                    <th>Subcategories</th>
                     <th>Order</th>
                     <th>Homepage</th>
                     <th>Status</th>
@@ -105,6 +106,30 @@ const Categories = () => {
                         </div>
                       </td>
                       <td data-label="Product name">{cat.name}</td>
+                      <td data-label="Subcategories">
+                        {cat.subcategories && cat.subcategories.length > 0 ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '240px' }}>
+                            {cat.subcategories.map((sub) => (
+                              <span
+                                key={sub}
+                                style={{
+                                  background: 'rgba(212, 175, 55, 0.12)',
+                                  border: '1px solid rgba(212, 175, 55, 0.3)',
+                                  color: '#e0c068',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '11px',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {sub}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted" style={{ fontSize: '12px' }}>None</span>
+                        )}
+                      </td>
                       <td data-label="Order">{cat.sortOrder ?? 0}</td>
                       <td data-label="Homepage">{cat.showOnHome !== false ? 'Yes' : 'No'}</td>
                       <td data-label="Status">

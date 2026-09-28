@@ -19,6 +19,10 @@ const categorySchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  subcategories: {
+    type: [String],
+    default: [],
+  },
   sortOrder: {
     type: Number,
     default: 0,

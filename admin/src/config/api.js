@@ -1,6 +1,6 @@
 const trimTrailingSlash = (value) => (value ? value.replace(/\/+$/, '') : '');
 
-const DEFAULT_PROD_API_ORIGIN = 'https://buylow-api.onrender.com';
+const DEFAULT_PROD_API_ORIGIN = 'https://buyandlow-api.onrender.com';
 
 const getApiOrigin = () => {
   if (import.meta.env.VITE_API_ORIGIN) {
@@ -42,8 +42,9 @@ const rewriteStaleUploadUrl = (url) => {
     if (targetHost && parsed.host === targetHost) return url;
 
     const isFrontendOrLocal =
-      parsed.host.includes('buylow-admin') ||
-      parsed.host.includes('buylow-store') ||
+      parsed.host.includes('admin') ||
+      parsed.host.includes('store') ||
+      parsed.host.includes('frontend') ||
       parsed.host.includes('localhost') ||
       parsed.host === '127.0.0.1';
 

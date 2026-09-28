@@ -111,7 +111,10 @@ const ProductCard = ({ product, className = '' }) => {
       </div>
 
       <div className="product-card-body">
-        <p className="product-card-cat">{product.category}</p>
+        <p className="product-card-cat">
+          {product.category}
+          {product.subcategory ? ` • ${product.subcategory}` : ''}
+        </p>
         <h3 className="product-card-title">{product.name}</h3>
 
         <div className="product-card-bottom">

@@ -9,6 +9,7 @@ const emptyForm = {
   price: '',
   oldPrice: '',
   category: '',
+  subcategory: '',
   brand: 'Truemart',
   sku: '',
   stock: 10,
@@ -34,6 +35,7 @@ const ProductForm = () => {
   const [error, setError] = useState('');
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [customSubcategoryMode, setCustomSubcategoryMode] = useState(false);
 
   useEffect(() => {
     getCategories()
@@ -62,6 +64,7 @@ const ProductForm = () => {
           price: product.price || '',
           oldPrice: product.oldPrice || '',
           category: product.category || 'Electronics',
+          subcategory: product.subcategory || '',
           brand: product.brand || '',
           sku: product.sku || '',
           stock: product.stock ?? 10,
@@ -152,6 +155,7 @@ const ProductForm = () => {
       price: form.price !== '' && !isNaN(Number(form.price)) ? Math.max(0, Number(form.price)) : 0,
       oldPrice: form.oldPrice && !isNaN(Number(form.oldPrice)) ? Number(form.oldPrice) : null,
       category: finalCat,
+      subcategory: form.subcategory ? form.subcategory.trim() : '',
       brand: form.brand || 'Truemart',
       sku: form.sku?.trim() || undefined,
       stock: form.stock !== '' && !isNaN(Number(form.stock)) ? Number(form.stock) : 10,
@@ -174,13 +178,26 @@ const ProductForm = () => {
       }
       navigate('/products');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save product');
+      const errorMsg =
+        err.response?.data?.message ||
+        (err.response?.status === 401 ? 'Session expired. Please log in again.' : null) ||
+        (err.response?.status === 403 ? 'Not authorized as admin' : null) ||
+        (err.code === 'ERR_NETWORK' || !err.response
+          ? 'Cannot reach backend server. If you are on Render, wait ~30s for the free service to wake up and try again.'
+          : err.message || 'Failed to save product');
+      setError(errorMsg);
+      console.error('Failed to save product:', err);
     } finally {
       setSaving(false);
     }
   };
 
   if (loading) return <div className="loading-state">Loading product...</div>;
+
+  const selectedCat = categories.find(
+    (c) => String(c.name).toLowerCase() === String(form.category || '').toLowerCase()
+  );
+  const availableSubcategories = selectedCat?.subcategories || [];
 
   return (
     <div className="product-form-page">
@@ -215,7 +232,15 @@ const ProductForm = () => {
           <div className="form-row">
             <div className="form-group">
               <label>Category</label>
-              <select name="category" value={form.category} onChange={handleChange} disabled={categoriesLoading}>
+              <select
+                name="category"
+                value={form.category}
+                onChange={(e) => {
+                  handleChange(e);
+                  setCustomSubcategoryMode(false);
+                }}
+                disabled={categoriesLoading}
+              >
                 <option value="">{categoriesLoading ? 'Loading...' : 'Select category (Optional)'}</option>
                 {categories.map((c) => (
                   <option key={c._id} value={c.name}>{c.title || c.name}</option>
@@ -228,10 +253,53 @@ const ProductForm = () => {
               )}
             </div>
             <div className="form-group">
-              <label>Badge</label>
-              <select name="badge" value={form.badge} onChange={handleChange}>
-                {BADGES.map((b) => <option key={b} value={b}>{b || 'None'}</option>)}
-              </select>
+              <label>Subcategory (Optional)</label>
+              {availableSubcategories.length > 0 ? (
+                <div>
+                  <select
+                    name="subcategory"
+                    value={
+                      availableSubcategories.includes(form.subcategory)
+                        ? form.subcategory
+                        : form.subcategory
+                        ? '__custom__'
+                        : ''
+                    }
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        setForm((prev) => ({ ...prev, subcategory: '' }));
+                        setCustomSubcategoryMode(true);
+                      } else {
+                        setCustomSubcategoryMode(false);
+                        setForm((prev) => ({ ...prev, subcategory: e.target.value }));
+                      }
+                    }}
+                  >
+                    <option value="">Select subcategory (Optional)</option>
+                    {availableSubcategories.map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                    <option value="__custom__">+ Enter custom subcategory...</option>
+                  </select>
+                  {(customSubcategoryMode || (form.subcategory && !availableSubcategories.includes(form.subcategory))) && (
+                    <input
+                      name="subcategory"
+                      value={form.subcategory}
+                      onChange={handleChange}
+                      placeholder="Type custom subcategory name..."
+                      style={{ marginTop: '8px' }}
+                      autoFocus
+                    />
+                  )}
+                </div>
+              ) : (
+                <input
+                  name="subcategory"
+                  value={form.subcategory}
+                  onChange={handleChange}
+                  placeholder="e.g. Mobiles, Laptops, Audio (Optional)"
+                />
+              )}
             </div>
           </div>
 
@@ -241,19 +309,32 @@ const ProductForm = () => {
               <input name="brand" value={form.brand} onChange={handleChange} placeholder="Truemart" />
             </div>
             <div className="form-group">
-              <label>SKU</label>
-              <input name="sku" value={form.sku} onChange={handleChange} placeholder="Auto-generated if empty" />
+              <label>Badge</label>
+              <select name="badge" value={form.badge} onChange={handleChange}>
+                {BADGES.map((b) => <option key={b} value={b}>{b || 'None'}</option>)}
+              </select>
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group">
+              <label>SKU</label>
+              <input name="sku" value={form.sku} onChange={handleChange} placeholder="Auto-generated if empty" />
+            </div>
+            <div className="form-group">
               <label>Stock</label>
               <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} placeholder="10" />
             </div>
+          </div>
+
+          <div className="form-row">
             <div className="form-group">
               <label>Rating</label>
               <input name="rating" type="number" step="0.1" min="0" max="5" value={form.rating} onChange={handleChange} placeholder="4.5" />
+            </div>
+            <div className="form-group">
+              <label>Reviews Count</label>
+              <input name="reviews" type="number" min="0" value={form.reviews} onChange={handleChange} placeholder="0" />
             </div>
           </div>
 

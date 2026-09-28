@@ -12,10 +12,13 @@ import { isProduction } from '../config/env.js';
 
 const router = express.Router();
 
+const escapeRegex = (string) =>
+  string ? String(string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+
 const isOnSale = (p) => p.oldPrice != null && Number(p.oldPrice) > Number(p.price);
 
 const filterStaticProducts = (queryOptions) => {
-  const { keyword, category, minPrice, maxPrice, rating, sort, sale } = queryOptions;
+  const { keyword, category, subcategory, minPrice, maxPrice, rating, sort, sale } = queryOptions;
   const { page, limit } = clampPagination(queryOptions.page, queryOptions.limit);
 
   const adminAdded = (global.adminProducts || []).map((p) => ({ ...p }));
@@ -34,7 +37,11 @@ const filterStaticProducts = (queryOptions) => {
   }
 
   if (category && category !== 'All') {
-    list = list.filter((p) => p.category.toLowerCase() === category.toLowerCase());
+    list = list.filter((p) => p.category && p.category.toLowerCase() === category.toLowerCase());
+  }
+
+  if (subcategory && subcategory !== 'All') {
+    list = list.filter((p) => p.subcategory && p.subcategory.toLowerCase() === subcategory.toLowerCase());
   }
 
   if (sale === 'true') {
@@ -68,7 +75,7 @@ router.get('/', asyncHandler(async (req, res) => {
     return res.json(filterStaticProducts(req.query));
   }
 
-  const { keyword, category, minPrice, maxPrice, rating, sort, sale } = req.query;
+  const { keyword, category, subcategory, minPrice, maxPrice, rating, sort, sale } = req.query;
   const { page, limit } = clampPagination(req.query.page, req.query.limit);
   const query = {};
 
@@ -79,7 +86,13 @@ router.get('/', asyncHandler(async (req, res) => {
     ];
   }
 
-  if (category && category !== 'All') query.category = category;
+  if (category && category !== 'All') {
+    query.category = new RegExp(`^${escapeRegex(category)}$`, 'i');
+  }
+
+  if (subcategory && subcategory !== 'All') {
+    query.subcategory = new RegExp(`^${escapeRegex(subcategory)}$`, 'i');
+  }
 
   if (sale === 'true') {
     query.oldPrice = { $ne: null, $gt: 0 };

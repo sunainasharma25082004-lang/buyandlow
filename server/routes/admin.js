@@ -22,18 +22,40 @@ const router = express.Router();
 
 global.adminProducts = global.adminProducts || [];
 
+const escapeRegex = (string) =>
+  string ? String(string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+
 const sortCategories = (list) =>
   [...list].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
-const normalizeCategoryBody = (body) => ({
-  name: body.name?.trim(),
-  title: body.title?.trim() || body.name?.trim(),
-  image: body.image,
-  description: body.description?.trim() || '',
-  sortOrder: body.sortOrder !== undefined ? Number(body.sortOrder) : 0,
-  isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
-  showOnHome: body.showOnHome !== undefined ? Boolean(body.showOnHome) : true,
-});
+const normalizeCategoryBody = (body) => {
+  let subcategories = [];
+  if (Array.isArray(body.subcategories)) {
+    subcategories = body.subcategories.map((s) => String(s).trim()).filter(Boolean);
+  } else if (typeof body.subcategories === 'string') {
+    subcategories = body.subcategories.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  const seen = new Set();
+  const dedupedSubcategories = [];
+  for (const sub of subcategories) {
+    const lower = sub.toLowerCase();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      dedupedSubcategories.push(sub);
+    }
+  }
+
+  return {
+    name: body.name?.trim(),
+    title: body.title?.trim() || body.name?.trim(),
+    image: body.image?.trim() || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
+    description: body.description?.trim() || '',
+    subcategories: dedupedSubcategories,
+    sortOrder: body.sortOrder !== undefined && body.sortOrder !== '' ? Number(body.sortOrder) : 0,
+    isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
+    showOnHome: body.showOnHome !== undefined ? Boolean(body.showOnHome) : true,
+  };
+};
 
 const findOfflineCategory = (id) =>
   (global.adminCategories || []).find((c) => c._id === id);
@@ -271,7 +293,7 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
 
   const {
     name, price, oldPrice, rating, reviews, image, images,
-    badge, category, brand, sku, stock, colors, description, keyFeatures, tags,
+    badge, category, subcategory, brand, sku, stock, colors, description, keyFeatures, tags,
   } = req.body;
 
   if (!name || !String(name).trim()) {
@@ -283,11 +305,12 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
   const finalImage = (image && String(image).trim()) || defaultImage;
 
   let resolvedCategory = (category && String(category).trim()) || '';
+  const resolvedSubcategory = (subcategory && String(subcategory).trim()) || '';
 
   if (global.isDbConnected) {
     if (resolvedCategory) {
       const categoryExists = await Category.findOne({
-        name: new RegExp(`^${resolvedCategory}$`, 'i'),
+        name: new RegExp(`^${escapeRegex(resolvedCategory)}$`, 'i'),
         isActive: true,
       });
       if (!categoryExists) {
@@ -296,19 +319,32 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
           name: resolvedCategory,
           title: resolvedCategory,
           image: defaultImage,
+          subcategories: resolvedSubcategory ? [resolvedSubcategory] : [],
           isActive: true,
         });
+      } else if (resolvedSubcategory) {
+        await Category.updateOne(
+          { _id: categoryExists._id },
+          { $addToSet: { subcategories: resolvedSubcategory } }
+        ).catch(() => {});
       }
     } else {
       const firstCat = await Category.findOne({ isActive: true });
       if (firstCat) {
         resolvedCategory = firstCat.name;
+        if (resolvedSubcategory) {
+          await Category.updateOne(
+            { _id: firstCat._id },
+            { $addToSet: { subcategories: resolvedSubcategory } }
+          ).catch(() => {});
+        }
       } else {
         resolvedCategory = 'General';
         await Category.create({
           name: 'General',
           title: 'General',
           image: defaultImage,
+          subcategories: resolvedSubcategory ? [resolvedSubcategory] : [],
           isActive: true,
         });
       }
@@ -316,6 +352,15 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
   } else {
     if (!resolvedCategory) {
       resolvedCategory = (global.adminCategories && global.adminCategories[0]?.name) || 'General';
+    }
+    if (resolvedSubcategory) {
+      const catObj = (global.adminCategories || []).find((c) => c.name.toLowerCase() === resolvedCategory.toLowerCase());
+      if (catObj) {
+        catObj.subcategories = catObj.subcategories || [];
+        if (!catObj.subcategories.includes(resolvedSubcategory)) {
+          catObj.subcategories.push(resolvedSubcategory);
+        }
+      }
     }
   }
 
@@ -333,6 +378,7 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
     images: images?.length ? images : [finalImage],
     badge: badge || null,
     category: resolvedCategory,
+    subcategory: resolvedSubcategory,
     brand: brand || 'Truemart',
     sku: generatedSku,
     stock: stock !== undefined && stock !== '' && !isNaN(Number(stock)) ? Number(stock) : 10,
@@ -377,6 +423,7 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
       price: req.body.price !== undefined ? Number(req.body.price) : global.adminProducts[idx].price,
       oldPrice: req.body.oldPrice !== undefined ? (req.body.oldPrice ? Number(req.body.oldPrice) : null) : global.adminProducts[idx].oldPrice,
       stock: req.body.stock !== undefined ? Number(req.body.stock) : global.adminProducts[idx].stock,
+      subcategory: req.body.subcategory !== undefined ? String(req.body.subcategory).trim() : global.adminProducts[idx].subcategory || '',
       updatedAt: new Date().toISOString(),
     };
     return res.json(global.adminProducts[idx]);
@@ -387,7 +434,7 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
 
   const fields = [
     'name', 'price', 'oldPrice', 'rating', 'reviews', 'image', 'images',
-    'badge', 'category', 'brand', 'sku', 'stock', 'colors', 'description', 'keyFeatures', 'tags',
+    'badge', 'category', 'subcategory', 'brand', 'sku', 'stock', 'colors', 'description', 'keyFeatures', 'tags',
   ];
 
   fields.forEach((field) => {
@@ -395,6 +442,14 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
   });
 
   product = await product.save();
+
+  if (product.subcategory && product.category) {
+    await Category.updateOne(
+      { name: new RegExp(`^${escapeRegex(product.category)}$`, 'i') },
+      { $addToSet: { subcategories: product.subcategory.trim() } }
+    ).catch(() => {});
+  }
+
   res.json(product);
 }));
 
@@ -438,13 +493,20 @@ router.post('/categories', protect, admin, asyncHandler(async (req, res) => {
     return res.status(201).json(newCategory);
   }
 
-  const existing = await Category.findOne({ name: new RegExp(`^${data.name}$`, 'i') });
+  const existing = await Category.findOne({ name: new RegExp(`^${escapeRegex(data.name)}$`, 'i') });
   if (existing) {
     return res.status(400).json({ success: false, message: 'Category already exists' });
   }
 
-  const category = await Category.create(data);
-  res.status(201).json(category);
+  try {
+    const category = await Category.create(data);
+    return res.status(201).json(category);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Category already exists' });
+    }
+    throw err;
+  }
 }));
 
 router.put('/categories/:id', protect, admin, asyncHandler(async (req, res) => {
@@ -486,15 +548,22 @@ router.put('/categories/:id', protect, admin, asyncHandler(async (req, res) => {
 
   const duplicate = await Category.findOne({
     _id: { $ne: req.params.id },
-    name: new RegExp(`^${data.name}$`, 'i'),
+    name: new RegExp(`^${escapeRegex(data.name)}$`, 'i'),
   });
   if (duplicate) {
     return res.status(400).json({ success: false, message: 'Category name already in use' });
   }
 
-  Object.assign(category, data);
-  const updated = await category.save();
-  res.json(updated);
+  try {
+    Object.assign(category, data);
+    const updated = await category.save();
+    return res.json(updated);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Category name already in use' });
+    }
+    throw err;
+  }
 }));
 
 router.delete('/categories/:id', protect, admin, asyncHandler(async (req, res) => {

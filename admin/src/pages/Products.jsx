@@ -14,12 +14,14 @@ const matchesProductSearch = (product, query) => {
   const sku = (product.sku || '').toLowerCase();
   const id = String(product._id || '').toLowerCase();
   const category = (product.category || '').toLowerCase();
+  const subcategory = (product.subcategory || '').toLowerCase();
 
   return (
     name.includes(term)
     || sku.includes(term)
     || id.includes(term)
     || category.includes(term)
+    || subcategory.includes(term)
   );
 };
 
@@ -147,7 +149,26 @@ const Products = () => {
                           </div>
                         </div>
                       </td>
-                      <td data-label="Category"><span className="badge badge-gold">{p.category}</span></td>
+                      <td data-label="Category">
+                        <span className="badge badge-gold">{p.category}</span>
+                        {p.subcategory ? (
+                          <div style={{ marginTop: '4px' }}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                color: '#ccc',
+                                padding: '2px 7px',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                              }}
+                            >
+                              ↳ {p.subcategory}
+                            </span>
+                          </div>
+                        ) : null}
+                      </td>
                       <td data-label="Price">
                         <strong>{formatINR(p.price)}</strong>
                         {p.oldPrice ? <div className="text-strike">{formatINR(p.oldPrice)}</div> : null}

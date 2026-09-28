@@ -61,7 +61,11 @@ router.get('/', asyncHandler(async (req, res) => {
 
   const categories = await Category.find(query).sort({ sortOrder: 1, name: 1 }).lean();
   const withCounts = await withProductCounts(
-    categories.map((c) => ({ ...c, displayName: c.title || c.name }))
+    categories.map((c) => ({
+      ...c,
+      displayName: c.title || c.name,
+      subcategories: Array.isArray(c.subcategories) ? c.subcategories : [],
+    }))
   );
 
   res.json({ success: true, categories: withCounts });

@@ -8,6 +8,7 @@ const emptyForm = {
   title: '',
   image: '',
   description: '',
+  subcategories: '',
   sortOrder: 0,
   isActive: true,
   showOnHome: true,
@@ -39,6 +40,9 @@ const CategoryForm = () => {
           title: category.title || '',
           image: category.image || '',
           description: category.description || '',
+          subcategories: Array.isArray(category.subcategories)
+            ? category.subcategories.join(', ')
+            : (category.subcategories || ''),
           sortOrder: category.sortOrder ?? 0,
           isActive: category.isActive !== false,
           showOnHome: category.showOnHome !== false,
@@ -118,11 +122,19 @@ const CategoryForm = () => {
     const defaultCatImg = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80';
     const finalImage = form.image?.trim() || defaultCatImg;
 
+    const subcategoriesList = form.subcategories
+      ? form.subcategories
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0)
+      : [];
+
     const payload = {
       name: form.name.trim(),
       title: form.title.trim() || form.name.trim(),
       image: finalImage,
       description: form.description.trim(),
+      subcategories: subcategoriesList,
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
       showOnHome: form.showOnHome,
@@ -136,7 +148,15 @@ const CategoryForm = () => {
       }
       navigate('/categories');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save category');
+      const errorMsg =
+        err.response?.data?.message ||
+        (err.response?.status === 401 ? 'Session expired. Please log in again.' : null) ||
+        (err.response?.status === 403 ? 'Not authorized as admin' : null) ||
+        (err.code === 'ERR_NETWORK' || !err.response
+          ? 'Cannot reach backend server. If you are on Render, wait ~30s for the free service to wake up and try again.'
+          : err.message || 'Failed to save category');
+      setError(errorMsg);
+      console.error('Failed to save category:', err);
     } finally {
       setSaving(false);
     }
@@ -179,6 +199,67 @@ const CategoryForm = () => {
                 placeholder="Electronics & Gadgets"
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label>Subcategories (Optional)</label>
+            <input
+              name="subcategories"
+              value={form.subcategories}
+              onChange={handleChange}
+              placeholder="e.g. Mobiles, Laptops, Headphones, Smart Watches, Accessories"
+            />
+            <small className="text-muted">Type subcategories separated by commas (,)</small>
+            {form.subcategories ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                {form.subcategories
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .map((sub, idx) => (
+                    <span
+                      key={`${sub}-${idx}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#232329',
+                        border: '1px solid #3b3b44',
+                        color: '#d4af37',
+                        padding: '3px 10px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {sub}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = form.subcategories
+                            .split(',')
+                            .map((s) => s.trim())
+                            .filter(Boolean);
+                          current.splice(idx, 1);
+                          setForm((prev) => ({ ...prev, subcategories: current.join(', ') }));
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#888',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          lineHeight: 1,
+                          padding: 0,
+                        }}
+                        title="Remove"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="form-group">
