@@ -79,6 +79,16 @@ const ProductForm = () => {
       .finally(() => setLoading(false));
   }, [id, isEdit]);
 
+  const [localPreview, setLocalPreview] = useState('');
+
+  useEffect(() => {
+    return () => {
+      if (localPreview && localPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(localPreview);
+      }
+    };
+  }, [localPreview]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -98,14 +108,23 @@ const ProductForm = () => {
       return;
     }
 
+    // Immediately show local preview from file
+    if (localPreview && localPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(localPreview);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview(previewUrl);
+
     setError('');
     setUploading(true);
 
     try {
       const { data } = await uploadImage(file);
-      setForm((prev) => ({ ...prev, image: data.url }));
+      const serverUrl = data.url || data.fullUrl;
+      setForm((prev) => ({ ...prev, image: serverUrl }));
       setImageMode('upload');
     } catch (err) {
+      setLocalPreview('');
       setError(err.response?.data?.message || 'Image upload failed');
     } finally {
       setUploading(false);
@@ -117,31 +136,30 @@ const ProductForm = () => {
     e.preventDefault();
     setError('');
 
-    if (!form.image) {
-      setError('Product image is required — add a URL or upload from your device');
-      return;
-    }
-
-    if (!form.category) {
-      setError('Please select a category. Create one in Categories if none exist.');
+    if (!form.name || !form.name.trim()) {
+      setError('Product name is required');
       return;
     }
 
     setSaving(true);
 
+    const defaultImg = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80';
+    const finalImg = form.image || defaultImg;
+    const finalCat = form.category || (categories.length > 0 ? categories[0].name : 'General');
+
     const payload = {
-      name: form.name,
-      price: Number(form.price),
-      oldPrice: form.oldPrice ? Number(form.oldPrice) : null,
-      category: form.category,
-      brand: form.brand,
-      sku: form.sku || undefined,
-      stock: Number(form.stock),
-      rating: Number(form.rating),
-      reviews: Number(form.reviews),
-      image: form.image,
-      images: [form.image],
-      description: form.description,
+      name: form.name.trim(),
+      price: form.price !== '' && !isNaN(Number(form.price)) ? Math.max(0, Number(form.price)) : 0,
+      oldPrice: form.oldPrice && !isNaN(Number(form.oldPrice)) ? Number(form.oldPrice) : null,
+      category: finalCat,
+      brand: form.brand || 'Truemart',
+      sku: form.sku?.trim() || undefined,
+      stock: form.stock !== '' && !isNaN(Number(form.stock)) ? Number(form.stock) : 10,
+      rating: form.rating !== '' && !isNaN(Number(form.rating)) ? Number(form.rating) : 4.5,
+      reviews: Number(form.reviews) || 0,
+      image: finalImg,
+      images: [finalImg],
+      description: form.description || '',
       badge: form.badge || null,
       colors: form.colors ? form.colors.split(',').map((c) => c.trim()).filter(Boolean) : [],
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
@@ -185,8 +203,8 @@ const ProductForm = () => {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Price (₹) *</label>
-              <input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleChange} required />
+              <label>Price (₹)</label>
+              <input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleChange} placeholder="0" />
             </div>
             <div className="form-group">
               <label>Old Price (₹)</label>
@@ -196,16 +214,16 @@ const ProductForm = () => {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Category *</label>
-              <select name="category" value={form.category} onChange={handleChange} required disabled={categoriesLoading}>
-                <option value="">{categoriesLoading ? 'Loading...' : 'Select category'}</option>
+              <label>Category</label>
+              <select name="category" value={form.category} onChange={handleChange} disabled={categoriesLoading}>
+                <option value="">{categoriesLoading ? 'Loading...' : 'Select category (Optional)'}</option>
                 {categories.map((c) => (
                   <option key={c._id} value={c.name}>{c.title || c.name}</option>
                 ))}
               </select>
               {!categoriesLoading && categories.length === 0 && (
-                <small className="text-danger">
-                  No categories found. <Link to="/categories/new" className="text-gold">Add a category first</Link>
+                <small className="text-muted">
+                  Categories empty. Product will be saved under 'General'.
                 </small>
               )}
             </div>
@@ -220,7 +238,7 @@ const ProductForm = () => {
           <div className="form-row">
             <div className="form-group">
               <label>Brand</label>
-              <input name="brand" value={form.brand} onChange={handleChange} />
+              <input name="brand" value={form.brand} onChange={handleChange} placeholder="Truemart" />
             </div>
             <div className="form-group">
               <label>SKU</label>
@@ -231,17 +249,17 @@ const ProductForm = () => {
           <div className="form-row">
             <div className="form-group">
               <label>Stock</label>
-              <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} />
+              <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} placeholder="10" />
             </div>
             <div className="form-group">
               <label>Rating</label>
-              <input name="rating" type="number" step="0.1" min="0" max="5" value={form.rating} onChange={handleChange} />
+              <input name="rating" type="number" step="0.1" min="0" max="5" value={form.rating} onChange={handleChange} placeholder="4.5" />
             </div>
           </div>
 
           {/* Image section */}
           <div className="form-group image-upload-section">
-            <label>Product Image *</label>
+            <label>Product Image</label>
 
             <div className="image-mode-tabs">
               <button
@@ -294,13 +312,19 @@ const ProductForm = () => {
               </div>
             )}
 
-            {form.image && (
+            {(localPreview || form.image) && (
               <div className="image-preview-wrap">
-                <AdminImage src={form.image} alt="Preview" className="image-preview" />
+                <AdminImage src={localPreview || form.image} alt="Preview" className="image-preview" />
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
-                  onClick={() => setForm((prev) => ({ ...prev, image: '' }))}
+                  onClick={() => {
+                    if (localPreview && localPreview.startsWith('blob:')) {
+                      URL.revokeObjectURL(localPreview);
+                    }
+                    setLocalPreview('');
+                    setForm((prev) => ({ ...prev, image: '' }));
+                  }}
                 >
                   Remove Image
                 </button>

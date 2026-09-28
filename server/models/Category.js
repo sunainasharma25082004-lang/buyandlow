@@ -13,7 +13,7 @@ const categorySchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    required: true,
+    default: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
   },
   description: {
     type: String,

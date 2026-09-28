@@ -39,7 +39,16 @@ const AppBanners = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [localPreview, setLocalPreview] = useState('');
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (localPreview && localPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(localPreview);
+      }
+    };
+  }, [localPreview]);
 
   const fetchBanners = () => {
     setLoading(true);
@@ -61,6 +70,10 @@ const AppBanners = () => {
 
   const openCreate = () => {
     setEditingId(null);
+    if (localPreview && localPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(localPreview);
+    }
+    setLocalPreview('');
     setForm({
       ...emptyForm,
       sortOrder: banners.length,
@@ -72,6 +85,10 @@ const AppBanners = () => {
 
   const openEdit = (banner) => {
     setEditingId(String(banner._id));
+    if (localPreview && localPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(localPreview);
+    }
+    setLocalPreview('');
     setForm({
       label: banner.label || '',
       title: banner.title || '',
@@ -89,6 +106,10 @@ const AppBanners = () => {
   const closeModal = () => {
     setModalOpen(false);
     setEditingId(null);
+    if (localPreview && localPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(localPreview);
+    }
+    setLocalPreview('');
     setForm(emptyForm);
     setModalError('');
     setUploadSuccess('');
@@ -116,6 +137,12 @@ const AppBanners = () => {
       return;
     }
 
+    if (localPreview && localPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(localPreview);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview(previewUrl);
+
     setModalError('');
     setUploadSuccess('');
     setUploading(true);
@@ -127,8 +154,9 @@ const AppBanners = () => {
         throw new Error('Upload succeeded but no image URL returned');
       }
       setForm((prev) => ({ ...prev, image: imagePath }));
-      setUploadSuccess('Image uploaded! Ab "Update App Banner" dabao save karne ke liye.');
+      setUploadSuccess('Image uploaded! Click "Update App Banner" or "Add App Banner" to save.');
     } catch (err) {
+      setLocalPreview('');
       setModalError(err.response?.data?.message || err.message || 'Image upload failed');
     } finally {
       setUploading(false);
@@ -400,13 +428,19 @@ const AppBanners = () => {
                   </label>
                 </div>
 
-                {form.image && (
+                {(localPreview || form.image) && (
                   <div className="image-preview-wrap banner-preview-wrap">
-                    <AdminImage src={form.image} alt="Banner preview" className="banner-preview-image" />
+                    <AdminImage src={localPreview || form.image} alt="Banner preview" className="banner-preview-image" />
                     <button
                       type="button"
                       className="btn btn-outline btn-sm"
-                      onClick={() => setForm((prev) => ({ ...prev, image: '' }))}
+                      onClick={() => {
+                        if (localPreview && localPreview.startsWith('blob:')) {
+                          URL.revokeObjectURL(localPreview);
+                        }
+                        setLocalPreview('');
+                        setForm((prev) => ({ ...prev, image: '' }));
+                      }}
                     >
                       Remove Image
                     </button>

@@ -57,6 +57,16 @@ const CategoryForm = () => {
     }));
   };
 
+  const [localPreview, setLocalPreview] = useState('');
+
+  useEffect(() => {
+    return () => {
+      if (localPreview && localPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(localPreview);
+      }
+    };
+  }, [localPreview]);
+
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -71,14 +81,22 @@ const CategoryForm = () => {
       return;
     }
 
+    if (localPreview && localPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(localPreview);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview(previewUrl);
+
     setError('');
     setUploading(true);
 
     try {
       const { data } = await uploadImage(file);
-      setForm((prev) => ({ ...prev, image: data.url }));
+      const serverUrl = data.url || data.fullUrl;
+      setForm((prev) => ({ ...prev, image: serverUrl }));
       setImageMode('upload');
     } catch (err) {
+      setLocalPreview('');
       setError(err.response?.data?.message || 'Image upload failed');
     } finally {
       setUploading(false);
@@ -90,17 +108,20 @@ const CategoryForm = () => {
     e.preventDefault();
     setError('');
 
-    if (!form.image) {
-      setError('Category image is required — add a URL or upload from your device');
+    if (!form.name || !form.name.trim()) {
+      setError('Category name is required');
       return;
     }
 
     setSaving(true);
 
+    const defaultCatImg = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80';
+    const finalImage = form.image?.trim() || defaultCatImg;
+
     const payload = {
       name: form.name.trim(),
       title: form.title.trim() || form.name.trim(),
-      image: form.image,
+      image: finalImage,
       description: form.description.trim(),
       sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
@@ -195,7 +216,7 @@ const CategoryForm = () => {
           </div>
 
           <div className="form-group image-upload-section">
-            <label>Category Image *</label>
+            <label>Category Image</label>
 
             <div className="image-mode-tabs">
               <button
@@ -245,13 +266,19 @@ const CategoryForm = () => {
               </div>
             )}
 
-            {form.image && (
+            {(localPreview || form.image) && (
               <div className="image-preview-wrap">
-                <AdminImage src={form.image} alt="Preview" className="image-preview" />
+                <AdminImage src={localPreview || form.image} alt="Preview" className="image-preview" />
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
-                  onClick={() => setForm((prev) => ({ ...prev, image: '' }))}
+                  onClick={() => {
+                    if (localPreview && localPreview.startsWith('blob:')) {
+                      URL.revokeObjectURL(localPreview);
+                    }
+                    setLocalPreview('');
+                    setForm((prev) => ({ ...prev, image: '' }));
+                  }}
                 >
                   Remove Image
                 </button>

@@ -274,46 +274,68 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
     badge, category, brand, sku, stock, colors, description, keyFeatures, tags,
   } = req.body;
 
-  if (!name || price == null || !image || !category) {
-    return res.status(400).json({ success: false, message: 'Name, price, image and category are required' });
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ success: false, message: 'Product name is required' });
   }
+
+  const finalPrice = price !== undefined && price !== '' && !isNaN(Number(price)) ? Math.max(0, Number(price)) : 0;
+  const defaultImage = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80';
+  const finalImage = (image && String(image).trim()) || defaultImage;
+
+  let resolvedCategory = (category && String(category).trim()) || '';
 
   if (global.isDbConnected) {
-    const categoryExists = await Category.findOne({
-      name: new RegExp(`^${String(category).trim()}$`, 'i'),
-      isActive: true,
-    });
-    if (!categoryExists) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid category. Please create the category in Admin → Categories first.',
+    if (resolvedCategory) {
+      const categoryExists = await Category.findOne({
+        name: new RegExp(`^${resolvedCategory}$`, 'i'),
+        isActive: true,
       });
+      if (!categoryExists) {
+        // Auto-create category if it does not exist so admin is never blocked
+        await Category.create({
+          name: resolvedCategory,
+          title: resolvedCategory,
+          image: defaultImage,
+          isActive: true,
+        });
+      }
+    } else {
+      const firstCat = await Category.findOne({ isActive: true });
+      if (firstCat) {
+        resolvedCategory = firstCat.name;
+      } else {
+        resolvedCategory = 'General';
+        await Category.create({
+          name: 'General',
+          title: 'General',
+          image: defaultImage,
+          isActive: true,
+        });
+      }
     }
   } else {
-    const categoryExists = (global.adminCategories || []).some(
-      (c) => c.name.toLowerCase() === String(category).trim().toLowerCase() && c.isActive !== false
-    );
-    if (!categoryExists) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid category. Please create the category in Admin → Categories first.',
-      });
+    if (!resolvedCategory) {
+      resolvedCategory = (global.adminCategories && global.adminCategories[0]?.name) || 'General';
     }
   }
 
+  const generatedSku = sku && String(sku).trim()
+    ? String(sku).trim()
+    : `TRD-${(resolvedCategory || 'GEN').toUpperCase().substring(0, 3)}-${Date.now().toString().slice(-6)}`;
+
   const productData = {
-    name: name.trim(),
-    price: Number(price),
-    oldPrice: oldPrice ? Number(oldPrice) : null,
-    rating: rating ? Number(rating) : 4.5,
-    reviews: reviews ? Number(reviews) : 0,
-    image,
-    images: images?.length ? images : [image],
+    name: String(name).trim(),
+    price: finalPrice,
+    oldPrice: oldPrice && !isNaN(Number(oldPrice)) ? Number(oldPrice) : null,
+    rating: rating !== undefined && !isNaN(Number(rating)) ? Number(rating) : 4.5,
+    reviews: reviews !== undefined && !isNaN(Number(reviews)) ? Number(reviews) : 0,
+    image: finalImage,
+    images: images?.length ? images : [finalImage],
     badge: badge || null,
-    category,
+    category: resolvedCategory,
     brand: brand || 'Truemart',
-    sku: sku || `TRD-${category.toUpperCase().substring(0, 3)}-${Date.now().toString().slice(-6)}`,
-    stock: stock !== undefined ? Number(stock) : 10,
+    sku: generatedSku,
+    stock: stock !== undefined && stock !== '' && !isNaN(Number(stock)) ? Number(stock) : 10,
     colors: colors || [],
     description: description || '',
     keyFeatures: keyFeatures || [],
@@ -391,8 +413,11 @@ router.post('/categories', protect, admin, asyncHandler(async (req, res) => {
   if (!requireDbOrOffline(res)) return;
 
   const data = normalizeCategoryBody(req.body);
-  if (!data.name || !data.image) {
-    return res.status(400).json({ success: false, message: 'Name and image are required' });
+  if (!data.name) {
+    return res.status(400).json({ success: false, message: 'Category name is required' });
+  }
+  if (!data.image) {
+    data.image = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80';
   }
 
   if (!global.isDbConnected) {
@@ -426,8 +451,11 @@ router.put('/categories/:id', protect, admin, asyncHandler(async (req, res) => {
   if (!requireDbOrOffline(res)) return;
 
   const data = normalizeCategoryBody(req.body);
-  if (!data.name || !data.image) {
-    return res.status(400).json({ success: false, message: 'Name and image are required' });
+  if (!data.name) {
+    return res.status(400).json({ success: false, message: 'Category name is required' });
+  }
+  if (!data.image) {
+    data.image = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80';
   }
 
   if (!global.isDbConnected) {

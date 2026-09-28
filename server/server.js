@@ -62,6 +62,18 @@ app.use(cors({
       return;
     }
 
+    const isLiveCloudDeployment = typeof normalized === 'string' && (
+      normalized.endsWith('.onrender.com') ||
+      normalized.includes('onrender.com') ||
+      normalized.endsWith('.vercel.app') ||
+      normalized.endsWith('.netlify.app')
+    );
+
+    if (isLiveCloudDeployment) {
+      callback(null, true);
+      return;
+    }
+
     if (corsOrigins.length === 0 || corsOrigins.includes(normalized)) {
       callback(null, true);
       return;
@@ -88,7 +100,11 @@ app.use(morgan(isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, 'uploads'), {
   maxAge: isProduction ? '7d' : 0,
 }));
 
