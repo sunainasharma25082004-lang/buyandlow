@@ -12,12 +12,20 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://buylowindia.com/api",
+        "EXPO_PUBLIC_GOOGLE_AUTH_ORIGIN": "https://buylowindia.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://buylowindia.com/api",
+        "EXPO_PUBLIC_GOOGLE_AUTH_ORIGIN": "https://buylowindia.com"
       }
     }
   },

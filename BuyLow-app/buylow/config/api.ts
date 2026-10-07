@@ -49,7 +49,7 @@ const getWebDevApiUrl = () => {
   return null;
 };
 
-const PRODUCTION_API_URL = 'https://buyandlow-api.onrender.com/api';
+const PRODUCTION_API_URL = 'https://buylowindia.com/api';
 
 const resolveApiUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();

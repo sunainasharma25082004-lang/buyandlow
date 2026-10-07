@@ -39,7 +39,7 @@ export const getGoogleAuthOrigin = () => {
   const fromEnv = process.env.EXPO_PUBLIC_GOOGLE_AUTH_ORIGIN?.trim();
   if (fromEnv) return trimTrailingSlash(fromEnv);
 
-  return 'https://buyandlow-api.onrender.com';
+  return 'https://buylowindia.com';
 };
 
 const getReversedClientRedirectUri = (clientId: string) => {
