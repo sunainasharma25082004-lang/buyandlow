@@ -10,8 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.buylowindia.ecommerce",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "BuyLow uses your location to automatically fill your delivery address."
+        "NSLocationWhenInUseUsageDescription": "BuyLow uses your location to automatically fill your delivery address.",
+        "NSCameraUsageDescription": "BuyLow needs access to your camera to take photos for product reviews.",
+        "NSPhotoLibraryUsageDescription": "BuyLow needs access to your photo library to select photos for product reviews.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -24,7 +28,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.buylowindia.app"
+      "package": "com.buylowindia.ecommerce"
     },
     "web": {
       "bundler": "metro",

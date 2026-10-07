@@ -21,11 +21,12 @@ import HelpHeader from '../../../components/HelpHeader';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, loading, updateProfile } = useAuth();
+  const { user, loading, updateProfile, deleteAccount } = useAuth();
   const { t } = useLanguage();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -61,6 +62,33 @@ export default function ProfileScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action is permanent and cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteAccount();
+              Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+              router.replace('/(tabs)');
+            } catch (err: unknown) {
+              const message = err instanceof Error ? err.message : 'Failed to delete account';
+              Alert.alert(t('common.error'), message);
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading || !user) {
@@ -131,11 +159,27 @@ export default function ProfileScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleSave} disabled={saving}>
+          <TouchableOpacity style={styles.button} onPress={handleSave} disabled={saving || deleting}>
             {saving ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
               <Text style={styles.buttonText}>{t('profile.saveChanges')}</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={handleDeleteAccount}
+            disabled={saving || deleting}
+            activeOpacity={0.7}
+          >
+            {deleting ? (
+              <ActivityIndicator color="#DC2626" />
+            ) : (
+              <View style={styles.deleteContent}>
+                <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                <Text style={styles.deleteButtonText}>Delete Account</Text>
+              </View>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -231,5 +275,25 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  deleteButton: {
+    marginTop: 20,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  deleteButtonText: {
+    color: '#DC2626',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

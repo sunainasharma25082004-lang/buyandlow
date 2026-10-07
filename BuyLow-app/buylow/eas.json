@@ -13,6 +13,9 @@
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "simulator": true
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://buylowindia.com/api",
         "EXPO_PUBLIC_GOOGLE_AUTH_ORIGIN": "https://buylowindia.com"
@@ -23,6 +26,7 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "ios": {},
       "env": {
         "EXPO_PUBLIC_API_URL": "https://buylowindia.com/api",
         "EXPO_PUBLIC_GOOGLE_AUTH_ORIGIN": "https://buylowindia.com"

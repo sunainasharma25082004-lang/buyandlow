@@ -159,6 +159,12 @@ export const updateAddresses = (addresses: SavedAddress[], token: string) =>
     body: JSON.stringify({ addresses }),
   });
 
+export const deleteProfile = (token: string) =>
+  request<{ success: boolean; message: string }>('/auth/profile', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
 // Cart
 export const syncCart = (cart: CartItem[], token: string) => {
   const formattedCart = cart.map((item) => ({

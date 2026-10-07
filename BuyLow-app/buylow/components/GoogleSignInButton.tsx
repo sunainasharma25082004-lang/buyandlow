@@ -64,7 +64,7 @@ const androidSetupMsg =
   "Android app ke liye Google Console mein Android client banao (5 min, ek baar):\n\n" +
   "1) console.cloud.google.com/apis/credentials\n" +
   "2) Create Credentials -> OAuth -> Android\n" +
-  "3) Package: com.viz_eas_001.buylow\n" +
+  "3) Package: com.buylowindia.ecommerce\n" +
   "4) SHA-1: use the SHA-1 from your EAS Android keystore\n" +
   "5) Android Client ID copy -> .env mein:\n" +
   "   EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=...\n" +

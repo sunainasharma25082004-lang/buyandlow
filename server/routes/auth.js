@@ -353,6 +353,18 @@ router.put('/profile', protect, asyncHandler(async (req, res) => {
   res.json(buildUserPayload(populated));
 }));
 
+router.delete('/profile', protect, asyncHandler(async (req, res) => {
+  if (!global.isDbConnected) {
+    if (isProduction) {
+      return res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
+    return res.json({ success: true, message: 'Account deleted' });
+  }
+
+  await User.findByIdAndDelete(req.user._id);
+  res.json({ success: true, message: 'Account deleted successfully' });
+}));
+
 router.put('/addresses', protect, asyncHandler(async (req, res) => {
   const normalized = normalizeAddresses(req.body.addresses);
   if (normalized === null) {

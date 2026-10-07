@@ -15,6 +15,7 @@ type AuthContextType = {
   refreshUser: () => Promise<void>;
   updateProfile: (data: { name?: string; phone?: string; paymentPreference?: PaymentPreference }) => Promise<void>;
   saveAddresses: (addresses: SavedAddress[]) => Promise<SavedAddress[]>;
+  deleteAccount: () => Promise<void>;
   toggleWishlist: (productId: string) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
 };
@@ -127,6 +128,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return res.addresses;
   };
 
+  const deleteAccount = async () => {
+    if (!token) throw new Error('Please login first');
+    await api.deleteProfile(token);
+    await logout();
+  };
+
   const toggleWishlist = async (productId: string) => {
     if (!user || !token) throw new Error('Please login to add to wishlist');
     
@@ -176,6 +183,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       refreshUser,
       updateProfile,
       saveAddresses,
+      deleteAccount,
       toggleWishlist,
       isInWishlist,
     }}>
