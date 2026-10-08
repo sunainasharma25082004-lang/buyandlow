@@ -71,7 +71,7 @@ router.post('/', protect, asyncHandler(async (req, res) => {
   }
 
   let verifiedItemsPrice = Number(itemsPrice) || 0;
-  const verifiedShippingPrice = Number(shippingPrice) || 0;
+  let verifiedShippingPrice = verifiedItemsPrice >= 999 ? 0 : 49;
 
   // Server-side price & stock verification when DB is connected
   if (global.isDbConnected) {
@@ -95,6 +95,7 @@ router.post('/', protect, asyncHandler(async (req, res) => {
       item.price = dbProduct.price;
     }
     verifiedItemsPrice = Math.round(calculatedItemsPrice * 100) / 100;
+    verifiedShippingPrice = verifiedItemsPrice >= 999 ? 0 : 49;
   }
 
   const verifiedTotalPrice = Math.round((verifiedItemsPrice + verifiedShippingPrice) * 100) / 100;
@@ -329,12 +330,18 @@ router.put('/:id/cancel', protect, asyncHandler(async (req, res) => {
   applyCancellation(order, reason);
   await order.save();
 
-  // Restore inventory stock on cancellation
-  for (const item of order.orderItems || []) {
-    if (item.product) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: Number(item.quantity) || 1 },
-      });
+  // Restore inventory stock on cancellation only if stock was actually deducted
+  const isCodOrder = (order.paymentMethod || '').toLowerCase().includes('cod') ||
+    (order.paymentMethod || '').toLowerCase().includes('cash');
+  const wasStockDeducted = order.isPaid || isCodOrder;
+
+  if (wasStockDeducted) {
+    for (const item of order.orderItems || []) {
+      if (item.product) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: Number(item.quantity) || 1 },
+        });
+      }
     }
   }
 

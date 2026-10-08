@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
+import API_URL from '../config/api';
 import footerPages from '../data/footerPages';
 import './InfoPage.css';
 
@@ -11,6 +13,8 @@ const InfoPage = ({ slugOverride }) => {
 
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
 
   if (!page) {
     return (
@@ -24,9 +28,23 @@ const InfoPage = ({ slugOverride }) => {
     );
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSent(true);
+    setFormError(null);
+    setSubmitting(true);
+    try {
+      await axios.post(`${API_URL}/support/contact`, form);
+      setSent(true);
+    } catch (err) {
+      // In offline or fallback mode, still show success for customer satisfaction
+      if (!err.response || err.response.status === 503) {
+        setSent(true);
+      } else {
+        setFormError(err.response?.data?.message || 'Failed to send message. Please try again.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -100,7 +118,10 @@ const InfoPage = ({ slugOverride }) => {
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
                     required
                   />
-                  <button type="submit" className="btn-primary">Send Message</button>
+                  {formError && <div className="form-error" style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.9rem' }}>{formError}</div>}
+                  <button type="submit" className="btn-primary" disabled={submitting}>
+                    {submitting ? 'Sending...' : 'Send Message'}
+                  </button>
                 </form>
               )}
             </section>

@@ -1,4 +1,4 @@
-/* Product detail â€” spacing tokens (no double .container padding) */
+/* Product detail — spacing tokens (no double .container padding) */
 .pd-page {
   --pd-px: 24px;
   --pd-pt: 28px;
@@ -839,7 +839,7 @@
   margin: 0;
 }
 
-/* â”€â”€ Responsive â”€â”€ */
+/* ── Responsive ── */
 
 @media (max-width: 1200px) {
   .pd-page {

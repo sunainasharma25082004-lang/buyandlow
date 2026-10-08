@@ -22,6 +22,7 @@ const Checkout = () => {
   const [error, setError] = useState(null);
   const [paymentStep, setPaymentStep] = useState(false); // For checkout summary/mock choice
   const [createdOrderData, setCreatedOrderData] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
 
   // Dynamic script loading for Razorpay SDK
   const loadRazorpayScript = () => {
@@ -81,8 +82,19 @@ const Checkout = () => {
         shippingAddress,
         itemsPrice,
         shippingPrice,
-        totalPrice
+        totalPrice,
+        paymentMethod,
       });
+
+      if (paymentMethod === 'COD') {
+        clearCart();
+        navigate('/orders', {
+          state: {
+            successMessage: 'Your Cash on Delivery order has been placed successfully! Pay upon delivery.',
+          },
+        });
+        return;
+      }
 
       setCreatedOrderData(res.data);
       setPaymentStep(true);
@@ -256,8 +268,73 @@ const Checkout = () => {
                   </div>
                 </div>
 
+                <div className="form-group payment-method-selector-group">
+                  <label>Payment Method</label>
+                  <div className="payment-options-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '4px' }}>
+                    <div
+                      className={`payment-option-card ${paymentMethod === 'Razorpay' ? 'selected' : ''}`}
+                      onClick={() => setPaymentMethod('Razorpay')}
+                      style={{
+                        border: paymentMethod === 'Razorpay' ? '2px solid #b8860b' : '1.5px solid var(--border)',
+                        background: paymentMethod === 'Razorpay' ? 'rgba(184, 134, 11, 0.06)' : 'var(--white)',
+                        padding: '14px',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '13.5px', color: 'var(--brown-dark)' }}>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="Razorpay"
+                          checked={paymentMethod === 'Razorpay'}
+                          onChange={() => setPaymentMethod('Razorpay')}
+                          style={{ margin: 0 }}
+                        />
+                        <span>💳 Online Payment</span>
+                      </div>
+                      <p style={{ margin: '6px 0 0 24px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                        UPI, Cards, Netbanking
+                      </p>
+                    </div>
+
+                    <div
+                      className={`payment-option-card ${paymentMethod === 'COD' ? 'selected' : ''}`}
+                      onClick={() => setPaymentMethod('COD')}
+                      style={{
+                        border: paymentMethod === 'COD' ? '2px solid #b8860b' : '1.5px solid var(--border)',
+                        background: paymentMethod === 'COD' ? 'rgba(184, 134, 11, 0.06)' : 'var(--white)',
+                        padding: '14px',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '13.5px', color: 'var(--brown-dark)' }}>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value="COD"
+                          checked={paymentMethod === 'COD'}
+                          onChange={() => setPaymentMethod('COD')}
+                          style={{ margin: 0 }}
+                        />
+                        <span>💵 Cash on Delivery</span>
+                      </div>
+                      <p style={{ margin: '6px 0 0 24px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                        Pay cash or UPI at delivery
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <button type="submit" className="place-order-btn btn-dark" disabled={loading}>
-                  {loading ? 'Processing...' : 'Place Order & Continue'}
+                  {loading
+                    ? 'Processing...'
+                    : paymentMethod === 'COD'
+                      ? 'Place Cash on Delivery Order 📦'
+                      : 'Proceed to Online Payment →'}
                 </button>
               </form>
             ) : (

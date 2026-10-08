@@ -1,6 +1,6 @@
 const getPublicBaseUrl = (req) => {
   if (process.env.API_BASE_URL) {
-    return process.env.API_BASE_URL.replace(/\/$/, '');
+    return process.env.API_BASE_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
   }
 
   if (req) {

@@ -113,4 +113,36 @@ router.post('/chat', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, request });
 }));
 
+router.post('/contact', asyncHandler(async (req, res) => {
+  const { name, email, subject, message } = req.body;
+  const trimmedName = name?.trim();
+  const trimmedEmail = email?.trim().toLowerCase();
+  const trimmedMessage = message?.trim();
+
+  if (!trimmedName || !trimmedEmail || !trimmedMessage) {
+    return res.status(400).json({
+      success: false,
+      message: 'Name, email, and message are all required',
+    });
+  }
+
+  const authUser = await attachUserIfToken(req);
+  const request = await saveSupportRequest({
+    requestType: 'contact',
+    name: trimmedName,
+    email: trimmedEmail,
+    subject: subject?.trim() || 'General Inquiry',
+    note: trimmedMessage.slice(0, 500),
+    chatSummary: trimmedMessage.slice(0, 3000),
+    status: 'pending',
+    source: 'web_contact_page',
+  }, authUser);
+
+  res.status(201).json({
+    success: true,
+    message: 'Your message has been sent successfully',
+    request,
+  });
+}));
+
 export default router;

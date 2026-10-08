@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import RemoteImage from '../../components/RemoteImage';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
-import { getProducts, formatINR } from '../../services/api';
+import { getProducts } from '../../services/api';
 import { Product } from '../../types/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
+import ProductGridCard from '../../components/home/ProductGridCard';
 
 export default function CategoryProductsScreen() {
   const { name } = useLocalSearchParams();
   const router = useRouter();
   const { t } = useLanguage();
+  const { cartCount } = useCart();
   const categoryName = decodeURIComponent(Array.isArray(name) ? name[0] : (name || ''));
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,10 +51,21 @@ export default function CategoryProductsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={Colors.text} />
+          <Ionicons name="arrow-back" size={22} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{categoryName}</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle} numberOfLines={1}>{categoryName}</Text>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => router.push('/cart')}
+          activeOpacity={0.7}
+        >
+          <Feather name="shopping-bag" size={20} color={Colors.text} />
+          {cartCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{cartCount > 99 ? '99+' : cartCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -63,21 +76,14 @@ export default function CategoryProductsScreen() {
         columnWrapperStyle={styles.row}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
+            <Ionicons name="cube-outline" size={52} color={Colors.border} />
             <Text style={styles.emptyText}>{t('categories.noProductsInCategory')}</Text>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Text style={styles.backBtnText}>Explore Other Categories</Text>
+            </TouchableOpacity>
           </View>
         }
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => router.push(`/product/${item._id}`)}>
-            <View style={styles.imageContainer}>
-              <RemoteImage uri={item.image} style={styles.image} contentFit="contain" />
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.brand}>{item.brand}</Text>
-              <Text style={styles.title} numberOfLines={2}>{item.name}</Text>
-              <Text style={styles.price}>₹{formatINR(item.price)}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => <ProductGridCard product={item} />}
       />
     </SafeAreaView>
   );
@@ -86,7 +92,7 @@ export default function CategoryProductsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
   center: {
     justifyContent: 'center',
@@ -98,68 +104,73 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
   headerButton: {
-    padding: 8,
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '700',
     color: Colors.text,
+    textAlign: 'center',
+    marginHorizontal: 8,
     textTransform: 'capitalize',
   },
+  badge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: Colors.accent,
+    borderRadius: 9,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontWeight: '800',
+  },
   list: {
-    padding: 16,
-    gap: 16,
+    paddingHorizontal: 10,
+    paddingTop: 12,
+    paddingBottom: 28,
   },
   row: {
-    gap: 16,
-  },
-  card: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden',
-  },
-  imageContainer: {
-    height: 150,
-    backgroundColor: Colors.background,
-    padding: 16,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  cardBody: {
-    padding: 12,
-  },
-  brand: {
-    fontSize: 10,
-    color: Colors.textLight,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: Colors.text,
-    marginBottom: 8,
-    height: 34,
-  },
-  price: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: Colors.text,
+    gap: 12,
+    marginBottom: 12,
   },
   emptyContainer: {
-    padding: 32,
+    padding: 48,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
     color: Colors.textLight,
+    fontSize: 14,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  backBtn: {
+    marginTop: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+  },
+  backBtnText: {
+    color: Colors.white,
+    fontWeight: '700',
+    fontSize: 13,
   },
 });

@@ -210,7 +210,7 @@ const footerPages = {
     sections: [
       {
         heading: '1. Introduction',
-        body: 'Welcome to BuyLow ("we", "our", or "us"). We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (buylow-store.onrender.com) and mobile application (com.buylowindia.app).',
+        body: 'Welcome to BuyLow ("we", "our", or "us"). We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (https://buylowindia.com) and mobile application (com.buylowindia.app).',
       },
       {
         heading: '2. Information We Collect',
@@ -260,7 +260,7 @@ const footerPages = {
       },
       {
         heading: '9. Contact Us',
-        body: 'If you have any questions or concerns about this Privacy Policy, please contact us at:\n\nEmail: support@buylow.store\nApp Package: com.buylowindia.app\nWebsite: https://buylow-store.onrender.com',
+        body: 'If you have any questions or concerns about this Privacy Policy, please contact us at:\n\nEmail: support@buylowindia.com\nApp Package: com.buylowindia.app\nWebsite: https://buylowindia.com',
       },
     ],
   },

@@ -1,44 +1,36 @@
-import React, { useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../context/CartContext';
 import { formatINR } from '../utils/currency';
 import { resolveMediaUrl } from '../config/api';
 import './ProductCard.css';
 
-const badgeClass = (badge) =>
-  ({ SALE: 'badge-sale', NEW: 'badge-new', HOT: 'badge-hot' }[badge] || '');
-
 const CardStars = ({ rating = 0 }) => {
-  const score = Number(rating) || 0;
+  const score = Number(rating) || 4.5;
   const filled = Math.floor(score);
-  const hasHalf = score - filled >= 0.25 && filled < 5;
 
   return (
-    <span className="pc-stars" aria-hidden="true">
-      {Array.from({ length: 5 }, (_, i) => {
-        const index = i + 1;
-        let state = 'empty';
-        if (index <= filled) state = 'filled';
-        else if (index === filled + 1 && hasHalf) state = 'half';
-
-        return (
-          <span key={index} className={`pc-star pc-star--${state}`}>
+    <div className="pc-stars-wrap">
+      <span className="pc-stars" aria-hidden="true">
+        {Array.from({ length: 5 }, (_, i) => (
+          <span key={i} className={`pc-star ${i < filled ? 'filled' : 'empty'}`}>
             ★
           </span>
-        );
-      })}
-    </span>
+        ))}
+      </span>
+      <span className="pc-rating-num">{score.toFixed(1)}</span>
+    </div>
   );
 };
 
 const ProductCard = ({ product, className = '' }) => {
   const navigate = useNavigate();
   const { addToCart, toggleWishlist, isWishlisted } = useContext(CartContext);
+  const [added, setAdded] = useState(false);
 
   const prodId = product._id || product.id;
   const isWish = isWishlisted(prodId);
-  const rating = Number(product.rating) || 0;
-  const reviews = product.reviews || 0;
+  const rating = Number(product.rating) || 4.5;
   const discount =
     product.oldPrice && product.price
       ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
@@ -46,11 +38,25 @@ const ProductCard = ({ product, className = '' }) => {
 
   const goToProduct = () => navigate(`/product/${prodId}`);
 
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    if (added) return;
+    addToCart(product, 1, product.colors?.[0] || '');
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1600);
+  };
+
+  const handleWishlist = (e) => {
+    e.stopPropagation();
+    toggleWishlist(product);
+  };
+
   return (
     <article
       className={`product-card ${className}`.trim()}
       onClick={goToProduct}
     >
+      {/* Top Media: Image, Wishlist Button, Discount Badge */}
       <div className="product-card-media">
         <img
           src={resolveMediaUrl(product.image) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80'}
@@ -64,12 +70,6 @@ const ProductCard = ({ product, className = '' }) => {
           }}
         />
 
-        {product.badge && (
-          <span className={`product-card-badge ${badgeClass(product.badge)}`}>
-            {product.badge}
-          </span>
-        )}
-
         {discount > 0 && (
           <span className="product-card-discount">-{discount}%</span>
         )}
@@ -77,64 +77,51 @@ const ProductCard = ({ product, className = '' }) => {
         <button
           type="button"
           className={`product-card-wish ${isWish ? 'active' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleWishlist(product);
-          }}
-          aria-label={isWish ? 'Remove from favourites' : 'Add to favourites'}
+          onClick={handleWishlist}
+          aria-label={isWish ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           {isWish ? '♥' : '♡'}
         </button>
-
-        <div className="product-card-actions">
-          <button
-            type="button"
-            className="product-card-action"
-            onClick={(e) => {
-              e.stopPropagation();
-              goToProduct();
-            }}
-          >
-            Quick View
-          </button>
-          <button
-            type="button"
-            className="product-card-action product-card-action--gold"
-            onClick={(e) => {
-              e.stopPropagation();
-              addToCart(product, 1, product.colors?.[0] || '');
-            }}
-          >
-            Add to Cart
-          </button>
-        </div>
       </div>
 
+      {/* Body: Category, Name, Rating, Price, Red Add-to-Cart Button */}
       <div className="product-card-body">
         <p className="product-card-cat">
-          {product.category}
-          {product.subcategory ? ` • ${product.subcategory}` : ''}
+          {product.category || 'General'}
         </p>
-        <h3 className="product-card-title">{product.name}</h3>
 
-        <div className="product-card-bottom">
-          <div className="product-card-rating">
-            <div className="product-card-rating-main">
-              <CardStars rating={rating} />
-              <span className="product-card-rating-num">{rating.toFixed(1)}</span>
-            </div>
-            <span className="product-card-reviews">
-              {reviews} {reviews === 1 ? 'review' : 'reviews'}
-            </span>
-          </div>
+        <h3 className="product-card-title" title={product.name}>
+          {product.name}
+        </h3>
 
-          <div className="product-card-price">
-            <span className="product-card-price-now">{formatINR(product.price)}</span>
-            {product.oldPrice && (
-              <span className="product-card-price-was">{formatINR(product.oldPrice)}</span>
-            )}
-          </div>
+        <div className="product-card-rating">
+          <CardStars rating={rating} />
         </div>
+
+        <div className="product-card-price">
+          <span className="product-card-price-now">{formatINR(product.price)}</span>
+          {product.oldPrice && (
+            <span className="product-card-price-was">{formatINR(product.oldPrice)}</span>
+          )}
+        </div>
+
+        <button
+          type="button"
+          className={`pc-add-cart-btn ${added ? 'added' : ''}`}
+          onClick={handleAddToCart}
+        >
+          {added ? (
+            <span>✓ Added</span>
+          ) : (
+            <>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
+              <span>Add to Cart</span>
+            </>
+          )}
+        </button>
       </div>
     </article>
   );

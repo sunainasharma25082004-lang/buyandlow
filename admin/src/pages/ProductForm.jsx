@@ -45,10 +45,29 @@ const ProductForm = () => {
   const [imageMode, setImageMode] = useState('upload'); // default to device upload
   const [urlInput, setUrlInput] = useState('');
   const [error, setError] = useState('');
+  const [previewMap, setPreviewMap] = useState({});
+  const [lightboxUrl, setLightboxUrl] = useState(null);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [customSubcategoryMode, setCustomSubcategoryMode] = useState(false);
   const [allExistingProducts, setAllExistingProducts] = useState([]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(previewMap).forEach((url) => {
+        if (url && typeof url === 'string' && url.startsWith('blob:')) {
+          try {
+            URL.revokeObjectURL(url);
+          } catch {}
+        }
+      });
+    };
+  }, [previewMap]);
+
+  const getImagePreview = (url) => {
+    if (!url) return '';
+    return previewMap[url] || url;
+  };
 
   useEffect(() => {
     getCategories()
@@ -132,6 +151,34 @@ const ProductForm = () => {
     setUploading(true);
     setUploadingText(files.length > 1 ? `Uploading ${files.length} images...` : 'Uploading image...');
 
+    // Generate local blob previews immediately for instantaneous visual feedback
+    const fileEntries = files.map((file) => ({
+      file,
+      blobUrl: URL.createObjectURL(file),
+      name: file.name,
+    }));
+    const newBlobUrls = fileEntries.map((fe) => fe.blobUrl);
+
+    // Save blob URLs into previewMap
+    setPreviewMap((prev) => {
+      const next = { ...prev };
+      fileEntries.forEach((fe) => {
+        next[fe.blobUrl] = fe.blobUrl;
+      });
+      return next;
+    });
+
+    // Immediately show the new photos in the gallery
+    setForm((prev) => {
+      const currentList = Array.isArray(prev.images) ? prev.images : [];
+      const updated = [...currentList, ...newBlobUrls];
+      return {
+        ...prev,
+        images: updated,
+        image: prev.image || updated[0],
+      };
+    });
+
     try {
       let uploadedUrls = [];
       if (files.length === 1) {
@@ -144,17 +191,45 @@ const ProductForm = () => {
       }
 
       if (uploadedUrls.length > 0) {
+        // Map the server URLs to local blobs so preview remains high-res & reliable
+        setPreviewMap((prev) => {
+          const next = { ...prev };
+          uploadedUrls.forEach((serverUrl, idx) => {
+            if (fileEntries[idx]) {
+              next[serverUrl] = fileEntries[idx].blobUrl;
+            }
+          });
+          return next;
+        });
+
+        // Swap the temporary blob URLs with the permanent server URLs
         setForm((prev) => {
-          const currentList = Array.isArray(prev.images) ? prev.images : [];
-          const updated = [...currentList, ...uploadedUrls];
+          const currentList = Array.isArray(prev.images) ? [...prev.images] : [];
+          const replaced = currentList.map((item) => {
+            const matchIndex = newBlobUrls.indexOf(item);
+            return matchIndex !== -1 && uploadedUrls[matchIndex] ? uploadedUrls[matchIndex] : item;
+          });
+          const newMain = prev.image && newBlobUrls.includes(prev.image)
+            ? uploadedUrls[newBlobUrls.indexOf(prev.image)] || replaced[0]
+            : (prev.image || replaced[0]);
+
           return {
             ...prev,
-            images: updated,
-            image: prev.image || updated[0],
+            images: replaced,
+            image: newMain,
           };
         });
       }
     } catch (err) {
+      // Revert temporary blob URLs on failure
+      setForm((prev) => ({
+        ...prev,
+        images: (prev.images || []).filter((u) => !newBlobUrls.includes(u)),
+        image: newBlobUrls.includes(prev.image) ? (prev.images || [])[0] || '' : prev.image,
+      }));
+      newBlobUrls.forEach((b) => {
+        try { URL.revokeObjectURL(b); } catch {}
+      });
       setError(err.response?.data?.message || 'Images upload failed. Please try again.');
     } finally {
       setUploading(false);
@@ -316,6 +391,8 @@ const ProductForm = () => {
   );
 
   const imagesList = Array.isArray(form.images) ? form.images : (form.image ? [form.image] : []);
+  const activeCoverUrl = form.image || (imagesList.length > 0 ? imagesList[0] : '');
+  const activeCoverIndex = imagesList.indexOf(activeCoverUrl) !== -1 ? imagesList.indexOf(activeCoverUrl) : 0;
 
   return (
     <div className="product-form-page">
@@ -635,10 +712,63 @@ const ProductForm = () => {
             {/* Visual Image Manager Grid */}
             {imagesList.length > 0 && (
               <div className="multi-image-container">
+                {/* Dedicated Active Cover Photo Preview Showcase */}
+                {activeCoverUrl && (
+                  <div className="active-cover-showcase">
+                    <div className="cover-showcase-badge">
+                      <span className="cover-badge-title">★ Active Main Cover Photo</span>
+                      <span className="cover-badge-hint">
+                        This is the photo buyers see on store product cards and search results
+                      </span>
+                    </div>
+
+                    <div className="cover-showcase-card">
+                      <div
+                        className="cover-showcase-img-wrap"
+                        onClick={() => setLightboxUrl(activeCoverUrl)}
+                        title="Click to inspect cover photo full size"
+                      >
+                        <AdminImage
+                          src={getImagePreview(activeCoverUrl)}
+                          alt="Main Cover Photo"
+                          className="cover-showcase-img"
+                        />
+                        <div className="cover-hover-zoom">
+                          <span>🔍 View Full Size</span>
+                        </div>
+                      </div>
+
+                      <div className="cover-showcase-info">
+                        <div className="cover-title-row">
+                          <h4>{form.name ? `${form.name} — Cover Photo` : 'Primary Cover Photo'}</h4>
+                          <span className="cover-pill">Photo #{activeCoverIndex + 1}</span>
+                        </div>
+                        <p className="cover-desc">
+                          This image is set as the main storefront cover photo. To change which photo is the cover,
+                          click <strong>"★ Set Cover"</strong> on any thumbnail in the gallery below.
+                        </p>
+                        <div className="cover-actions-row">
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            onClick={() => setLightboxUrl(activeCoverUrl)}
+                          >
+                            🔍 Inspect Full Size
+                          </button>
+                          {imagesList.length > 1 && (
+                            <span className="cover-gallery-hint">
+                              💡 {imagesList.length} total photos in gallery. First thumbnail is the primary cover.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="multi-image-header">
                   <h4>
-                    <span>🖼️ Product Gallery</span>
-                    <span className="multi-image-count">{imagesList.length} photos</span>
+                    <span>🖼️ Product Gallery ({imagesList.length} {imagesList.length === 1 ? 'photo' : 'photos'})</span>
                   </h4>
                   <button
                     type="button"
@@ -653,18 +783,35 @@ const ProductForm = () => {
                 <div className="multi-image-grid">
                   {imagesList.map((imgUrl, index) => {
                     const isMain = index === 0 || form.image === imgUrl;
+                    const previewSrc = getImagePreview(imgUrl);
                     return (
-                      <div key={`${imgUrl}-${index}`} className={`image-tile ${isMain ? 'is-main' : ''}`}>
+                      <div
+                        key={`${imgUrl}-${index}`}
+                        className={`image-tile ${isMain ? 'is-main' : ''}`}
+                      >
                         {isMain ? (
                           <span className="main-image-tag">★ Main Cover</span>
                         ) : (
                           <span className="image-tile-index">#{index + 1}</span>
                         )}
 
-                        <AdminImage src={imgUrl} alt={`Product ${index + 1}`} className="image-tile-img" />
+                        <AdminImage
+                          src={previewSrc}
+                          alt={`Product ${index + 1}`}
+                          className="image-tile-img"
+                          onClick={() => setLightboxUrl(imgUrl)}
+                        />
 
                         <div className="image-tile-actions">
-                          <div style={{ display: 'flex', gap: '3px' }}>
+                          <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              className="tile-action-btn btn-zoom-img"
+                              onClick={() => setLightboxUrl(imgUrl)}
+                              title="Inspect Full Size"
+                            >
+                              🔍
+                            </button>
                             {index > 0 && (
                               <button
                                 type="button"
@@ -709,6 +856,66 @@ const ProductForm = () => {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* Lightbox / Zoom Modal */}
+            {lightboxUrl && (
+              <div className="image-lightbox-overlay" onClick={() => setLightboxUrl(null)}>
+                <div className="image-lightbox-content" onClick={(e) => e.stopPropagation()}>
+                  <div className="lightbox-header">
+                    <div className="lightbox-title">
+                      <span>🖼️ Photo Inspection</span>
+                      {lightboxUrl === activeCoverUrl && (
+                        <span className="lightbox-badge-main">★ Current Main Cover</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="lightbox-close-btn"
+                      onClick={() => setLightboxUrl(null)}
+                      title="Close"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="lightbox-body">
+                    <img
+                      src={getImagePreview(lightboxUrl)}
+                      alt="Product Preview Full Size"
+                      className="lightbox-img"
+                    />
+                  </div>
+
+                  <div className="lightbox-footer">
+                    <span className="lightbox-url-info">
+                      {lightboxUrl.startsWith('blob:') ? '📁 Device upload preview' : lightboxUrl}
+                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {lightboxUrl !== activeCoverUrl && (
+                        <button
+                          type="button"
+                          className="btn btn-gold btn-sm"
+                          onClick={() => {
+                            const idx = imagesList.indexOf(lightboxUrl);
+                            if (idx !== -1) handleSetMainImage(idx);
+                            setLightboxUrl(null);
+                          }}
+                        >
+                          ★ Set as Main Cover Photo
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        onClick={() => setLightboxUrl(null)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

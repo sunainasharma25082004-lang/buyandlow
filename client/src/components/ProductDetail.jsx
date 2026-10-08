@@ -103,11 +103,11 @@ const ProductDetail = () => {
     );
   }
 
-  const images = (
-    product.images?.length > 0
-      ? product.images
-      : [product.image || '/placeholder.png']
-  ).map(resolveMediaUrl);
+  const FALLBACK_IMG = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
+  const rawImages = product.images?.length > 0
+    ? product.images
+    : [product.image || FALLBACK_IMG];
+  const images = rawImages.map((img) => resolveMediaUrl(img) || FALLBACK_IMG);
 
   const discount =
     product.oldPrice && product.price

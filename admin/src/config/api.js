@@ -36,20 +36,25 @@ const API_URL =
 const rewriteStaleUploadUrl = (url) => {
   try {
     const parsed = new URL(url);
-    if (!parsed.pathname.startsWith('/uploads/')) return url;
+    let uploadPath = parsed.pathname;
+    if (uploadPath.startsWith('/api/uploads/')) {
+      uploadPath = uploadPath.replace(/^\/api/, '');
+    }
+    if (!uploadPath.startsWith('/uploads/')) return url;
 
     const targetHost = API_ORIGIN ? new URL(API_ORIGIN).host : '';
-    if (targetHost && parsed.host === targetHost) return url;
 
-    const isFrontendOrLocal =
+    const isStaleHost =
+      parsed.host.includes('buylow-api') ||
+      parsed.host.includes('buyandlow-api') ||
       parsed.host.includes('admin') ||
       parsed.host.includes('store') ||
       parsed.host.includes('frontend') ||
       parsed.host.includes('localhost') ||
       parsed.host === '127.0.0.1';
 
-    if (isFrontendOrLocal && API_ORIGIN) {
-      return `${API_ORIGIN}${parsed.pathname}${parsed.search}`;
+    if ((isStaleHost || (targetHost && parsed.host === targetHost)) && API_ORIGIN) {
+      return `${API_ORIGIN}${uploadPath}${parsed.search}`;
     }
 
     return url;
@@ -66,7 +71,10 @@ export const resolveMediaUrl = (url) => {
     return rewriteStaleUploadUrl(url);
   }
 
-  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  let cleanPath = url.startsWith('/') ? url : `/${url}`;
+  if (cleanPath.startsWith('/api/uploads/')) {
+    cleanPath = cleanPath.replace(/^\/api/, '');
+  }
   return `${API_ORIGIN}${cleanPath}`;
 };
 

@@ -74,13 +74,15 @@ export default function HomeScreen() {
       <SavedPicks />
 
       <View style={styles.allHeader}>
-        <Text style={styles.allTitle}>All Products</Text>
-        <Text style={styles.allSubtitle}>Scroll karo — aur products load hote jayenge</Text>
+        <View style={styles.allHeaderLeft}>
+          <Text style={styles.allTitle}>All Products</Text>
+          <Text style={styles.allSubtitle}>Explore our complete catalog · Best deals guaranteed</Text>
+        </View>
       </View>
 
       {loading && products.length === 0 ? (
         <View style={styles.skeletonSection}>
-          <Text style={styles.loadingHint}>Products load ho rahe hain...</Text>
+          <Text style={styles.loadingHint}>Loading products...</Text>
           {Array.from({ length: INITIAL_SKELETON_ROWS }).map((_, rowIndex) => (
             <View key={`product-skeleton-row-${rowIndex}`} style={styles.column}>
               <ProductCardSkeleton />
@@ -102,14 +104,14 @@ export default function HomeScreen() {
     <View style={styles.footer}>
       {loadingMore ? (
         <View style={styles.footerSkeletonWrap}>
-          <Text style={styles.loadingHint}>Aur products load ho rahe hain...</Text>
+          <Text style={styles.loadingHint}>Loading more products...</Text>
           <View style={styles.column}>
             <ProductCardSkeleton />
             <ProductCardSkeleton />
           </View>
         </View>
       ) : page >= totalPages && products.length > 0 ? (
-        <Text style={styles.endText}>Saare products load ho gaye</Text>
+        <Text style={styles.endText}>{"✓ You've viewed all available products"}</Text>
       ) : null}
       <View style={styles.bottomPadding} />
     </View>
@@ -153,6 +155,9 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 12,
     marginTop: 6,
+  },
+  allHeaderLeft: {
+    flex: 1,
   },
   allTitle: {
     fontSize: 18,

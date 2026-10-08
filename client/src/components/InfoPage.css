@@ -99,7 +99,7 @@
 }
 
 .info-list li::before {
-  content: 'âœ¦';
+  content: '✦';
   position: absolute;
   left: 0;
   color: var(--gold);

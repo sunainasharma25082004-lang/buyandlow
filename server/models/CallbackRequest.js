@@ -7,8 +7,14 @@ const callbackRequestSchema = new mongoose.Schema({
   },
   requestType: {
     type: String,
-    enum: ['callback', 'chat'],
+    enum: ['callback', 'chat', 'contact'],
     default: 'callback',
+  },
+  subject: {
+    type: String,
+    trim: true,
+    maxlength: 200,
+    default: '',
   },
   name: {
     type: String,

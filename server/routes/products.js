@@ -23,7 +23,7 @@ const filterStaticProducts = (queryOptions) => {
 
   const adminAdded = (global.adminProducts || []).map((p) => ({ ...p }));
   const staticMapped = staticProducts.map((p, index) => ({
-    _id: `static_id_${p.id || index}`,
+    _id: p.id ? String(p.id) : (p._id ? String(p._id) : `static_id_${index}`),
     ...p,
   }));
   const combined = [...adminAdded, ...staticMapped];
@@ -151,12 +151,12 @@ const findProductById = async (id) => {
     if (adminMatch) return adminMatch;
 
     const idMatch = staticProducts.find(
-      (p) => String(p.id) === String(id) || `static_id_${p.id}` === String(id)
+      (p) => String(p.id) === String(id) || String(p._id) === String(id) || `static_id_${p.id}` === String(id)
     );
-    if (idMatch) return { _id: `static_id_${idMatch.id}`, ...idMatch };
+    if (idMatch) return { _id: idMatch.id ? String(idMatch.id) : (idMatch._id ? String(idMatch._id) : `static_id_${idMatch.id}`), ...idMatch };
 
     const skuMatch = staticProducts.find((p) => p.sku === id);
-    if (skuMatch) return { _id: `static_id_${skuMatch.id}`, ...skuMatch };
+    if (skuMatch) return { _id: skuMatch.id ? String(skuMatch.id) : `static_id_${skuMatch.id}`, ...skuMatch };
 
     return null;
   }

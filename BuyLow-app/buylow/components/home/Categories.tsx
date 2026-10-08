@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../constants/colors';
+import { Colors, Shadows } from '../../constants/colors';
 import { getCategories } from '../../services/api';
 import RemoteImage from '../RemoteImage';
 import { PLACEHOLDER_CATEGORY } from '../../constants/images';
@@ -39,7 +39,7 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
       .catch((err: Error) => {
         if (active) {
           setCategories([]);
-          setError(err.message || 'Could not load categories. Check backend connection.');
+          setError(err.message || 'Could not load categories.');
         }
       })
       .finally(() => {
@@ -57,10 +57,22 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
     <View style={styles.container}>
       {showHeader && (
         <View style={styles.header}>
-          <Text style={styles.title}>Top Categories</Text>
-          <TouchableOpacity style={styles.viewAll} onPress={() => router.push('/(tabs)/categories')}>
+          <View style={styles.headerLeft}>
+            <View style={styles.iconWrap}>
+              <Feather name="grid" size={16} color={Colors.primary} />
+            </View>
+            <View>
+              <Text style={styles.title}>Top Categories</Text>
+              <Text style={styles.subtitle}>Explore our curated collections</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.viewAll}
+            onPress={() => router.push('/(tabs)/categories')}
+            activeOpacity={0.7}
+          >
             <Text style={styles.viewAllText}>View All</Text>
-            <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
+            <Feather name="chevron-right" size={14} color={Colors.primary} />
           </TouchableOpacity>
         </View>
       )}
@@ -78,15 +90,27 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
           </Text>
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scroll}
+        >
           {categories.map((item) => (
-            <TouchableOpacity 
-              key={item._id} 
+            <TouchableOpacity
+              key={item._id}
               style={styles.item}
               onPress={() => router.push(`/category/${encodeURIComponent(item.name)}`)}
+              activeOpacity={0.8}
             >
-              <View style={styles.imageCircle}>
-                <RemoteImage uri={item.image} style={styles.image} fallback={PLACEHOLDER_CATEGORY} />
+              <View style={styles.imageRing}>
+                <View style={styles.imageCircle}>
+                  <RemoteImage
+                    uri={item.image}
+                    style={styles.image}
+                    fallback={PLACEHOLDER_CATEGORY}
+                    contentFit="cover"
+                  />
+                </View>
               </View>
               <Text style={styles.name} numberOfLines={2}>
                 {getLabel(item)}
@@ -102,54 +126,86 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.white,
-    paddingVertical: 16,
+    paddingVertical: 14,
+    marginTop: 6,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 14,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.lightBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '800',
     color: Colors.text,
+  },
+  subtitle: {
+    fontSize: 11.5,
+    color: Colors.textLight,
+    marginTop: 1,
   },
   viewAll: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   viewAllText: {
     color: Colors.primary,
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
   scroll: {
-    paddingHorizontal: 16,
-    gap: 16,
+    paddingHorizontal: 14,
+    gap: 12,
+    paddingBottom: 2,
   },
   item: {
     alignItems: 'center',
-    width: 72,
+    width: 80,
+  },
+  imageRing: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 2,
+    borderColor: '#BBDEFB',
+    padding: 2,
+    backgroundColor: Colors.white,
+    marginBottom: 6,
+    ...Shadows.small,
   },
   imageCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.background,
+    width: '100%',
+    height: '100%',
+    borderRadius: 32,
     overflow: 'hidden',
-    marginBottom: 8,
+    backgroundColor: '#EDF5FD',
   },
   image: {
     width: '100%',
     height: '100%',
   },
   name: {
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '700',
     color: Colors.text,
     textAlign: 'center',
+    lineHeight: 15,
   },
   stateBox: {
     minHeight: 90,

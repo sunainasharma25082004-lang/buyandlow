@@ -13,10 +13,10 @@ const StarRating = ({ rating, size = 12 }) => (
 );
 
 const priceRanges = [
-  { label: 'Under ₹100', min: 0, max: 100 },
-  { label: '₹100 – ₹150', min: 100, max: 150 },
-  { label: '₹150 – ₹200', min: 150, max: 200 },
-  { label: 'Over ₹200', min: 200, max: 99999 },
+  { label: 'Under ₹1,000', min: 0, max: 1000 },
+  { label: '₹1,000 – ₹2,500', min: 1000, max: 2500 },
+  { label: '₹2,500 – ₹5,000', min: 2500, max: 5000 },
+  { label: 'Over ₹5,000', min: 5000, max: 99999 },
 ];
 
 const ratingOptions = [5, 4, 3];

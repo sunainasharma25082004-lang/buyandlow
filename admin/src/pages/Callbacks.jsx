@@ -30,6 +30,7 @@ const formatDate = (d) => {
 const TYPE_LABELS = {
   callback: 'Call Back',
   chat: 'Chat Support',
+  contact: 'Contact Form',
 };
 
 const matchesCallbackSearch = (item, query) => {
@@ -172,6 +173,13 @@ const Callbacks = () => {
           >
             Call Back
           </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${typeFilter === 'contact' ? 'btn-gold' : 'btn-outline'}`}
+            onClick={() => setTypeFilter('contact')}
+          >
+            Contact Form
+          </button>
         </div>
       ) : null}
 
@@ -216,18 +224,19 @@ const Callbacks = () => {
         <>
           {paginatedCallbacks.map((item) => {
             const isChat = item.requestType === 'chat';
+            const isContact = item.requestType === 'contact';
             return (
             <div key={item._id} className="callback-card">
               <div className="callback-card-header">
                 <div>
                   <h3>
-                    {isChat ? '💬' : '📞'} {item.name}
-                    {isChat ? ' — chat support request' : ' — wants a callback'}
+                    {isChat ? '💬' : isContact ? '✉️' : '📞'} {item.name}
+                    {isChat ? ' — chat support request' : isContact ? ` — message: ${item.subject || 'General Inquiry'}` : ' — wants a callback'}
                   </h3>
                   <p>Requested {formatDate(item.createdAt)} · ID: {item._id}</p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                  <span className={`badge ${isChat ? 'badge-info' : 'badge-gold'}`}>
+                  <span className={`badge ${isChat ? 'badge-info' : isContact ? 'badge-success' : 'badge-gold'}`}>
                     {TYPE_LABELS[item.requestType] || TYPE_LABELS.callback}
                   </span>
                   <span className={`badge ${statusBadgeClass(item.status)}`}>

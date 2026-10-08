@@ -7,22 +7,15 @@ import './FeaturedProducts.css';
 
 const FeaturedProducts = ({ onLoadedProducts }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('All');
-  const [tabs, setTabs] = useState(['All']);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get(`${API_URL}/categories`)
-      .then((res) => {
-        const names = (res.data.categories || []).map((c) => c.name);
-        if (names.length) setTabs(['All', ...names.slice(0, 4)]);
-      })
-      .catch(() => {});
-
+    let active = true;
     axios
-      .get(`${API_URL}/products`, { params: { limit: 8, sort: 'Popular' } })
+      .get(`${API_URL}/products`, { params: { limit: 12, sort: 'Popular' } })
       .then((res) => {
+        if (!active) return;
         const list = res.data.products || [];
         const seen = new Set();
         const unique = list.filter((p) => {
@@ -34,57 +27,45 @@ const FeaturedProducts = ({ onLoadedProducts }) => {
         setProducts(unique);
         if (onLoadedProducts) onLoadedProducts(unique);
       })
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => {
+        if (active) setProducts([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
 
-  const filtered = activeTab === 'All'
-    ? products
-    : products.filter((p) => p.category === activeTab);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <section className="featured-products">
       <div className="container">
-        <div className="section-header">
-          <div>
-            <p className="section-eyebrow">Most Loved</p>
-            <h2 className="section-title">Popular Products</h2>
-          </div>
-          <div className="product-tabs">
-            {tabs.map((t) => (
-              <button key={t} className={`tab-btn ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>
-                {t}
-              </button>
-            ))}
-          </div>
+        {/* Section Header */}
+        <div className="trending-header-bar">
+          <h2 className="trending-title">Trending Products</h2>
           <button
-            className="view-all-link-btn"
-            onClick={() => navigate('/allproducts?sort=Popular&title=Popular Products')}
+            type="button"
+            className="trending-view-all-btn"
+            onClick={() => navigate('/allproducts?sort=Popular&title=Trending Products')}
           >
-            View All →
+            <span>View All</span>
+            <span className="view-arrow">→</span>
           </button>
         </div>
 
         {loading ? (
-          <div className="products-loading">Loading popular products...</div>
-        ) : filtered.length === 0 ? (
-          <div className="products-empty">No products yet.</div>
+          <div className="products-loading">Loading trending products...</div>
+        ) : products.length === 0 ? (
+          <div className="products-empty">Products will appear here once added from the catalog.</div>
         ) : (
-          <div className="products-grid">
-            {filtered.map((product) => (
+          <div className="trending-products-grid">
+            {products.slice(0, 6).map((product) => (
               <ProductCard key={product._id || product.id} product={product} />
             ))}
           </div>
         )}
-
-        <div className="view-all-center">
-          <button
-            className="btn-dark view-all-btn"
-            onClick={() => navigate('/allproducts?sort=Popular&title=Popular Products')}
-          >
-            View Popular Products
-          </button>
-        </div>
       </div>
     </section>
   );

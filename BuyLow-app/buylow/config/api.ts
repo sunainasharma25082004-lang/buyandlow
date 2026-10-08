@@ -104,12 +104,16 @@ const rewriteLocalhostUrl = (url: string) => {
 const rewriteStaleUploadUrl = (url: string) => {
   try {
     const parsed = new URL(url);
-    if (!parsed.pathname.startsWith('/uploads/')) return url;
+    let uploadPath = parsed.pathname;
+    if (uploadPath.startsWith('/api/uploads/')) {
+      uploadPath = uploadPath.replace(/^\/api/, '');
+    }
+    if (!uploadPath.startsWith('/uploads/')) return url;
 
     const currentHost = new URL(API_ORIGIN).host;
-    if (parsed.host === currentHost) return url;
+    if (parsed.host === currentHost && uploadPath === parsed.pathname) return url;
 
-    return `${API_ORIGIN}${parsed.pathname}${parsed.search}`;
+    return `${API_ORIGIN}${uploadPath}${parsed.search}`;
   } catch {
     return url;
   }
@@ -123,6 +127,9 @@ export const resolveMediaUrl = (url?: string | null) => {
     return rewriteStaleUploadUrl(rewriteLocalhostUrl(url));
   }
 
-  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  let cleanPath = url.startsWith('/') ? url : `/${url}`;
+  if (cleanPath.startsWith('/api/uploads/')) {
+    cleanPath = cleanPath.replace(/^\/api/, '');
+  }
   return `${API_ORIGIN}${cleanPath}`;
 };

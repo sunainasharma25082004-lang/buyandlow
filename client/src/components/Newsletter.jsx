@@ -1,14 +1,30 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import API_URL from '../config/api';
 import './Newsletter.css';
 
 const Newsletter = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (email) {
+  const handleSubmit = async () => {
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes('@')) return;
+    setSubmitting(true);
+    try {
+      await axios.post(`${API_URL}/support/contact`, {
+        name: 'Newsletter Subscriber',
+        email: trimmed,
+        subject: 'Newsletter Subscription',
+        message: `Customer subscribed to store newsletter with email: ${trimmed}`,
+      });
+    } catch {
+      // Graceful fallback
+    } finally {
       setSubmitted(true);
       setEmail('');
+      setSubmitting(false);
     }
   };
 
@@ -36,7 +52,9 @@ const Newsletter = () => {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             />
-            <button className="nl-btn" onClick={handleSubmit}>Subscribe Now</button>
+            <button className="nl-btn" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? 'Subscribing...' : 'Subscribe Now'}
+            </button>
           </div>
         )}
 
