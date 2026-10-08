@@ -1,119 +1,72 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import API_URL, { resolveMediaUrl } from '../config/api';
-import { CartContext } from '../context/CartContext';
-import { formatINR } from '../utils/currency';
+import API_URL from '../config/api';
+import ProductCard from './ProductCard';
+import { products as fallbackProducts } from '../data/products';
 import './NewArrivals.css';
 
-const StarRating = ({ rating }) => (
-  <span className="stars">{'★'.repeat(Math.floor(rating))}{'☆'.repeat(5 - Math.floor(rating))}</span>
-);
-
-const NewArrivals = ({ excludeIds = [] }) => {
+const NewArrivals = () => {
   const navigate = useNavigate();
-  const { addToCart } = useContext(CartContext);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     axios
       .get(`${API_URL}/products`, { params: { sort: 'Newest', limit: 8 } })
       .then((res) => {
+        if (!active) return;
         const list = res.data.products || [];
-        const seen = new Set();
-        const unique = list.filter((p) => {
-          const id = String(p._id || p.id || '');
-          if (!id || seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        });
-        setProducts(unique);
+        if (list.length > 0) {
+          setProducts(list);
+        } else {
+          setProducts(fallbackProducts);
+        }
       })
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (active) setProducts(fallbackProducts);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const availableProducts = (products || []).filter(
-    (p) => !excludeIds.includes(String(p._id || p.id))
-  );
-
-  if (!loading && availableProducts.length === 0) {
-    return null;
-  }
+  const items = products.length > 0 ? products.slice(0, 6) : fallbackProducts.slice(0, 6);
 
   return (
-    <section className="new-arrivals">
+    <section className="new-arrivals-section">
       <div className="container">
-        <div className="section-header">
-          <h2 className="section-title">New Arrivals</h2>
-          <p className="arrivals-subtitle">Freshly added products — latest uploads from our store.</p>
+        {/* Header Bar */}
+        <div className="arrivals-header-bar">
+          <div className="arrivals-title-wrap">
+            <span className="arrivals-sparkle-icon">✨</span>
+            <h2 className="arrivals-title">New Arrivals</h2>
+            <span className="arrivals-pill-tag">Just In</span>
+          </div>
+
+          <button
+            type="button"
+            className="arrivals-view-all-btn"
+            onClick={() => navigate('/allproducts?sort=Newest&title=New Arrivals')}
+          >
+            <span>View All New</span>
+            <span className="view-arrow">→</span>
+          </button>
         </div>
-        <button
-          className="btn-dark arrivals-btn"
-          onClick={() => navigate('/allproducts?sort=Newest&title=New Arrivals')}
-        >
-          View All New
-        </button>
 
+        {/* 6-column Grid */}
         {loading ? (
-          <div className="arrivals-loading">Loading latest products...</div>
-        ) : availableProducts.length === 0 ? (
-          <div className="arrivals-empty">No new products yet. Check back soon!</div>
+          <div className="arrivals-loading">Loading new arrivals...</div>
         ) : (
-          <div className="arrivals-list">
-            {availableProducts.map((item) => {
-              const prodId = item._id || item.id;
-              const desc = typeof item.description === 'string'
-                ? item.description.slice(0, 80) + (item.description.length > 80 ? '…' : '')
-                : '';
-
-              return (
-                <div
-                  key={prodId}
-                  className="arrival-item"
-                  onClick={() => navigate(`/product/${prodId}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="arrival-img-wrap">
-                    <img
-                      src={resolveMediaUrl(item.image) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80'}
-                      alt={item.name}
-                      className="arrival-img"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80';
-                      }}
-                    />
-                    {item.badge && <span className="arrival-badge">{item.badge}</span>}
-                  </div>
-                  <div className="arrival-info">
-                    <h3 className="arrival-name">{item.name}</h3>
-                    <p className="arrival-desc">{desc}</p>
-                    <div className="arrival-rating">
-                      <StarRating rating={item.rating || 0} />
-                      <span className="rating-count">({item.reviews || 0} reviews)</span>
-                    </div>
-                  </div>
-                  <div className="arrival-price" onClick={(e) => e.stopPropagation()}>
-                    <div className="arrival-price-col">
-                      <span className="price-current">{formatINR(item.price)}</span>
-                      {item.oldPrice && (
-                        <span className="price-old">{formatINR(item.oldPrice)}</span>
-                      )}
-                    </div>
-                    <button
-                      className="add-btn"
-                      onClick={() => addToCart(item, 1, '')}
-                      title="Add to Cart"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="arrivals-products-grid">
+            {items.map((product) => (
+              <ProductCard key={product._id || product.id} product={product} />
+            ))}
           </div>
         )}
       </div>

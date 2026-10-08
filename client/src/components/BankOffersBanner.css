@@ -1,0 +1,104 @@
+/* Bank Offers Banner */
+.bank-offers-section {
+  padding: 10px 0 16px;
+}
+
+.bank-offers-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bank-offers-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.bank-offer-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px;
+  border-right: 1px solid #F3F4F6;
+}
+
+.bank-offer-item:last-child {
+  border-right: none;
+}
+
+.bank-offer-emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.bank-offer-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.bank-offer-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #0D6EFD;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.bank-offer-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.bank-offer-sub {
+  font-size: 11px;
+  color: #6B7280;
+  line-height: 1.2;
+}
+
+@media (max-width: 860px) {
+  .bank-offers-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .bank-offer-item {
+    border-right: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .bank-offers-section {
+    padding: 6px 0 12px;
+  }
+  .bank-offers-card {
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+  .bank-offers-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 10px;
+  }
+  .bank-offer-item {
+    border-right: none;
+    padding: 2px 4px;
+    gap: 8px;
+  }
+  .bank-offer-emoji {
+    font-size: 18px;
+  }
+  .bank-offer-tag {
+    font-size: 8.5px;
+  }
+  .bank-offer-title {
+    font-size: 11.5px;
+  }
+  .bank-offer-sub {
+    font-size: 9.5px;
+  }
+}

@@ -1,0 +1,154 @@
+/* Brands Showcase Section */
+.brands-showcase-section {
+  padding: 18px 0 24px;
+}
+
+.brands-header-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.brands-tag {
+  display: inline-block;
+  background: #EBF3FC;
+  color: #0D6EFD;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  margin-bottom: 6px;
+}
+
+.brands-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.brands-view-btn {
+  background: none;
+  border: none;
+  color: #0D6EFD;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+.brands-view-btn:hover {
+  color: #0B5ED7;
+  transform: translateX(2px);
+}
+
+.brands-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 12px;
+}
+
+.brand-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.brand-card:hover {
+  transform: translateY(-3px);
+  border-color: #0D6EFD;
+  box-shadow: 0 8px 18px rgba(13, 110, 253, 0.12);
+}
+
+.brand-logo-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.2px;
+  margin-bottom: 4px;
+}
+
+.brand-cat {
+  font-size: 11px;
+  color: #6B7280;
+  margin-bottom: 8px;
+}
+
+.brand-discount-badge {
+  background: #ECFDF5;
+  color: #059669;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .brands-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .brands-showcase-section {
+    padding: 12px 0 18px;
+  }
+  .brands-header-bar {
+    margin-bottom: 12px;
+  }
+  .brands-title {
+    font-size: 17px;
+  }
+  .brands-view-btn {
+    font-size: 12.5px;
+  }
+  .brands-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .brands-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .brand-card {
+    flex: 0 0 105px;
+    padding: 12px 8px;
+    border-radius: 12px;
+  }
+  .brand-logo-text {
+    font-size: 13.5px;
+    margin-bottom: 2px;
+  }
+  .brand-cat {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+  .brand-discount-badge {
+    font-size: 9px;
+  }
+}

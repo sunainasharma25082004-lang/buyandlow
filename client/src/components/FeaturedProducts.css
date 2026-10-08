@@ -73,9 +73,21 @@
   }
 }
 
-@media (max-width: 540px) {
+@media (max-width: 600px) {
+  .featured-products {
+    padding: 12px 0 20px;
+  }
+  .trending-header-bar {
+    margin-bottom: 12px;
+  }
+  .trending-title {
+    font-size: 17px;
+  }
+  .trending-view-all-btn {
+    font-size: 12.5px;
+  }
   .trending-products-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 8px;
   }
 }

@@ -209,7 +209,7 @@ const Navbar = () => {
           </Link>
         </div>
 
-        {/* Center: Search Bar */}
+        {/* Center: Desktop Search Bar */}
         <div className="nav-center">
           <form className="nav-search-form" onSubmit={handleSearchSubmit}>
             <svg className="nav-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.2">
@@ -295,6 +295,50 @@ const Navbar = () => {
           </button>
         </div>
       </div>
+
+      {/* Dedicated Mobile Search Bar (Always visible on mobile phones!) */}
+      <div className="nav-mobile-search-bar">
+        <form className="mobile-search-form" onSubmit={handleSearchSubmit}>
+          <svg className="mobile-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search products, brands & more..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="mobile-search-input"
+          />
+        </form>
+      </div>
+
+      {/* Fixed Bottom Mobile Navigation Bar */}
+      <nav className="mobile-bottom-bar" aria-label="Mobile Navigation">
+        <Link to="/" className={`bottom-nav-item ${location.pathname === '/' ? 'active' : ''}`}>
+          <span className="bottom-nav-icon">🏠</span>
+          <span className="bottom-nav-label">Home</span>
+        </Link>
+        <Link to="/allproducts" className={`bottom-nav-item ${location.pathname === '/allproducts' ? 'active' : ''}`}>
+          <span className="bottom-nav-icon">🛍️</span>
+          <span className="bottom-nav-label">Shop</span>
+        </Link>
+        <Link to="/allproducts?sale=true&title=Flash Deals" className="bottom-nav-item">
+          <span className="bottom-nav-icon">⚡</span>
+          <span className="bottom-nav-label">Deals</span>
+        </Link>
+        <Link to="/orders" className={`bottom-nav-item ${location.pathname === '/orders' ? 'active' : ''}`}>
+          <span className="bottom-nav-icon">📦</span>
+          <span className="bottom-nav-label">Orders</span>
+        </Link>
+        <button type="button" className="bottom-nav-item bottom-cart-btn" onClick={handleCartClick}>
+          <div className="bottom-cart-icon-wrap">
+            <span className="bottom-nav-icon">🛒</span>
+            {cartCount > 0 && <span className="bottom-cart-badge">{cartCount}</span>}
+          </div>
+          <span className="bottom-nav-label">Cart</span>
+        </button>
+      </nav>
     </nav>
   );
 };

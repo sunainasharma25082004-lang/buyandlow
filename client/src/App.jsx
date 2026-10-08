@@ -8,12 +8,22 @@ import { CartProvider } from "./context/CartContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
+import AnnouncementBar from "./components/AnnouncementBar";
+import CategoryStoryBar from "./components/CategoryStoryBar";
 import HeroSection from "./components/HeroSection";
+import BankOffersBanner from "./components/BankOffersBanner";
 import ShopCategories from "./components/ShopCategories";
+import FlashDeals from "./components/FlashDeals";
 import FeaturedProducts from "./components/FeaturedProducts";
-import SummerCollection from "./components/SummerCollection";
+import PromoSlider from "./components/PromoSlider";
+import BudgetStore from "./components/BudgetStore";
+import PromoBanners from "./components/PromoBanners";
 import NewArrivals from "./components/NewArrivals";
+import BrandsShowcase from "./components/BrandsShowcase";
+import WhyChooseUs from "./components/WhyChooseUs";
 import CustomerReviews from "./components/CustomerReviews";
+import FaqSection from "./components/FaqSection";
+import AppBanner from "./components/AppBanner";
 import Newsletter from "./components/Newsletter";
 
 import Allproducts from "./components/Allproducts";
@@ -30,20 +40,24 @@ import ScrollToTop from "./components/ScrollToTop";
 import "./index.css";
 
 const HomePage = () => {
-  const [featuredIds, setFeaturedIds] = React.useState([]);
-
   return (
     <>
+      <AnnouncementBar />
+      <CategoryStoryBar />
       <HeroSection />
+      <BankOffersBanner />
       <ShopCategories />
-      <FeaturedProducts
-        onLoadedProducts={(prods) =>
-          setFeaturedIds((prods || []).map((p) => String(p._id || p.id || '')))
-        }
-      />
-      <SummerCollection excludeIds={featuredIds} />
-      <NewArrivals excludeIds={featuredIds} />
+      <FlashDeals />
+      <FeaturedProducts />
+      <PromoSlider />
+      <BudgetStore />
+      <PromoBanners />
+      <NewArrivals />
+      <BrandsShowcase />
+      <WhyChooseUs />
       <CustomerReviews />
+      <FaqSection />
+      <AppBanner />
       <Newsletter />
     </>
   );

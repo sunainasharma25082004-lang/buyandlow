@@ -131,15 +131,47 @@
   }
 }
 
-@media (max-width: 540px) {
+@media (max-width: 640px) {
+  .shop-categories-section {
+    padding: 14px 0 10px;
+  }
+  .categories-header-bar {
+    margin-bottom: 10px;
+  }
+  .categories-title {
+    font-size: 17px;
+  }
+  .categories-view-all-btn {
+    font-size: 12.5px;
+  }
   .categories-row-grid {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    overflow-x: auto;
     gap: 10px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .categories-row-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .category-pill-card {
+    flex: 0 0 120px;
+    min-height: 118px;
+    padding: 12px 8px;
+    border-radius: 14px;
   }
   .cat-card-media {
-    height: 64px;
+    height: 54px;
+    margin-bottom: 4px;
   }
   .cat-card-img {
-    max-height: 60px;
+    max-height: 50px;
+  }
+  .cat-card-title {
+    font-size: 12px;
+  }
+  .cat-card-subtitle {
+    font-size: 9.5px;
   }
 }

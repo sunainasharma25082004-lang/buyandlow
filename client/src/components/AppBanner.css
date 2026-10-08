@@ -1,0 +1,184 @@
+/* Mobile App Download Banner */
+.app-download-section {
+  padding: 16px 0 28px;
+}
+
+.app-download-card {
+  background: linear-gradient(135deg, #111827 0%, #1F2937 60%, #111827 100%);
+  border-radius: 20px;
+  padding: 28px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  color: #FFFFFF;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-download-left {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex: 1;
+}
+
+.app-logo-pill {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.app-banner-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.app-download-info {
+  flex: 1;
+}
+
+.app-badge-pill {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFD200;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  margin-bottom: 8px;
+}
+
+.app-download-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0 0 6px 0;
+  line-height: 1.25;
+}
+
+.app-download-desc {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+  line-height: 1.45;
+  max-width: 580px;
+}
+
+.app-download-desc strong {
+  color: #FFD200;
+}
+
+.app-download-right {
+  flex-shrink: 0;
+}
+
+.btn-download-app {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: #FFFFFF;
+  color: #111827;
+  padding: 12px 22px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: all 0.22s ease;
+}
+
+.btn-download-app:hover {
+  background: #F3F4F6;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+}
+
+.btn-download-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.download-small {
+  font-size: 9px;
+  font-weight: 600;
+  color: #6B7280;
+  letter-spacing: 0.8px;
+}
+
+.download-big {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .app-download-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 20px;
+  }
+  .app-download-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-download-section {
+    padding: 10px 0 16px;
+  }
+  .app-download-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px 16px;
+    border-radius: 16px;
+    gap: 14px;
+  }
+  .app-download-left {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-logo-pill {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    padding: 6px;
+  }
+  .app-badge-pill {
+    font-size: 9px;
+    padding: 2px 7px;
+    margin-bottom: 4px;
+  }
+  .app-download-title {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  .app-download-desc {
+    font-size: 11.5px;
+  }
+  .app-download-right {
+    width: 100%;
+  }
+  .btn-download-app {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 10px;
+  }
+}
