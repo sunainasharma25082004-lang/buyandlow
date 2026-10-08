@@ -14,59 +14,86 @@ const FALLBACK =
     '</svg>',
   );
 
+const getUrlVariants = (raw) => {
+  if (!raw || typeof raw !== 'string') return [];
+  if (raw.startsWith('blob:') || raw.startsWith('data:')) return [raw];
+
+  const primary = resolveMediaUrl(raw);
+  const variants = primary ? [primary] : [];
+
+  let uploadPath = '';
+  if (raw.startsWith('/uploads/') || raw.startsWith('/api/uploads/')) {
+    uploadPath = raw.replace(/^\/api/, '');
+  } else {
+    try {
+      const parsed = new URL(raw);
+      if (parsed.pathname.startsWith('/uploads/') || parsed.pathname.startsWith('/api/uploads/')) {
+        uploadPath = parsed.pathname.replace(/^\/api/, '') + parsed.search;
+      }
+    } catch {}
+  }
+
+  if (uploadPath) {
+    const alternates = [
+      `/api${uploadPath}`,
+      `https://buylowindia.com${uploadPath}`,
+      `https://admin.buylowindia.com/api${uploadPath}`,
+      uploadPath,
+    ];
+    alternates.forEach((alt) => {
+      if (alt && !variants.includes(alt)) {
+        variants.push(alt);
+      }
+    });
+  }
+
+  return variants;
+};
+
 const AdminImage = ({ src, images = [], alt = '', className, style, onClick }) => {
-  const candidateUrls = useMemo(() => {
-    const list = [];
-    if (src) list.push(src);
+  const allCandidateUrls = useMemo(() => {
+    const rawList = [];
+    if (src) rawList.push(src);
     if (Array.isArray(images)) {
       images.forEach((img) => {
-        if (img && !list.includes(img)) list.push(img);
+        if (img && !rawList.includes(img)) rawList.push(img);
       });
     }
-    return list;
+
+    const result = [];
+    rawList.forEach((raw) => {
+      const variants = getUrlVariants(raw);
+      variants.forEach((v) => {
+        if (v && !result.includes(v)) result.push(v);
+      });
+    });
+
+    return result;
   }, [src, images]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [triedRelative, setTriedRelative] = useState(false);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     setCurrentIndex(0);
-    setTriedRelative(false);
     setFailed(false);
-  }, [src, images]);
+  }, [allCandidateUrls]);
 
-  const currentRaw = candidateUrls[currentIndex];
-
-  let resolved = FALLBACK;
-  if (!failed && currentRaw) {
-    if (currentRaw.startsWith('blob:') || currentRaw.startsWith('data:')) {
-      resolved = currentRaw;
-    } else if (triedRelative && (currentRaw.startsWith('/uploads/') || currentRaw.startsWith('/api/uploads/'))) {
-      resolved = currentRaw.replace(/^\/api/, '');
-    } else {
-      resolved = resolveMediaUrl(currentRaw) || FALLBACK;
-    }
-  }
+  const currentResolvedUrl = allCandidateUrls[currentIndex] || '';
 
   const handleError = () => {
-    if (!triedRelative && currentRaw && (currentRaw.startsWith('/uploads/') || currentRaw.startsWith('/api/uploads/'))) {
-      setTriedRelative(true);
-      return;
-    }
-
-    if (currentIndex + 1 < candidateUrls.length) {
+    if (currentIndex + 1 < allCandidateUrls.length) {
       setCurrentIndex((prev) => prev + 1);
-      setTriedRelative(false);
       return;
     }
-
     setFailed(true);
   };
 
+  const imageSrc = !failed && currentResolvedUrl ? currentResolvedUrl : FALLBACK;
+
   return (
     <img
-      src={resolved}
+      src={imageSrc}
       alt={alt}
       className={className}
       style={style}

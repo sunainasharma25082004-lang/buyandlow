@@ -882,7 +882,7 @@ const ProductForm = () => {
                   </div>
 
                   <div className="lightbox-body">
-                    <img
+                    <AdminImage
                       src={getImagePreview(lightboxUrl)}
                       alt="Product Preview Full Size"
                       className="lightbox-img"

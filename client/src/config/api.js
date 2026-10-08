@@ -1,6 +1,6 @@
 const trimTrailingSlash = (value) => (value ? value.replace(/\/+$/, '') : '');
 
-const DEFAULT_PROD_API_ORIGIN = 'https://buyandlow-api.onrender.com';
+const DEFAULT_PROD_API_ORIGIN = 'https://buylowindia.com';
 
 const getApiOrigin = () => {
   if (import.meta.env.VITE_API_ORIGIN) {
@@ -19,6 +19,9 @@ const getApiOrigin = () => {
       window.location.hostname === '10.0.2.2';
     if (isLocalhost) {
       return 'http://localhost:5000';
+    }
+    if (window.location.hostname.includes('buylowindia.com')) {
+      return window.location.origin;
     }
   }
 
@@ -41,6 +44,11 @@ const rewriteStaleUploadUrl = (url) => {
       uploadPath = uploadPath.replace(/^\/api/, '');
     }
     if (!uploadPath.startsWith('/uploads/')) return url;
+
+    // If it's already on the live domain, leave as-is
+    if (parsed.host === 'buylowindia.com' || parsed.host === 'www.buylowindia.com') {
+      return url;
+    }
 
     const targetHost = API_ORIGIN ? new URL(API_ORIGIN).host : '';
 
