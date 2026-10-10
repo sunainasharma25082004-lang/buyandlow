@@ -14,10 +14,11 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Colors, Shadows } from '../../constants/colors';
+import { Colors, Shadows, Gradients } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import GoogleSignInButton from '../../components/GoogleSignInButton';
 
 const { width } = Dimensions.get('window');
@@ -79,96 +80,124 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={Colors.text} />
-          </TouchableOpacity>
+          {/* Header Bar */}
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+              <Ionicons name="arrow-back" size={22} color={Colors.white} />
+            </TouchableOpacity>
+          </View>
 
-          <View style={styles.brandHeader}>
+          {/* Hero Branding */}
+          <View style={styles.hero}>
             <Image
               source={require('../../assets/images/logo.png')}
               style={styles.logo}
               contentFit="contain"
             />
-            <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
-            <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
+            <Text style={styles.heroTitle}>{t('auth.welcomeBack')}</Text>
+            <Text style={styles.heroSubtitle}>{t('auth.loginSubtitle')}</Text>
           </View>
 
-          {error ? (
-            <View style={styles.errorBox}>
-              <Ionicons name="alert-circle" size={18} color={Colors.error} />
-              <Text style={styles.errorText}>{error}</Text>
+          {/* White Form Card */}
+          <View style={styles.formCard}>
+            {error ? (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle" size={18} color={Colors.error} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
+            <GoogleSignInButton onSuccess={handleGoogle} disabled={loading} />
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t('auth.orUseEmail')}</Text>
+              <View style={styles.dividerLine} />
             </View>
-          ) : null}
 
-          <GoogleSignInButton onSuccess={handleGoogle} disabled={loading} />
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>{t('auth.orUseEmail')}</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <Text style={styles.label}>{t('auth.emailLabel')}</Text>
-          <View style={[styles.inputContainer, emailFocused && styles.inputFocused]}>
-            <View style={styles.leadingIcon} pointerEvents="none">
-              <Feather name="mail" size={20} color={emailFocused ? Colors.primary : Colors.textLight} />
+            <Text style={styles.label}>{t('auth.emailLabel')}</Text>
+            <View style={[styles.inputContainer, emailFocused && styles.inputFocused]}>
+              <View style={styles.leadingIcon} pointerEvents="none">
+                <Feather name="mail" size={18} color={emailFocused ? Colors.primary : '#94A3B8'} />
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder={t('auth.emailPlaceholder')}
+                placeholderTextColor={Colors.textLight}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="email"
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+                editable={!loading}
+                underlineColorAndroid="transparent"
+              />
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder={t('auth.emailPlaceholder')}
-              placeholderTextColor={Colors.textLight}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="email"
-              onFocus={() => setEmailFocused(true)}
-              onBlur={() => setEmailFocused(false)}
-              editable={!loading}
-              underlineColorAndroid="transparent"
-            />
-          </View>
 
-          <Text style={styles.label}>{t('auth.passwordLabel')}</Text>
-          <View style={[styles.inputContainer, passwordFocused && styles.inputFocused]}>
-            <View style={styles.leadingIcon} pointerEvents="none">
-              <Feather name="lock" size={20} color={passwordFocused ? Colors.primary : Colors.textLight} />
+            <Text style={styles.label}>{t('auth.passwordLabel')}</Text>
+            <View style={[styles.inputContainer, passwordFocused && styles.inputFocused]}>
+              <View style={styles.leadingIcon} pointerEvents="none">
+                <Feather name="lock" size={18} color={passwordFocused ? Colors.primary : '#94A3B8'} />
+              </View>
+              <TextInput
+                style={[styles.input, styles.inputWithTrailing]}
+                placeholder={t('auth.passwordPlaceholder')}
+                placeholderTextColor={Colors.textLight}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="password"
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
+                editable={!loading}
+                underlineColorAndroid="transparent"
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.trailingIcon}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#94A3B8"
+                />
+              </TouchableOpacity>
             </View>
-            <TextInput
-              style={[styles.input, styles.inputWithTrailing]}
-              placeholder={t('auth.passwordPlaceholder')}
-              placeholderTextColor={Colors.textLight}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="password"
-              onFocus={() => setPasswordFocused(true)}
-              onBlur={() => setPasswordFocused(false)}
-              editable={!loading}
-              underlineColorAndroid="transparent"
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.trailingIcon}>
-              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color={Colors.textLight} />
+
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.88}
+            >
+              <LinearGradient
+                colors={Gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.gradientButton}
+              >
+                {loading ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <Text style={styles.buttonText}>{t('auth.logIn')}</Text>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
-          </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.buttonText}>{t('auth.logIn')}</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>{t('auth.noAccount')} </Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-              <Text style={styles.footerLink}>{t('common.signUp')}</Text>
-            </TouchableOpacity>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>{t('auth.noAccount')} </Text>
+              <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+                <Text style={styles.footerLink}>{t('common.signUp')}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -179,7 +208,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.primary,
   },
   keyboardView: {
     flex: 1,
@@ -188,50 +217,69 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
+    flexGrow: 1,
+  },
+  topBar: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   backButton: {
-    paddingVertical: 12,
-    alignSelf: 'flex-start',
-  },
-  brandHeader: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 24,
+  },
+  hero: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    paddingBottom: 28,
   },
   logo: {
-    width: width * 0.5,
-    height: 60,
-    marginBottom: 16,
+    width: width * 0.44,
+    height: 52,
+    marginBottom: 14,
   },
-  title: {
-    fontSize: 24,
+  heroTitle: {
+    fontSize: 26,
     fontWeight: '900',
-    color: Colors.text,
+    color: Colors.white,
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.textLight,
+  heroSubtitle: {
+    fontSize: 13.5,
+    color: 'rgba(255, 255, 255, 0.85)',
     textAlign: 'center',
+    lineHeight: 18,
+  },
+  formCard: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 22,
+    paddingTop: 28,
+    paddingBottom: 24,
+    ...Shadows.large,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 18,
     gap: 12,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: '#E2E8F0',
   },
   dividerText: {
-    fontSize: 13,
-    color: Colors.textLight,
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
   },
   errorBox: {
     flexDirection: 'row',
@@ -246,36 +294,36 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: Colors.error,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     flex: 1,
   },
   label: {
-    fontSize: 14,
+    fontSize: 12.5,
     fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 8,
+    color: '#334155',
+    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   inputContainer: {
     position: 'relative',
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     borderRadius: 12,
-    marginBottom: 20,
-    minHeight: 54,
+    marginBottom: 18,
+    minHeight: 52,
   },
   inputFocused: {
     borderColor: Colors.primary,
-    backgroundColor: Colors.white,
+    backgroundColor: '#FFFFFF',
     ...Shadows.small,
   },
   leadingIcon: {
     position: 'absolute',
-    left: 16,
+    left: 14,
     zIndex: 1,
     width: 24,
     alignItems: 'center',
@@ -289,44 +337,50 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.text,
-    paddingVertical: Platform.OS === 'android' ? 14 : 16,
-    paddingLeft: 48,
+    paddingVertical: Platform.OS === 'android' ? 12 : 14,
+    paddingLeft: 46,
     paddingRight: 16,
-    minHeight: 54,
+    minHeight: 52,
   },
   inputWithTrailing: {
-    paddingRight: 48,
+    paddingRight: 44,
   },
   button: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    height: 54,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginTop: 8,
+    ...Shadows.small,
+  },
+  gradientButton: {
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
-    ...Shadows.small,
+    borderRadius: 14,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
     letterSpacing: 0.5,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 40,
+    marginTop: 28,
     paddingBottom: 16,
   },
   footerText: {
-    color: Colors.textLight,
+    color: '#64748B',
     fontSize: 14,
   },
   footerLink: {
     color: Colors.primary,
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
 });

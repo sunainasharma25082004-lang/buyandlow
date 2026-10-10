@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '../../constants/colors';
 import { getCategories } from '../../services/api';
@@ -63,7 +64,7 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
             </View>
             <View>
               <Text style={styles.title}>Top Categories</Text>
-              <Text style={styles.subtitle}>Explore our curated collections</Text>
+              <Text style={styles.subtitle}>Explore curated collections</Text>
             </View>
           </View>
           <TouchableOpacity
@@ -72,7 +73,7 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
             activeOpacity={0.7}
           >
             <Text style={styles.viewAllText}>View All</Text>
-            <Feather name="chevron-right" size={14} color={Colors.primary} />
+            <Feather name="chevron-right" size={13} color={Colors.primary} />
           </TouchableOpacity>
         </View>
       )}
@@ -95,28 +96,42 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
         >
-          {categories.map((item) => (
-            <TouchableOpacity
-              key={item._id}
-              style={styles.item}
-              onPress={() => router.push(`/category/${encodeURIComponent(item.name)}`)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.imageRing}>
-                <View style={styles.imageCircle}>
-                  <RemoteImage
-                    uri={item.image}
-                    style={styles.image}
-                    fallback={PLACEHOLDER_CATEGORY}
-                    contentFit="cover"
-                  />
-                </View>
-              </View>
-              <Text style={styles.name} numberOfLines={2}>
-                {getLabel(item)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {categories.map((item, index) => {
+            const ringColors =
+              index % 3 === 0
+                ? ['#1E88E5', '#1565C0']
+                : index % 3 === 1
+                ? ['#F59E0B', '#FBBF24']
+                : ['#10B981', '#059669'];
+
+            return (
+              <TouchableOpacity
+                key={item._id}
+                style={styles.item}
+                onPress={() => router.push(`/category/${encodeURIComponent(item.name)}`)}
+                activeOpacity={0.82}
+              >
+                <LinearGradient
+                  colors={ringColors as any}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.imageRing}
+                >
+                  <View style={styles.imageCircle}>
+                    <RemoteImage
+                      uri={item.image}
+                      style={styles.image}
+                      fallback={PLACEHOLDER_CATEGORY}
+                      contentFit="cover"
+                    />
+                  </View>
+                </LinearGradient>
+                <Text style={styles.name} numberOfLines={2}>
+                  {getLabel(item)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       )}
     </View>
@@ -134,7 +149,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -145,12 +160,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.lightBlue,
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 17,
+    fontSize: 16.5,
     fontWeight: '800',
     color: Colors.text,
   },
@@ -163,29 +178,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
   viewAllText: {
     color: Colors.primary,
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '700',
   },
   scroll: {
     paddingHorizontal: 14,
-    gap: 12,
+    gap: 14,
     paddingBottom: 2,
   },
   item: {
     alignItems: 'center',
-    width: 80,
+    width: 78,
   },
   imageRing: {
     width: 68,
     height: 68,
     borderRadius: 34,
-    borderWidth: 2,
-    borderColor: '#BBDEFB',
-    padding: 2,
-    backgroundColor: Colors.white,
+    padding: 2.5,
     marginBottom: 6,
     ...Shadows.small,
   },
@@ -194,14 +210,14 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 32,
     overflow: 'hidden',
-    backgroundColor: '#EDF5FD',
+    backgroundColor: Colors.white,
   },
   image: {
     width: '100%',
     height: '100%',
   },
   name: {
-    fontSize: 12,
+    fontSize: 11.5,
     fontWeight: '700',
     color: Colors.text,
     textAlign: 'center',

@@ -115,8 +115,13 @@ export default function AddressesScreen() {
 
   const handleSaveForm = async () => {
     const digits = form.phone.replace(/\D/g, '');
-    if (!form.address.trim() || !form.city.trim() || !form.postalCode.trim()) {
+    const cleanPostal = form.postalCode.trim();
+    if (!form.address.trim() || !form.city.trim() || !cleanPostal) {
       Alert.alert(t('common.error'), t('addresses.missingDetails'));
+      return;
+    }
+    if (cleanPostal.length !== 6 || !/^\d{6}$/.test(cleanPostal)) {
+      Alert.alert(t('common.error'), 'Please enter a valid 6-digit PIN code.');
       return;
     }
     if (digits.length < 10) {

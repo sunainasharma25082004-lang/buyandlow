@@ -22,21 +22,47 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user, token } = useAuth();
 
   useEffect(() => {
-    if (user?.cart) {
-      setCart(user.cart);
-    } else {
-      loadLocalCart();
-    }
-  }, [user]);
+    const initCart = async () => {
+      try {
+        const stored = await storage.getItem('localCart');
+        const localItems: CartItem[] = stored ? JSON.parse(stored) : [];
 
-  const loadLocalCart = async () => {
-    try {
-      const stored = await storage.getItem('localCart');
-      if (stored) setCart(JSON.parse(stored));
-    } catch (e) {
-      console.error(e);
-    }
-  };
+        if (user) {
+          const userItems = user.cart || [];
+          if (localItems.length > 0) {
+            // Merge guest items with user cart without duplicate product IDs
+            const merged = [...userItems];
+            for (const loc of localItems) {
+              const locId = typeof loc.product === 'string' ? loc.product : loc.product?._id;
+              const exists = merged.some((u) => {
+                const uId = typeof u.product === 'string' ? u.product : u.product?._id;
+                return uId === locId;
+              });
+              if (!exists) {
+                merged.push(loc);
+              }
+            }
+            setCart(merged);
+            if (token) {
+              await api.syncCart(merged, token).catch(() => {});
+            }
+            await storage.removeItem('localCart');
+          } else {
+            setCart(userItems);
+          }
+        } else {
+          setCart(localItems);
+        }
+      } catch (e) {
+        console.error('Failed to init cart', e);
+        if (user?.cart) {
+          setCart(user.cart);
+        }
+      }
+    };
+
+    initCart();
+  }, [user, token]);
 
   const saveCart = async (newCart: CartItem[]) => {
     setCart(newCart);
@@ -55,17 +81,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addToCart = async (product: Product, quantity = 1, color?: string) => {
-    const existing = cart.find(item => 
-      (typeof item.product === 'string' ? item.product : item.product._id) === product._id
-    );
+    if (!product?._id) return;
+    const existing = cart.find((item) => {
+      const id = typeof item.product === 'string' ? item.product : item.product?._id;
+      return id === product._id;
+    });
 
-    let newCart;
+    let newCart: CartItem[];
     if (existing) {
-      newCart = cart.map(item => 
-        (typeof item.product === 'string' ? item.product : item.product._id) === product._id
+      newCart = cart.map((item) => {
+        const id = typeof item.product === 'string' ? item.product : item.product?._id;
+        return id === product._id
           ? { ...item, quantity: item.quantity + quantity, color: color || item.color }
-          : item
-      );
+          : item;
+      });
     } else {
       newCart = [...cart, { product, quantity, color }];
     }
@@ -73,9 +102,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeFromCart = async (productId: string) => {
-    const newCart = cart.filter(item => 
-      (typeof item.product === 'string' ? item.product : item.product._id) !== productId
-    );
+    const newCart = cart.filter((item) => {
+      const id = typeof item.product === 'string' ? item.product : item.product?._id;
+      return id !== productId;
+    });
     await saveCart(newCart);
   };
 
@@ -84,11 +114,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       await removeFromCart(productId);
       return;
     }
-    const newCart = cart.map(item => 
-      (typeof item.product === 'string' ? item.product : item.product._id) === productId
-        ? { ...item, quantity }
-        : item
-    );
+    const newCart = cart.map((item) => {
+      const id = typeof item.product === 'string' ? item.product : item.product?._id;
+      return id === productId ? { ...item, quantity } : item;
+    });
     await saveCart(newCart);
   };
 
@@ -97,11 +126,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const cartTotal = cart.reduce((total, item) => {
-    const price = typeof item.product === 'string' ? 0 : item.product.price;
-    return total + price * item.quantity;
+    if (!item?.product || typeof item.product === 'string') return total;
+    const price = Number(item.product.price) || 0;
+    const qty = Number(item.quantity) || 1;
+    return total + price * qty;
   }, 0);
 
-  const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
+  const cartCount = cart.reduce((count, item) => count + (Number(item?.quantity) || 0), 0);
 
   return (
     <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount }}>

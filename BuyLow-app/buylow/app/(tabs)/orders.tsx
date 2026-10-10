@@ -9,6 +9,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  RefreshControl,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import RemoteImage from '../../components/RemoteImage';
@@ -33,27 +34,37 @@ export default function OrdersScreen() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const fetchOrders = useCallback(async (isPull = false) => {
+    if (!token) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    if (isPull) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    try {
+      const res = await getMyOrders(token);
+      if (res.success) {
+        setOrders(res.orders || []);
+      }
+    } catch {
+      // keep existing orders
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [token]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      let active = true;
-      setLoading(true);
-      getMyOrders(token)
-        .then((res) => {
-          if (active && res.success) {
-            setOrders(res.orders);
-          }
-        })
-        .finally(() => {
-          if (active) setLoading(false);
-        });
-      return () => { active = false; };
-    }, [token]),
+      fetchOrders(false);
+    }, [fetchOrders]),
   );
 
   const toggleExpand = (id: string) => {
@@ -130,14 +141,20 @@ export default function OrdersScreen() {
 
             <Text style={styles.sectionLabel}>{t('orders.deliveryAddress')}</Text>
             <View style={styles.addressBox}>
-              <Text style={styles.addressText}>{item.shippingAddress.address}</Text>
-              <Text style={styles.addressText}>
-                {item.shippingAddress.city} - {item.shippingAddress.postalCode}
-              </Text>
-              <Text style={styles.addressText}>{item.shippingAddress.country}</Text>
-              <Text style={styles.addressPhone}>
-                {t('orders.phoneLabel', { phone: item.shippingAddress.phone })}
-              </Text>
+              <Text style={styles.addressText}>{item.shippingAddress?.address || 'Address not available'}</Text>
+              {item.shippingAddress?.city ? (
+                <Text style={styles.addressText}>
+                  {item.shippingAddress.city} - {item.shippingAddress.postalCode || ''}
+                </Text>
+              ) : null}
+              {item.shippingAddress?.country ? (
+                <Text style={styles.addressText}>{item.shippingAddress.country}</Text>
+              ) : null}
+              {item.shippingAddress?.phone ? (
+                <Text style={styles.addressPhone}>
+                  {t('orders.phoneLabel', { phone: item.shippingAddress.phone })}
+                </Text>
+              ) : null}
             </View>
 
             <Text style={styles.sectionLabel}>{t('orders.paymentSummary')}</Text>
@@ -229,6 +246,13 @@ export default function OrdersScreen() {
           contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 }}
           renderItem={({ item }) => renderOrderCard(item)}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => fetchOrders(true)}
+              colors={[Colors.primary]}
+            />
+          }
         />
       )}
     </SafeAreaView>

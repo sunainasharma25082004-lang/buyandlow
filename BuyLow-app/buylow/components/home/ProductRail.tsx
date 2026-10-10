@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import ProductRailSkeleton from '../ui/ProductRailSkeleton';
 import { useRouter } from 'expo-router';
-import { Feather, FontAwesome } from '@expo/vector-icons';
+import { Feather, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../constants/colors';
 import { formatINR, getDiscountPercent } from '../../services/api';
 import RemoteImage from '../RemoteImage';
@@ -76,7 +76,7 @@ function RailCard({
     <TouchableOpacity
       style={[styles.card, { width: productCardWidth }]}
       onPress={() => router.push(`/product/${item._id}`)}
-      activeOpacity={0.88}
+      activeOpacity={0.9}
     >
       <View style={[styles.imageWrap, { height: productImageHeight }]}>
         <RemoteImage uri={item.image} style={styles.image} contentFit="contain" />
@@ -98,30 +98,39 @@ function RailCard({
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityLabel="Wishlist"
         >
-          <FontAwesome
-            name={isWish ? 'heart' : 'heart-o'}
-            size={13}
-            color={isWish ? '#E53935' : Colors.textLight}
+          <Ionicons
+            name={isWish ? 'heart' : 'heart-outline'}
+            size={15}
+            color={isWish ? '#EF4444' : Colors.textLight}
           />
         </TouchableOpacity>
       </View>
 
       <View style={styles.body}>
-        <Text style={styles.brand} numberOfLines={1}>
-          {item.brand || item.category || 'BuyLow'}
-        </Text>
+        <View style={styles.brandRow}>
+          <Text style={styles.brand} numberOfLines={1}>
+            {item.brand || item.category || 'BuyLow'}
+          </Text>
+          <View style={styles.assuredTag}>
+            <Ionicons name="checkmark-circle" size={9} color="#059669" />
+            <Text style={styles.assuredText}>Assured</Text>
+          </View>
+        </View>
+
         <Text style={styles.name} numberOfLines={2}>
           {item.name}
         </Text>
 
         <View style={styles.ratingRow}>
           <View style={styles.starBadge}>
-            <FontAwesome name="star" size={9.5} color="#F59E0B" />
+            <FontAwesome name="star" size={9} color="#F59E0B" />
             <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
           </View>
           {reviews > 0 ? (
             <Text style={styles.reviewsText}>({reviews})</Text>
-          ) : null}
+          ) : (
+            <Text style={styles.freeDeliv}>Free</Text>
+          )}
         </View>
 
         <View style={styles.priceRow}>
@@ -143,7 +152,7 @@ function RailCard({
             color={Colors.white}
           />
           <Text style={styles.addButtonText}>
-            {added ? 'Added!' : 'Add 🛒'}
+            {added ? 'Added!' : 'Add to Cart'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -176,7 +185,7 @@ export default function ProductRail({
           </View>
         </View>
         {onViewAll ? (
-          <TouchableOpacity onPress={onViewAll} style={styles.viewAll}>
+          <TouchableOpacity onPress={onViewAll} style={styles.viewAll} activeOpacity={0.7}>
             <Text style={styles.viewAllText}>View All</Text>
             <Feather name="chevron-right" size={14} color={Colors.primary} />
           </TouchableOpacity>
@@ -233,7 +242,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.lightBlue,
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -249,10 +258,14 @@ const styles = StyleSheet.create({
   viewAll: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 3,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
   viewAllText: {
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontWeight: '700',
     color: Colors.primary,
   },
@@ -262,14 +275,14 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: Colors.white,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#DCE8F5',
+    borderColor: '#E2E8F0',
     overflow: 'hidden',
     ...Shadows.small,
   },
   imageWrap: {
-    backgroundColor: '#F4F9FD',
+    backgroundColor: '#F8FAFC',
     padding: 8,
     position: 'relative',
     alignItems: 'center',
@@ -288,10 +301,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5.5,
     paddingVertical: 2,
     borderRadius: 5,
+    ...Shadows.small,
   },
   discountText: {
     fontSize: 9,
-    fontWeight: '800',
+    fontWeight: '900',
     color: Colors.primaryDark,
   },
   statusBadge: {
@@ -314,21 +328,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 7,
     right: 7,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...Shadows.small,
     zIndex: 2,
   },
   body: {
     padding: 9,
+    justifyContent: 'space-between',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
   },
   brand: {
     fontSize: 9.5,
@@ -336,7 +353,17 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     fontWeight: '700',
     letterSpacing: 0.3,
-    marginBottom: 2,
+    flex: 1,
+  },
+  assuredTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  assuredText: {
+    fontSize: 8.5,
+    fontWeight: '700',
+    color: '#059669',
   },
   name: {
     fontSize: 12,
@@ -364,13 +391,18 @@ const styles = StyleSheet.create({
     borderColor: '#FDE68A',
   },
   ratingText: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
     color: '#B45309',
   },
   reviewsText: {
-    fontSize: 10,
+    fontSize: 9.5,
     color: Colors.textLight,
+  },
+  freeDeliv: {
+    fontSize: 9,
+    color: '#16A34A',
+    fontWeight: '600',
   },
   priceRow: {
     flexDirection: 'row',
@@ -379,7 +411,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   price: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '900',
     color: Colors.primaryDark,
   },
@@ -394,8 +426,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     backgroundColor: Colors.primary,
-    paddingVertical: 6,
-    borderRadius: 7,
+    paddingVertical: 6.5,
+    borderRadius: 8,
+    ...Shadows.small,
   },
   addedButton: {
     backgroundColor: Colors.success,

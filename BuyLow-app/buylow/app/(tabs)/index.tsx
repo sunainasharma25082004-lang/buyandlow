@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   FlatList,
+  Platform,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
 import { bottomTabPadding, horizontalPadding } from '../../utils/responsive';
 import Screen from '../../components/Screen';
@@ -15,11 +18,13 @@ import ProductCardSkeleton from '../../components/ui/ProductCardSkeleton';
 import Header from '../../components/home/Header';
 import BannerSlider from '../../components/home/BannerSlider';
 import Categories from '../../components/home/Categories';
+import CouponBanner from '../../components/home/CouponBanner';
 import TrendyProducts from '../../components/home/TrendyProducts';
 import Deals from '../../components/home/Deals';
 import NewArrivals from '../../components/home/NewArrivals';
 import TopSearches from '../../components/home/TopSearches';
 import SavedPicks from '../../components/home/SavedPicks';
+import Features from '../../components/home/Features';
 import ProductGridCard from '../../components/home/ProductGridCard';
 
 const PAGE_SIZE = 12;
@@ -30,6 +35,7 @@ export default function HomeScreen() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
 
@@ -51,6 +57,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -58,31 +65,45 @@ export default function HomeScreen() {
     fetchPage(1, false);
   }, [fetchPage]);
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchPage(1, false);
+  }, [fetchPage]);
+
   const loadMore = useCallback(() => {
-    if (loadingMore || loading || page >= totalPages) return;
+    if (loadingMore || loading || refreshing || page >= totalPages) return;
     fetchPage(page + 1, true);
-  }, [fetchPage, loading, loadingMore, page, totalPages]);
+  }, [fetchPage, loading, loadingMore, refreshing, page, totalPages]);
 
   const renderHeader = () => (
     <View>
       <BannerSlider />
       <Categories />
+      <CouponBanner />
       <TrendyProducts />
       <Deals />
       <NewArrivals />
       <TopSearches />
       <SavedPicks />
+      <Features />
 
+      {/* All Products Section Title */}
       <View style={styles.allHeader}>
         <View style={styles.allHeaderLeft}>
+          <View style={styles.sectionBadge}>
+            <Feather name="shopping-bag" size={12} color={Colors.primary} />
+            <Text style={styles.sectionBadgeText}>EXPLORE ALL</Text>
+          </View>
           <Text style={styles.allTitle}>All Products</Text>
-          <Text style={styles.allSubtitle}>Explore our complete catalog · Best deals guaranteed</Text>
+          <Text style={styles.allSubtitle}>
+            Hand-picked collection with guaranteed low prices
+          </Text>
         </View>
       </View>
 
       {loading && products.length === 0 ? (
         <View style={styles.skeletonSection}>
-          <Text style={styles.loadingHint}>Loading products...</Text>
+          <Text style={styles.loadingHint}>Loading catalog...</Text>
           {Array.from({ length: INITIAL_SKELETON_ROWS }).map((_, rowIndex) => (
             <View key={`product-skeleton-row-${rowIndex}`} style={styles.column}>
               <ProductCardSkeleton />
@@ -94,6 +115,7 @@ export default function HomeScreen() {
 
       {error && products.length === 0 ? (
         <View style={styles.errorBox}>
+          <Feather name="alert-circle" size={18} color={Colors.error} />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
@@ -111,7 +133,10 @@ export default function HomeScreen() {
           </View>
         </View>
       ) : page >= totalPages && products.length > 0 ? (
-        <Text style={styles.endText}>{"✓ You've viewed all available products"}</Text>
+        <View style={styles.endBadge}>
+          <Feather name="check" size={14} color="#059669" />
+          <Text style={styles.endText}>{"You've seen all available products"}</Text>
+        </View>
       ) : null}
       <View style={styles.bottomPadding} />
     </View>
@@ -131,10 +156,19 @@ export default function HomeScreen() {
         ListFooterComponent={renderFooter}
         renderItem={({ item }) => <ProductGridCard product={item} />}
         onEndReached={loadMore}
-        onEndReachedThreshold={0.35}
-        initialNumToRender={12}
-        maxToRenderPerBatch={12}
-        windowSize={7}
+        onEndReachedThreshold={0.4}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
       />
     </Screen>
   );
@@ -143,7 +177,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 8,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F3F6FB',
   },
   column: {
     paddingHorizontal: horizontalPadding - 6,
@@ -153,21 +187,41 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: horizontalPadding,
     paddingTop: 18,
-    paddingBottom: 12,
+    paddingBottom: 14,
     marginTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
   },
   allHeaderLeft: {
     flex: 1,
   },
-  allTitle: {
-    fontSize: 18,
+  sectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#EFF6FF',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  sectionBadgeText: {
+    fontSize: 10,
     fontWeight: '800',
+    color: Colors.primary,
+    letterSpacing: 0.5,
+  },
+  allTitle: {
+    fontSize: 19,
+    fontWeight: '900',
     color: Colors.text,
+    letterSpacing: 0.2,
   },
   allSubtitle: {
     fontSize: 12,
     color: Colors.textLight,
-    marginTop: 4,
+    marginTop: 3,
   },
   skeletonSection: {
     backgroundColor: Colors.white,
@@ -187,27 +241,43 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     marginHorizontal: horizontalPadding,
-    marginBottom: 16,
+    marginVertical: 16,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: '#FFF5F5',
     borderWidth: 1,
     borderColor: '#FFCDD2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   errorText: {
     color: Colors.error,
     fontSize: 13,
-    textAlign: 'center',
+    fontWeight: '500',
+    flex: 1,
   },
   footer: {
     backgroundColor: Colors.white,
-    paddingTop: 8,
+    paddingTop: 12,
     alignItems: 'center',
+  },
+  endBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginVertical: 16,
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
   },
   endText: {
     fontSize: 12,
-    color: Colors.textLight,
-    marginVertical: 16,
+    color: '#166534',
+    fontWeight: '600',
   },
   bottomPadding: {
     height: bottomTabPadding,

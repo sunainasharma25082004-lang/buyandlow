@@ -45,7 +45,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(res);
             storage.setItem('user', JSON.stringify(res));
           }
-        }).catch(() => {});
+        }).catch((err: any) => {
+          const msg = (err?.message || '').toLowerCase();
+          if (msg.includes('not authorized') || msg.includes('token') || msg.includes('expired') || msg.includes('401')) {
+            logout();
+          }
+        });
       }
     } catch (e) {
       console.error('Failed to load user', e);

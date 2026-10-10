@@ -1,9 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../constants/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Shadows, Gradients } from '../../../constants/colors';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import CustomHeader from '../../../components/CustomHeader';
@@ -49,112 +50,213 @@ export default function AccountScreen() {
     ]);
   };
 
-  const renderMenuItem = (icon: string, title: string, subtitle?: string, onPress?: () => void) => (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-      <View style={styles.menuIconContainer}>
-        <Ionicons name={icon as any} size={24} color={Colors.text} />
+  const renderMenuItem = (
+    icon: string,
+    title: string,
+    subtitle?: string,
+    onPress?: () => void,
+    iconColor: string = Colors.primary
+  ) => (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress} activeOpacity={0.7}>
+      <View style={[styles.menuIconContainer, { backgroundColor: `${iconColor}15` }]}>
+        <Ionicons name={icon as any} size={20} color={iconColor} />
       </View>
       <View style={styles.menuTextContainer}>
         <Text style={styles.menuTitle}>{title}</Text>
         {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
       </View>
-      <Ionicons name="chevron-forward" size={20} color={Colors.border} />
+      <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <CustomHeader />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* User Profile Hero */}
         {user ? (
-          <View style={styles.profileHeader}>
-            <View style={styles.avatarContainer}>
-              <Ionicons name="person" size={40} color={Colors.white} />
+          <LinearGradient
+            colors={Gradients.primaryHeader}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.profileHero}
+          >
+            <View style={styles.avatarWrap}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarInitial}>
+                  {(user.name || 'U').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.onlineBadge} />
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.name}>{user.name}</Text>
-              <Text style={styles.email}>{user.email}</Text>
+
+            <View style={styles.profileDetails}>
+              <View style={styles.nameRow}>
+                <Text style={styles.userName} numberOfLines={1}>{user.name}</Text>
+                <View style={styles.verifiedBadge}>
+                  <MaterialIcons name="verified" size={14} color="#60A5FA" />
+                </View>
+              </View>
+              <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text>
+              {user.phone ? <Text style={styles.userPhone}>+91 {user.phone}</Text> : null}
             </View>
-          </View>
+          </LinearGradient>
         ) : (
-          <View style={styles.loginBanner}>
-            <Text style={styles.loginTitle}>{t('account.welcome')}</Text>
-            <Text style={styles.loginSubtitle}>{t('account.welcomeSubtitle')}</Text>
+          <View style={styles.loginHero}>
+            <View style={styles.loginHeroHeader}>
+              <Ionicons name="person-circle-outline" size={48} color={Colors.primary} />
+              <Text style={styles.loginTitle}>{t('account.welcome')}</Text>
+              <Text style={styles.loginSubtitle}>{t('account.welcomeSubtitle')}</Text>
+            </View>
             <View style={styles.googleWrap}>
               <GoogleSignInButton onSuccess={loginWithGoogle} />
             </View>
-            <View style={styles.loginButtons}>
-              <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/(auth)/login')}>
-                <Text style={styles.primaryButtonText}>{t('common.login')}</Text>
+            <View style={styles.authButtonsRow}>
+              <TouchableOpacity
+                style={styles.loginBtn}
+                onPress={() => router.push('/(auth)/login')}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.loginBtnText}>{t('common.login')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/(auth)/register')}>
-                <Text style={styles.secondaryButtonText}>{t('common.signUp')}</Text>
+              <TouchableOpacity
+                style={styles.registerBtn}
+                onPress={() => router.push('/(auth)/register')}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.registerBtnText}>{t('common.signUp')}</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
+        {/* 4 Quick Actions (Amazon / Flipkart Style) */}
+        <View style={styles.quickActionsContainer}>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push('/(tabs)/orders')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: '#EFF6FF' }]}>
+              <Feather name="package" size={20} color={Colors.primary} />
+            </View>
+            <Text style={styles.quickActionText}>{t('account.myOrders')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push('/wishlist')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: '#FDF2F8' }]}>
+              <Ionicons name="heart-outline" size={20} color="#DB2777" />
+            </View>
+            <Text style={styles.quickActionText}>{t('account.wishlist')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => requireLogin('/(tabs)/account/addresses')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: '#F0FDF4' }]}>
+              <Ionicons name="location-outline" size={20} color="#16A34A" />
+            </View>
+            <Text style={styles.quickActionText}>Addresses</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push('/help' as any)}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: '#FFFBEB' }]}>
+              <Feather name="headphones" size={20} color="#D97706" />
+            </View>
+            <Text style={styles.quickActionText}>Help Center</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Account Details Group */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('account.myAccount')}</Text>
+          <Text style={styles.sectionHeader}>{t('account.myAccount')}</Text>
           <View style={styles.card}>
             {renderMenuItem('bag-outline', t('account.myOrders'), t('account.myOrdersSub'), () =>
-              router.push('/(tabs)/orders'),
+              router.push('/(tabs)/orders')
             )}
             {renderMenuItem('cart-outline', t('account.shoppingCart'), t('account.shoppingCartSub'), () =>
-              router.push('/cart'),
+              router.push('/cart')
+            )}
+            {renderMenuItem('heart-outline', t('account.wishlist'), t('account.wishlistSub'), () =>
+              router.push('/wishlist'),
+              '#DB2777'
             )}
           </View>
         </View>
 
+        {/* Account Settings Group */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('account.accountSettings')}</Text>
+          <Text style={styles.sectionHeader}>{t('account.accountSettings')}</Text>
           <View style={styles.card}>
-            {renderMenuItem('heart-outline', t('account.wishlist'), t('account.wishlistSub'), () =>
-              router.push('/wishlist'),
-            )}
             {renderMenuItem(
               'person-outline',
               t('account.personalInfo'),
               user
                 ? `${user.name}${user.phone ? ` · +91 ${user.phone}` : ''}`
                 : t('account.personalInfoSub'),
-              () => requireLogin('/(tabs)/account/profile'),
+              () => requireLogin('/(tabs)/account/profile')
             )}
-            {renderMenuItem('location-outline', t('account.savedAddresses'), addressSubtitle, () =>
-              requireLogin('/(tabs)/account/addresses'),
+            {renderMenuItem(
+              'location-outline',
+              t('account.savedAddresses'),
+              addressSubtitle,
+              () => requireLogin('/(tabs)/account/addresses')
             )}
             {renderMenuItem(
               'card-outline',
               t('account.paymentMethods'),
               user ? paymentLabel : t('account.paymentDefault'),
-              () => requireLogin('/(tabs)/account/payment'),
+              () => requireLogin('/(tabs)/account/payment')
             )}
           </View>
         </View>
 
+        {/* Support & Legal Group */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('account.support')}</Text>
+          <Text style={styles.sectionHeader}>{t('account.support')}</Text>
           <View style={styles.card}>
-            {renderMenuItem('help-circle-outline', t('account.helpCenter'), t('account.helpCenterSub'), () =>
-              router.push('/help' as any),
+            {renderMenuItem(
+              'help-circle-outline',
+              t('account.helpCenter'),
+              t('account.helpCenterSub'),
+              () => router.push('/help' as any)
             )}
-            {renderMenuItem('document-text-outline', t('account.termsPolicies'))}
+            {renderMenuItem(
+              'chatbubble-ellipses-outline',
+              'Chat with Support',
+              'Fast assistance for orders & queries',
+              () => router.push('/help/chat' as any)
+            )}
+            {renderMenuItem('document-text-outline', t('account.termsPolicies'), 'Privacy policy & usage terms')}
           </View>
         </View>
 
+        {/* Logout Button */}
         {user && (
           <View style={styles.logoutContainer}>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
+              <Feather name="log-out" size={18} color="#EF4444" />
               <Text style={styles.logoutText}>{t('common.logout')}</Text>
             </TouchableOpacity>
           </View>
         )}
 
+        {/* App Version Info */}
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>{t('common.version')}</Text>
+          <Text style={styles.brandFooter}>BuyLow India • Premium Value Store</Text>
+          <Text style={styles.versionText}>{t('common.version')} 1.0.0</Text>
         </View>
       </ScrollView>
-
     </SafeAreaView>
   );
 }
@@ -162,118 +264,206 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F8FAFC',
   },
-  profileHeader: {
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  profileHero: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: Colors.white,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    marginHorizontal: 14,
+    marginTop: 12,
+    borderRadius: 20,
     gap: 16,
+    ...Shadows.medium,
   },
-  avatarContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.primary,
+  avatarWrap: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
+    ...Shadows.small,
   },
-  profileInfo: {
+  avatarInitial: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: Colors.primary,
+  },
+  onlineBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#10B981',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  profileDetails: {
     flex: 1,
   },
-  name: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 14,
-    color: Colors.textLight,
-  },
-  loginBanner: {
-    padding: 24,
-    backgroundColor: Colors.white,
+  nameRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    marginBottom: 3,
+  },
+  userName: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  verifiedBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 10,
+    padding: 2,
+  },
+  userEmail: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '500',
+  },
+  userPhone: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginTop: 2,
+  },
+  loginHero: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 22,
+    marginHorizontal: 14,
+    marginTop: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.small,
+  },
+  loginHeroHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
   },
   loginTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.text,
-    marginBottom: 8,
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 8,
+    marginBottom: 4,
   },
   loginSubtitle: {
-    fontSize: 14,
-    color: Colors.textLight,
-    marginBottom: 16,
+    fontSize: 13,
+    color: '#64748B',
     textAlign: 'center',
+    lineHeight: 18,
   },
   googleWrap: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  loginButtons: {
+  authButtonsRow: {
     flexDirection: 'row',
-    gap: 12,
+    width: '100%',
+    gap: 10,
   },
-  primaryButton: {
+  loginBtn: {
+    flex: 1,
     backgroundColor: Colors.primary,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    flex: 1,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  primaryButtonText: {
-    color: Colors.white,
-    fontWeight: 'bold',
-    fontSize: 16,
+  loginBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
   },
-  secondaryButton: {
-    backgroundColor: Colors.white,
-    borderWidth: 1,
+  registerBtn: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
     borderColor: Colors.primary,
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    flex: 1,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  secondaryButtonText: {
+  registerBtnText: {
     color: Colors.primary,
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontWeight: '800',
+    fontSize: 14,
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    marginTop: 14,
+    gap: 8,
+  },
+  quickActionCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.small,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  quickActionText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#334155',
+    textAlign: 'center',
   },
   section: {
-    marginTop: 24,
-    paddingHorizontal: 16,
+    marginTop: 18,
+    paddingHorizontal: 14,
   },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: Colors.textLight,
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#64748B',
     textTransform: 'uppercase',
+    letterSpacing: 0.8,
     marginBottom: 8,
-    paddingLeft: 8,
+    paddingLeft: 4,
   },
   card: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     overflow: 'hidden',
+    ...Shadows.small,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.background,
+    borderBottomColor: '#F1F5F9',
   },
   menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: Colors.background,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -282,36 +472,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text,
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: '#0F172A',
   },
   menuSubtitle: {
-    fontSize: 13,
-    color: Colors.textLight,
+    fontSize: 12,
+    color: '#64748B',
     marginTop: 2,
   },
   logoutContainer: {
-    marginTop: 32,
-    paddingHorizontal: 16,
+    marginTop: 22,
+    paddingHorizontal: 14,
   },
   logoutButton: {
-    backgroundColor: Colors.white,
-    padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
+    paddingVertical: 14,
+    borderRadius: 14,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   logoutText: {
-    color: 'red',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '800',
   },
   versionContainer: {
-    padding: 32,
+    marginTop: 24,
     alignItems: 'center',
   },
-  versionText: {
+  brandFooter: {
     fontSize: 12,
-    color: Colors.textLight,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  versionText: {
+    fontSize: 11,
+    color: '#CBD5E1',
+    marginTop: 2,
   },
 });

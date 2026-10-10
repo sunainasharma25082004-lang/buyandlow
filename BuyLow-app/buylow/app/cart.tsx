@@ -1,36 +1,60 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Shadows } from '../constants/colors';
+import { Colors, Shadows, Gradients } from '../constants/colors';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { formatINR } from '../services/api';
+import { formatINR, getDiscountPercent } from '../services/api';
 import RemoteImage from '../components/RemoteImage';
 import { FREE_SHIPPING_MIN, getShippingPrice } from '../constants/shop';
 
-function CartHeader({ onBack }: { onBack: () => void }) {
+function CartHeader({ onBack, itemCount }: { onBack: () => void; itemCount: number }) {
   const { t } = useLanguage();
   return (
-    <View style={styles.header}>
-      <TouchableOpacity style={styles.headerBtn} onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+    <LinearGradient
+      colors={Gradients.primaryHeader}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.header}
+    >
+      <TouchableOpacity
+        style={styles.headerBtn}
+        onPress={onBack}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        activeOpacity={0.7}
+      >
         <Ionicons name="arrow-back" size={22} color={Colors.white} />
       </TouchableOpacity>
-      <Text style={styles.headerTitle}>{t('cart.title')}</Text>
+      <View style={styles.headerTitleWrap}>
+        <Text style={styles.headerTitle}>{t('cart.title')}</Text>
+        <Text style={styles.headerSubtitle}>
+          {itemCount === 1 ? '1 item' : `${itemCount} items`}
+        </Text>
+      </View>
       <View style={styles.headerBtn} />
-    </View>
+    </LinearGradient>
   );
 }
 
 export default function CartScreen() {
   const router = useRouter();
-  const { cart, removeFromCart, updateQuantity, cartTotal } = useCart();
+  const { cart, removeFromCart, updateQuantity, cartTotal, cartCount } = useCart();
   const { user } = useAuth();
   const { t } = useLanguage();
   const shipping = getShippingPrice(cartTotal);
   const grandTotal = cartTotal + shipping;
+
+  // Calculate total original MRP to show savings
+  const totalMrp = cart.reduce((acc, item) => {
+    if (!item?.product || typeof item.product === 'string') return acc;
+    const oldP = item.product.oldPrice || item.product.price;
+    return acc + oldP * (item.quantity || 1);
+  }, 0);
+  const totalSavings = Math.max(0, totalMrp - cartTotal);
 
   const handleCheckout = () => {
     if (!user) {
@@ -46,14 +70,19 @@ export default function CartScreen() {
   if (cart.length === 0) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right', 'bottom']}>
-        <CartHeader onBack={() => router.back()} />
+        <CartHeader onBack={() => router.back()} itemCount={0} />
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconWrap}>
-            <Feather name="shopping-bag" size={64} color={Colors.textLight} />
+            <Feather name="shopping-bag" size={56} color={Colors.primary} />
           </View>
           <Text style={styles.emptyTitle}>{t('cart.emptyTitle')}</Text>
           <Text style={styles.emptyText}>{t('cart.emptyText')}</Text>
-          <TouchableOpacity style={styles.shopButton} onPress={() => router.push('/(tabs)')}>
+          <TouchableOpacity
+            style={styles.shopButton}
+            onPress={() => router.push('/(tabs)')}
+            activeOpacity={0.88}
+          >
+            <Feather name="shopping-cart" size={16} color={Colors.white} style={{ marginRight: 6 }} />
             <Text style={styles.shopButtonText}>{t('cart.startShopping')}</Text>
           </TouchableOpacity>
         </View>
@@ -61,52 +90,180 @@ export default function CartScreen() {
     );
   }
 
+  const freeShippingProgress = Math.min(1, cartTotal / FREE_SHIPPING_MIN);
+  const needMore = Math.max(0, FREE_SHIPPING_MIN - cartTotal);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <CartHeader onBack={() => router.back()} />
+      <CartHeader onBack={() => router.back()} itemCount={cartCount} />
 
       <View style={styles.container}>
         <FlatList
           data={cart}
-          keyExtractor={(item, index) => item.product && typeof item.product === 'object' ? item.product._id : String(index)}
+          keyExtractor={(item, index) =>
+            item.product && typeof item.product === 'object' ? item.product._id : String(index)
+          }
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View>
+              {/* Delivery Progress Bar */}
+              <View style={styles.deliveryProgressCard}>
+                <View style={styles.deliveryProgressTop}>
+                  <Ionicons
+                    name={needMore === 0 ? 'checkmark-circle' : 'flash'}
+                    size={16}
+                    color={needMore === 0 ? '#16A34A' : Colors.primary}
+                  />
+                  <Text style={styles.deliveryProgressText}>
+                    {needMore === 0
+                      ? 'Congratulations! You unlocked FREE Delivery'
+                      : `Add ₹${formatINR(needMore)} more for FREE Delivery`}
+                  </Text>
+                </View>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${Math.round(freeShippingProgress * 100)}%`,
+                        backgroundColor: needMore === 0 ? '#16A34A' : Colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.sectionHeaderTitle}>Cart Items ({cartCount})</Text>
+            </View>
+          }
+          ListFooterComponent={
+            <View style={styles.priceBreakdownWrap}>
+              {/* Bill Details / Price Breakdown Card */}
+              <View style={styles.summaryCard}>
+                <Text style={styles.summaryCardTitle}>Price Details</Text>
+                <View style={styles.divider} />
+
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Total MRP</Text>
+                  <Text style={styles.billValue}>₹{formatINR(totalMrp)}</Text>
+                </View>
+
+                {totalSavings > 0 && (
+                  <View style={styles.billRow}>
+                    <Text style={styles.billLabel}>Discount on MRP</Text>
+                    <Text style={[styles.billValue, { color: '#16A34A' }]}>
+                      -₹{formatINR(totalSavings)}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Delivery Fee</Text>
+                  <Text style={[styles.billValue, shipping === 0 && { color: '#16A34A' }]}>
+                    {shipping === 0 ? 'FREE' : `₹${formatINR(shipping)}`}
+                  </Text>
+                </View>
+
+                <View style={styles.billRow}>
+                  <Text style={styles.billLabel}>Platform Fee</Text>
+                  <Text style={[styles.billValue, { color: '#16A34A' }]}>FREE</Text>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.grandRow}>
+                  <Text style={styles.grandLabel}>Total Amount</Text>
+                  <Text style={styles.grandValue}>₹{formatINR(grandTotal)}</Text>
+                </View>
+
+                {totalSavings > 0 && (
+                  <View style={styles.savingsBanner}>
+                    <Ionicons name="sparkles" size={14} color="#15803D" />
+                    <Text style={styles.savingsBannerText}>
+                      You will save ₹{formatINR(totalSavings)} on this order
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Trust Badge */}
+              <View style={styles.trustStrip}>
+                <MaterialIcons name="verified-user" size={18} color="#059669" />
+                <Text style={styles.trustText}>
+                  Safe and secure payments · 100% Authentic products
+                </Text>
+              </View>
+            </View>
+          }
           renderItem={({ item }) => {
             const product = typeof item.product === 'string' ? null : item.product;
             if (!product) return null;
 
+            const discount = getDiscountPercent(product.price, product.oldPrice);
+
             return (
-              <View style={styles.cartItem}>
-                <View style={styles.imageWrap}>
-                  <RemoteImage uri={product.image} style={styles.image} contentFit="contain" />
-                </View>
-
-                <View style={styles.details}>
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.brand}>{product.brand}</Text>
-                    <TouchableOpacity onPress={() => removeFromCart(product._id)} style={styles.deleteButton}>
-                      <Ionicons name="trash-outline" size={18} color={Colors.error} />
-                    </TouchableOpacity>
+              <View style={styles.cartCard}>
+                <View style={styles.cardMain}>
+                  {/* Thumbnail */}
+                  <View style={styles.imageWrap}>
+                    <RemoteImage uri={product.image} style={styles.image} contentFit="contain" />
+                    {discount ? (
+                      <View style={styles.discountBadge}>
+                        <Text style={styles.discountText}>-{discount}%</Text>
+                      </View>
+                    ) : null}
                   </View>
-                  <Text style={styles.title} numberOfLines={2}>{product.name}</Text>
 
-                  <View style={styles.priceRow}>
-                    <Text style={styles.price}>₹{formatINR(product.price)}</Text>
+                  {/* Info */}
+                  <View style={styles.details}>
+                    <View style={styles.itemHeader}>
+                      <Text style={styles.brand}>{product.brand || product.category || 'BuyLow'}</Text>
+                      <TouchableOpacity
+                        onPress={() => removeFromCart(product._id)}
+                        style={styles.deleteButton}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="trash-outline" size={18} color={Colors.error} />
+                      </TouchableOpacity>
+                    </View>
 
-                    <View style={styles.quantityContainer}>
-                      <TouchableOpacity
-                        style={styles.qtyButton}
-                        onPress={() => updateQuantity(product._id, item.quantity - 1)}
-                      >
-                        <Feather name="minus" size={14} color={Colors.text} />
-                      </TouchableOpacity>
-                      <Text style={styles.qtyText}>{item.quantity}</Text>
-                      <TouchableOpacity
-                        style={styles.qtyButton}
-                        onPress={() => updateQuantity(product._id, item.quantity + 1)}
-                      >
-                        <Feather name="plus" size={14} color={Colors.text} />
-                      </TouchableOpacity>
+                    <Text style={styles.title} numberOfLines={2}>
+                      {product.name}
+                    </Text>
+
+                    {item.color ? (
+                      <Text style={styles.colorText}>Color: {item.color}</Text>
+                    ) : null}
+
+                    {/* Price and Quantity Row */}
+                    <View style={styles.priceAndQtyRow}>
+                      <View style={styles.priceBox}>
+                        <Text style={styles.price}>₹{formatINR(product.price)}</Text>
+                        {product.oldPrice && product.oldPrice > product.price ? (
+                          <Text style={styles.oldPrice}>₹{formatINR(product.oldPrice)}</Text>
+                        ) : null}
+                      </View>
+
+                      {/* Quantity Selector Pill */}
+                      <View style={styles.qtyPill}>
+                        <TouchableOpacity
+                          style={styles.qtyBtn}
+                          onPress={() => updateQuantity(product._id, item.quantity - 1)}
+                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                        >
+                          <Feather name="minus" size={13} color={Colors.text} />
+                        </TouchableOpacity>
+                        <Text style={styles.qtyValue}>{item.quantity}</Text>
+                        <TouchableOpacity
+                          style={styles.qtyBtn}
+                          onPress={() => updateQuantity(product._id, item.quantity + 1)}
+                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                        >
+                          <Feather name="plus" size={13} color={Colors.text} />
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -115,34 +272,21 @@ export default function CartScreen() {
           }}
         />
 
+        {/* Sticky Bottom Bar */}
         <SafeAreaView edges={['bottom']} style={styles.footerSafe}>
-          <View style={styles.footer}>
-            <View style={styles.summaryBox}>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>{t('cart.subtotal')}</Text>
-                <Text style={styles.totalValue}>₹{formatINR(cartTotal)}</Text>
-              </View>
-              <View style={styles.deliveryRow}>
-                <Text style={styles.deliveryLabel}>{t('cart.delivery')}</Text>
-                <Text style={[styles.deliveryValue, shipping === 0 && { color: Colors.success }]}>
-                  {shipping === 0 ? t('common.free') : `₹${formatINR(shipping)}`}
-                </Text>
-              </View>
-              {cartTotal < FREE_SHIPPING_MIN && (
-                <Text style={styles.shipHint}>
-                  {t('cart.freeDeliveryHint', { amount: formatINR(FREE_SHIPPING_MIN - cartTotal) })}
-                </Text>
-              )}
-              <View style={styles.divider} />
-              <View style={styles.grandTotalRow}>
-                <Text style={styles.grandTotalLabel}>{t('cart.grandTotal')}</Text>
-                <Text style={styles.grandTotalValue}>₹{formatINR(grandTotal)}</Text>
-              </View>
+          <View style={styles.bottomBar}>
+            <View style={styles.bottomBarLeft}>
+              <Text style={styles.bottomBarLabel}>Total Amount</Text>
+              <Text style={styles.bottomBarPrice}>₹{formatINR(grandTotal)}</Text>
             </View>
 
-            <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
-              <Text style={styles.checkoutButtonText}>{t('cart.proceedCheckout')}</Text>
-              <Feather name="arrow-right" size={18} color={Colors.white} style={{ marginLeft: 8 }} />
+            <TouchableOpacity
+              style={styles.placeOrderBtn}
+              onPress={handleCheckout}
+              activeOpacity={0.88}
+            >
+              <Text style={styles.placeOrderBtnText}>{t('cart.proceedCheckout')}</Text>
+              <Feather name="arrow-right" size={16} color={Colors.white} />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -154,60 +298,126 @@ export default function CartScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#F3F6FB',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 12,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    ...Shadows.medium,
+    elevation: 6,
   },
   headerBtn: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerTitleWrap: {
+    alignItems: 'center',
+  },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: Colors.white,
+  },
+  headerSubtitle: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '600',
+    marginTop: 1,
   },
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F3F6FB',
   },
   list: {
-    padding: 16,
-    gap: 16,
-    paddingBottom: 8,
-  },
-  cartItem: {
-    flexDirection: 'row',
-    backgroundColor: Colors.white,
     padding: 14,
-    borderRadius: 16,
+    paddingBottom: 24,
+  },
+  deliveryProgressCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     ...Shadows.small,
   },
-  imageWrap: {
-    width: 90,
-    height: 90,
-    backgroundColor: Colors.background,
-    borderRadius: 12,
-    padding: 8,
-    marginRight: 14,
-    justifyContent: 'center',
+  deliveryProgressTop: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  deliveryProgressText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  progressTrack: {
+    height: 5,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  sectionHeaderTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.text,
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  cartCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 12,
+    marginBottom: 12,
+    ...Shadows.small,
+  },
+  cardMain: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  imageWrap: {
+    width: 95,
+    height: 105,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 6,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   image: {
     width: '100%',
     height: '100%',
+  },
+  discountBadge: {
+    position: 'absolute',
+    top: 5,
+    left: 5,
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 5,
+  },
+  discountText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: Colors.primaryDark,
   },
   details: {
     flex: 1,
@@ -215,180 +425,235 @@ const styles = StyleSheet.create({
   },
   itemHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   brand: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: Colors.textLight,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   deleteButton: {
     padding: 4,
   },
   title: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
     color: Colors.text,
-    lineHeight: 20,
+    lineHeight: 18,
     marginTop: 2,
-    marginBottom: 8,
   },
-  priceRow: {
+  colorText: {
+    fontSize: 11,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
+  priceAndQtyRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+  priceBox: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
   },
   price: {
-    fontSize: 18,
+    fontSize: 15.5,
     fontWeight: '900',
-    color: Colors.primary,
+    color: Colors.primaryDark,
   },
-  quantityContainer: {
+  oldPrice: {
+    fontSize: 11,
+    color: Colors.textLight,
+    textDecorationLine: 'line-through',
+  },
+  qtyPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: 20,
-    backgroundColor: Colors.background,
-    overflow: 'hidden',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
-  qtyButton: {
-    padding: 8,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+  qtyBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  qtyText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  qtyValue: {
+    fontSize: 13,
+    fontWeight: '800',
     color: Colors.text,
-    minWidth: 20,
+    minWidth: 18,
     textAlign: 'center',
   },
-  footerSafe: {
+  priceBreakdownWrap: {
+    marginTop: 10,
+  },
+  summaryCard: {
     backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.small,
   },
-  footer: {
-    backgroundColor: Colors.white,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    ...Shadows.large,
-  },
-  summaryBox: {
-    marginBottom: 20,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  totalLabel: {
-    fontSize: 14,
-    color: Colors.textLight,
-  },
-  totalValue: {
+  summaryCardTitle: {
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '800',
     color: Colors.text,
-  },
-  deliveryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  deliveryLabel: {
-    fontSize: 14,
-    color: Colors.textLight,
-  },
-  deliveryValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: Colors.success,
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.border,
-    marginVertical: 12,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 10,
   },
-  grandTotalRow: {
+  billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  grandTotalLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  billLabel: {
+    fontSize: 13,
+    color: Colors.textLight,
+    fontWeight: '500',
+  },
+  billValue: {
+    fontSize: 13,
+    fontWeight: '700',
     color: Colors.text,
   },
-  grandTotalValue: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: Colors.primary,
-  },
-  shipHint: {
-    fontSize: 11,
-    color: Colors.primary,
-    marginBottom: 4,
-  },
-  checkoutButton: {
-    backgroundColor: Colors.primary,
+  grandRow: {
     flexDirection: 'row',
-    height: 54,
-    borderRadius: 14,
+    justifyContent: 'space-between',
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  grandLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  grandValue: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: Colors.primaryDark,
+  },
+  savingsBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  savingsBannerText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: '#15803D',
+  },
+  trustStrip: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 14,
+  },
+  trustText: {
+    fontSize: 11.5,
+    color: Colors.textLight,
+    fontWeight: '600',
+  },
+  footerSafe: {
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
     ...Shadows.medium,
   },
-  checkoutButtonText: {
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  bottomBarLeft: {
+    flex: 1,
+  },
+  bottomBarLabel: {
+    fontSize: 11,
+    color: Colors.textLight,
+    fontWeight: '600',
+  },
+  bottomBarPrice: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.primaryDark,
+  },
+  placeOrderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    ...Shadows.small,
+  },
+  placeOrderBtnText: {
     color: Colors.white,
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '800',
   },
   emptyContainer: {
     flex: 1,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
+    justifyContent: 'center',
+    paddingHorizontal: 36,
   },
   emptyIconWrap: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.background,
-    justifyContent: 'center',
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
-    marginBottom: 24,
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 22,
-    fontWeight: '900',
+    fontSize: 19,
+    fontWeight: '800',
     color: Colors.text,
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textLight,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 32,
-    paddingHorizontal: 16,
+    lineHeight: 19,
+    marginBottom: 24,
   },
   shopButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: Colors.primary,
-    paddingHorizontal: 40,
-    paddingVertical: 16,
-    borderRadius: 14,
-    ...Shadows.small,
+    paddingHorizontal: 28,
+    paddingVertical: 13,
+    borderRadius: 24,
+    ...Shadows.medium,
   },
   shopButtonText: {
     color: Colors.white,
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

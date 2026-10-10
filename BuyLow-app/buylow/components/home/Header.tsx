@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Colors, Shadows } from '../../constants/colors';
+import { Colors, Shadows, Gradients } from '../../constants/colors';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import SideDrawer from '../SideDrawer';
@@ -15,10 +16,17 @@ export default function Header() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const wishlistCount = Array.isArray(user?.wishlist) ? user.wishlist.length : 0;
+  const defaultAddress = user?.addresses?.find((a) => a.isDefault) || user?.addresses?.[0];
+  const deliveryCity = defaultAddress?.city ? `${defaultAddress.city} ${defaultAddress.postalCode || ''}` : 'India';
 
   return (
     <>
-      <View style={styles.container}>
+      <LinearGradient
+        colors={Gradients.primaryHeader}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.container}
+      >
         {/* Top Navigation Row */}
         <View style={styles.topRow}>
           {/* Hamburger Menu */}
@@ -35,7 +43,7 @@ export default function Header() {
           <TouchableOpacity
             style={styles.logoWrapper}
             onPress={() => router.push('/(tabs)')}
-            activeOpacity={0.85}
+            activeOpacity={0.88}
           >
             <Image
               source={require('../../assets/images/logo.png')}
@@ -66,7 +74,7 @@ export default function Header() {
               accessibilityLabel="Shopping Cart"
               activeOpacity={0.7}
             >
-              <Feather name="shopping-cart" size={20} color={Colors.white} />
+              <Feather name="shopping-bag" size={20} color={Colors.white} />
               {cartCount > 0 && (
                 <View style={styles.cartBadge}>
                   <Text style={styles.badgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
@@ -76,23 +84,37 @@ export default function Header() {
           </View>
         </View>
 
+        {/* Location Ticker Row (Amazon / Flipkart Style) */}
+        <TouchableOpacity
+          style={styles.locationRow}
+          onPress={() => router.push(user ? '/(tabs)/account/addresses' as any : '/(auth)/login')}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="location-sharp" size={13} color={Colors.accent} />
+          <Text style={styles.locationLabel}>Deliver to:</Text>
+          <Text style={styles.locationText} numberOfLines={1}>
+            {user ? `${user.name?.split(' ')[0]} - ${deliveryCity}` : 'Select your delivery location'}
+          </Text>
+          <Feather name="chevron-down" size={12} color="rgba(255,255,255,0.7)" />
+        </TouchableOpacity>
+
         {/* Integrated Quick Search Bar */}
         <TouchableOpacity
           style={styles.searchBar}
           onPress={() => router.push('/(tabs)/search')}
-          activeOpacity={0.9}
+          activeOpacity={0.92}
         >
           <View style={styles.searchInner}>
-            <Feather name="search" size={17} color={Colors.primary} style={styles.searchIcon} />
+            <Feather name="search" size={18} color={Colors.primary} style={styles.searchIcon} />
             <Text style={styles.searchPlaceholder} numberOfLines={1}>
-              Search products, electronics, kitchenware...
+              Search for products, brands & more...
             </Text>
           </View>
           <View style={styles.searchPill}>
             <Text style={styles.searchPillText}>Search</Text>
           </View>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       {/* Side Drawer */}
       <SideDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
@@ -102,40 +124,35 @@ export default function Header() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.primary,
     paddingHorizontal: 14,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 14,
     ...Shadows.medium,
-    elevation: 6,
+    elevation: 8,
     zIndex: 10,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   logoWrapper: {
     flex: 1,
     marginHorizontal: 10,
     backgroundColor: Colors.white,
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    ...Shadows.small,
   },
   logo: {
-    height: 30,
-    width: 124,
+    height: 28,
+    width: 125,
   },
   iconGroup: {
     flexDirection: 'row',
@@ -147,14 +164,16 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   cartBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -3,
+    right: -3,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
@@ -163,46 +182,61 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: Colors.primaryDark,
   },
   wishlistBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: -3,
+    right: -3,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
     paddingHorizontal: 4,
-    backgroundColor: '#FF5252',
+    backgroundColor: '#EF4444',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: Colors.primaryDark,
   },
   badgeText: {
     fontSize: 9.5,
-    fontWeight: '800',
+    fontWeight: '900',
     color: Colors.primaryDark,
   },
   wishlistBadgeText: {
     fontSize: 9.5,
-    fontWeight: '800',
+    fontWeight: '900',
     color: Colors.white,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  locationLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.75)',
+    fontWeight: '500',
+  },
+  locationText: {
+    fontSize: 11.5,
+    color: Colors.white,
+    fontWeight: '700',
+    flex: 1,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingLeft: 12,
     paddingRight: 6,
-    height: 42,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
+    height: 44,
+    ...Shadows.small,
   },
   searchInner: {
     flexDirection: 'row',
@@ -216,16 +250,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.textLight,
     flex: 1,
+    fontWeight: '500',
   },
   searchPill: {
-    backgroundColor: Colors.lightBlue,
-    paddingHorizontal: 12,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   searchPillText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: Colors.primary,
+    fontWeight: '800',
+    color: Colors.white,
   },
 });

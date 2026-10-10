@@ -16,11 +16,12 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { Colors, Shadows } from '../../constants/colors';
+import { Colors, Shadows, Gradients } from '../../constants/colors';
 import GoogleSignInButton from '../../components/GoogleSignInButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -244,11 +245,18 @@ export default function RegisterScreen() {
               disabled={loading}
               activeOpacity={0.88}
             >
-              {loading ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <Text style={styles.buttonText}>{t('auth.joinTitle')}</Text>
-              )}
+              <LinearGradient
+                colors={Gradients.primary}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.gradientButton}
+              >
+                {loading ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <Text style={styles.buttonText}>{t('auth.joinTitle')}</Text>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </View>
 
@@ -384,13 +392,16 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
   button: {
-    backgroundColor: Colors.primary,
     borderRadius: 14,
+    overflow: 'hidden',
+    marginTop: 10,
+    ...Shadows.small,
+  },
+  gradientButton: {
     height: 54,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    ...Shadows.small,
+    borderRadius: 14,
   },
   buttonDisabled: {
     opacity: 0.7,

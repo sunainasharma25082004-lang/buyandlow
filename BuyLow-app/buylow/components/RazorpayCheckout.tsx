@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { Modal, View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Alert } from 'react-native';
+import { Modal, View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Alert, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import type { RazorpaySuccess } from '../utils/razorpay';
 
@@ -32,6 +33,7 @@ export default function RazorpayCheckout({
   onSuccess,
   onDismiss,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const html = useMemo(() => `
 <!DOCTYPE html>
 <html>
@@ -89,7 +91,7 @@ export default function RazorpayCheckout({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onDismiss}>
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top + 8, 44) }]}>
           <Text style={styles.headerTitle}>Secure Payment</Text>
           <TouchableOpacity onPress={onDismiss} style={styles.closeBtn}>
             <Ionicons name="close" size={22} color={Colors.white} />
@@ -98,6 +100,8 @@ export default function RazorpayCheckout({
         <WebView
           originWhitelist={['*']}
           source={{ html }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
           startInLoadingState
           renderLoading={() => (
             <View style={styles.loader}>
@@ -105,6 +109,26 @@ export default function RazorpayCheckout({
               <Text style={styles.loaderText}>Loading Razorpay...</Text>
             </View>
           )}
+          onShouldStartLoadWithRequest={(request) => {
+            const { url } = request;
+            if (
+              !url ||
+              url.startsWith('http://') ||
+              url.startsWith('https://') ||
+              url.startsWith('about:blank') ||
+              url.startsWith('data:')
+            ) {
+              return true;
+            }
+            Linking.canOpenURL(url).then((canOpen) => {
+              if (canOpen) {
+                Linking.openURL(url);
+              }
+            }).catch((err) => {
+              console.warn('Could not launch external payment scheme:', err);
+            });
+            return false;
+          }}
           onMessage={(event) => {
             try {
               const data = JSON.parse(event.nativeEvent.data);
@@ -134,7 +158,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: Colors.primary,
-    paddingTop: 48,
     paddingBottom: 14,
     paddingHorizontal: 16,
   },

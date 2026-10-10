@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { createOrder, verifyPayment, formatINR } from '../services/api';
 import { FREE_SHIPPING_MIN, getShippingPrice } from '../constants/shop';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import RazorpayCheckout from '../components/RazorpayCheckout';
 import { openRazorpayOnWeb, RazorpaySuccess, supportsWebRazorpay } from '../utils/razorpay';
 import type { SavedAddress } from '../types/api';
@@ -36,10 +36,10 @@ const applyAddress = (
     setPhone: (v: string) => void;
   },
 ) => {
-  setters.setAddress(addr.address);
-  setters.setCity(addr.city);
-  setters.setPostalCode(addr.postalCode);
-  setters.setPhone(addr.phone);
+  setters.setAddress(addr.address || '');
+  setters.setCity(addr.city || '');
+  setters.setPostalCode(addr.postalCode || '');
+  setters.setPhone(addr.phone || '');
 };
 
 export default function CheckoutScreen() {
@@ -60,14 +60,14 @@ export default function CheckoutScreen() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [locationPreview, setLocationPreview] = useState<GeocodedAddress | null>(null);
 
-  const savedAddresses = user?.addresses || [];
+  const savedAddresses = useMemo(() => user?.addresses || [], [user?.addresses]);
 
   const handleSelectCurrentLocation = (loc: GeocodedAddress) => {
     setSelectedAddressId(CURRENT_LOCATION_ID);
     setLocationPreview(loc);
-    setAddress(loc.address);
-    setCity(loc.city);
-    setPostalCode(loc.postalCode);
+    setAddress(loc.address || '');
+    setCity(loc.city || '');
+    setPostalCode(loc.postalCode || '');
     if (!phone && user?.phone) {
       setPhone(user.phone);
     }
@@ -81,18 +81,20 @@ export default function CheckoutScreen() {
 
   useEffect(() => {
     if (savedAddresses.length === 0) {
-      if (user?.phone && !phone) {
-        setPhone(user.phone);
+      if (user?.phone) {
+        setPhone((prev) => prev || user.phone || '');
       }
       return;
     }
 
-    const defaultAddr = savedAddresses.find((item) => item.isDefault) || savedAddresses[0];
-    if (defaultAddr && !selectedAddressId) {
-      setSelectedAddressId(defaultAddr._id || null);
-      applyAddress(defaultAddr, { setAddress, setCity, setPostalCode, setPhone });
+    if (!selectedAddressId) {
+      const defaultAddr = savedAddresses.find((item) => item.isDefault) || savedAddresses[0];
+      if (defaultAddr) {
+        setSelectedAddressId(defaultAddr._id || null);
+        applyAddress(defaultAddr, { setAddress, setCity, setPostalCode, setPhone });
+      }
     }
-  }, [savedAddresses, user?.phone]);
+  }, [savedAddresses, user?.phone, selectedAddressId]);
 
   const handleSelectAddress = (addr: SavedAddress) => {
     setSelectedAddressId(addr._id || null);
@@ -119,14 +121,16 @@ export default function CheckoutScreen() {
       })
       .filter(Boolean);
 
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+
     return {
       orderItems,
       shippingAddress: {
         address: address.trim(),
         city: city.trim(),
         postalCode: postalCode.trim(),
-        country,
-        phone: phone.trim(),
+        country: country || 'India',
+        phone: cleanPhone,
       },
       paymentMethod: paymentMethod === 'cod' ? 'Cash On Delivery' : 'Razorpay',
       itemsPrice: cartTotal,
@@ -166,8 +170,16 @@ export default function CheckoutScreen() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!address.trim() || !city.trim() || !postalCode.trim() || !phone.trim()) {
-      Alert.alert(t('common.error'), t('checkout.detailsMissing'));
+    if (loading) return;
+    if (cart.length === 0) {
+      Alert.alert(t('common.error'), 'Your cart is empty.');
+      router.replace('/cart');
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    const cleanPostal = postalCode.trim();
+    if (!address.trim() || !city.trim() || cleanPostal.length !== 6 || !/^\d{6}$/.test(cleanPostal) || cleanPhone.length < 10) {
+      Alert.alert(t('common.error'), 'Please fill in a valid full address, a 6-digit PIN code, and a 10-digit mobile number.');
       return;
     }
     if (!token) {
@@ -210,7 +222,7 @@ export default function CheckoutScreen() {
           razorpayOrderId: res.razorpayOrderId,
           userName: user?.name,
           userEmail: user?.email,
-          userPhone: phone,
+          userPhone: cleanPhone,
           onSuccess: handleRazorpaySuccess,
           onDismiss: () => setPaymentSession(null),
           onError: (message) => {
@@ -232,6 +244,34 @@ export default function CheckoutScreen() {
 
   return (
     <View style={styles.root}>
+      {/* Checkout Steps Header */}
+      <View style={styles.stepHeader}>
+        <View style={styles.stepItem}>
+          <View style={[styles.stepCircle, styles.stepCircleActive]}>
+            <Text style={styles.stepNumberActive}>1</Text>
+          </View>
+          <Text style={[styles.stepLabel, styles.stepLabelActive]}>Address</Text>
+        </View>
+
+        <View style={styles.stepLine} />
+
+        <View style={styles.stepItem}>
+          <View style={[styles.stepCircle, styles.stepCircleActive]}>
+            <Text style={styles.stepNumberActive}>2</Text>
+          </View>
+          <Text style={[styles.stepLabel, styles.stepLabelActive]}>Payment</Text>
+        </View>
+
+        <View style={styles.stepLine} />
+
+        <View style={styles.stepItem}>
+          <View style={styles.stepCircle}>
+            <Text style={styles.stepNumber}>3</Text>
+          </View>
+          <Text style={styles.stepLabel}>Confirm</Text>
+        </View>
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
@@ -239,156 +279,224 @@ export default function CheckoutScreen() {
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="always"
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.sectionHeader}>
-            <Feather name="map-pin" size={18} color={Colors.primary} />
-            <Text style={styles.sectionTitle}>{t('checkout.shippingAddress')}</Text>
-            {savedAddresses.length > 0 && (
-              <TouchableOpacity onPress={() => router.push('/(tabs)/account/addresses' as any)}>
-                <Text style={styles.manageLink}>{t('common.manage')}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <Text style={styles.chooseHint}>{t('checkout.chooseAddress')}</Text>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.savedScroll}
-            contentContainerStyle={styles.savedScrollContent}
-          >
-            <LocationSelectCard
-              selected={selectedAddressId === CURRENT_LOCATION_ID}
-              preview={locationPreview}
-              onSelect={handleSelectCurrentLocation}
-            />
-            {savedAddresses.map((addr) => {
-              const active = selectedAddressId === addr._id;
-              return (
-                <TouchableOpacity
-                  key={addr._id || addr.address}
-                  style={[styles.savedCard, active && styles.savedCardActive]}
-                  onPress={() => handleSelectAddress(addr)}
-                >
-                  <Text style={styles.savedLabel}>{addr.label}</Text>
-                  <Text style={styles.savedText} numberOfLines={2}>{addr.address}</Text>
-                  <Text style={styles.savedMeta}>{addr.city} · {addr.postalCode}</Text>
-                  {addr.isDefault && <Text style={styles.savedDefault}>{t('common.default')}</Text>}
+          {/* Shipping Address Section */}
+          <View style={styles.cardSection}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconWrap}>
+                <Feather name="map-pin" size={16} color={Colors.primary} />
+              </View>
+              <Text style={styles.sectionTitle}>{t('checkout.shippingAddress')}</Text>
+              {savedAddresses.length > 0 && (
+                <TouchableOpacity onPress={() => router.push('/(tabs)/account/addresses' as any)}>
+                  <Text style={styles.manageLink}>{t('common.manage')}</Text>
                 </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+              )}
+            </View>
 
-          <Text style={styles.label}>{t('checkout.fullAddress')}</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder={t('checkout.addressPlaceholder')}
-              placeholderTextColor={Colors.textLight}
-              value={address}
-              onChangeText={setAddress}
-            />
-          </View>
+            <Text style={styles.chooseHint}>{t('checkout.chooseAddress')}</Text>
 
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>{t('checkout.city')}</Text>
-              <View style={styles.inputContainer}>
-                <TextInput style={styles.input} placeholder={t('checkout.cityPlaceholder')} value={city} onChangeText={setCity} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.savedScroll}
+              contentContainerStyle={styles.savedScrollContent}
+            >
+              <LocationSelectCard
+                selected={selectedAddressId === CURRENT_LOCATION_ID}
+                preview={locationPreview}
+                onSelect={handleSelectCurrentLocation}
+              />
+              {savedAddresses.map((addr) => {
+                const active = selectedAddressId === addr._id;
+                return (
+                  <TouchableOpacity
+                    key={addr._id || addr.address}
+                    style={[styles.savedCard, active && styles.savedCardActive]}
+                    onPress={() => handleSelectAddress(addr)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.savedCardTop}>
+                      <Text style={styles.savedLabel}>{addr.label}</Text>
+                      {active ? (
+                        <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />
+                      ) : null}
+                    </View>
+                    <Text style={styles.savedText} numberOfLines={2}>
+                      {addr.address}
+                    </Text>
+                    <Text style={styles.savedMeta}>
+                      {addr.city} · {addr.postalCode}
+                    </Text>
+                    {addr.isDefault && <Text style={styles.savedDefault}>{t('common.default')}</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <Text style={styles.label}>{t('checkout.fullAddress')}</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder={t('checkout.addressPlaceholder')}
+                placeholderTextColor={Colors.textLight}
+                value={address}
+                onChangeText={setAddress}
+              />
+            </View>
+
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>{t('checkout.city')}</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={t('checkout.cityPlaceholder')}
+                    placeholderTextColor={Colors.textLight}
+                    value={city}
+                    onChangeText={setCity}
+                  />
+                </View>
+              </View>
+              <View style={{ width: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.label}>{t('checkout.pinCode')}</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="110001"
+                    placeholderTextColor={Colors.textLight}
+                    keyboardType="numeric"
+                    maxLength={6}
+                    value={postalCode}
+                    onChangeText={setPostalCode}
+                  />
+                </View>
               </View>
             </View>
-            <View style={{ width: 12 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>{t('checkout.pinCode')}</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="110001"
-                  keyboardType="numeric"
-                  maxLength={6}
-                  value={postalCode}
-                  onChangeText={setPostalCode}
-                />
-              </View>
+
+            <Text style={styles.label}>{t('common.phone')}</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder={t('checkout.phonePlaceholder')}
+                placeholderTextColor={Colors.textLight}
+                keyboardType="phone-pad"
+                maxLength={10}
+                value={phone}
+                onChangeText={setPhone}
+              />
             </View>
           </View>
 
-          <Text style={styles.label}>{t('common.phone')}</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder={t('checkout.phonePlaceholder')}
-              keyboardType="phone-pad"
-              maxLength={10}
-              value={phone}
-              onChangeText={setPhone}
-            />
+          {/* Payment Method Section */}
+          <View style={styles.cardSection}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconWrap}>
+                <Ionicons name="wallet-outline" size={16} color={Colors.primary} />
+              </View>
+              <Text style={styles.sectionTitle}>{t('checkout.paymentMethod')}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.payOption, paymentMethod === 'razorpay' && styles.payOptionActive]}
+              onPress={() => setPaymentMethod('razorpay')}
+              activeOpacity={0.88}
+            >
+              <View style={styles.payIconBox}>
+                <Ionicons name="card-outline" size={20} color={Colors.primary} />
+              </View>
+              <View style={styles.payTextWrap}>
+                <Text style={styles.payOptionTitle}>Razorpay Online (UPI, Cards, NetBanking)</Text>
+                <Text style={styles.payOptionDesc}>Instant & 100% secure encrypted payment</Text>
+              </View>
+              <Ionicons
+                name={paymentMethod === 'razorpay' ? 'radio-button-on' : 'radio-button-off'}
+                size={22}
+                color={paymentMethod === 'razorpay' ? Colors.primary : Colors.border}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.payOption, paymentMethod === 'cod' && styles.payOptionActive]}
+              onPress={() => setPaymentMethod('cod')}
+              activeOpacity={0.88}
+            >
+              <View style={styles.payIconBox}>
+                <Ionicons name="cash-outline" size={20} color={Colors.primary} />
+              </View>
+              <View style={styles.payTextWrap}>
+                <Text style={styles.payOptionTitle}>{t('checkout.codTitle')}</Text>
+                <Text style={styles.payOptionDesc}>{t('checkout.codDesc')}</Text>
+              </View>
+              <Ionicons
+                name={paymentMethod === 'cod' ? 'radio-button-on' : 'radio-button-off'}
+                size={22}
+                color={paymentMethod === 'cod' ? Colors.primary : Colors.border}
+              />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.summaryContainer}>
+          {/* Price Summary Section */}
+          <View style={styles.cardSection}>
             <Text style={styles.summaryTitle}>{t('checkout.orderSummary')}</Text>
+            <View style={styles.divider} />
+
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{t('checkout.subtotal')}</Text>
               <Text style={styles.summaryValue}>₹{formatINR(cartTotal)}</Text>
             </View>
+
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{t('checkout.shipping')}</Text>
-              <Text style={[styles.summaryValue, shippingPrice === 0 && { color: Colors.success }]}>
+              <Text style={[styles.summaryValue, shippingPrice === 0 && { color: '#16A34A' }]}>
                 {shippingPrice === 0 ? t('common.free') : `₹${formatINR(shippingPrice)}`}
               </Text>
             </View>
+
             {cartTotal < FREE_SHIPPING_MIN && (
               <Text style={styles.shippingHint}>
                 {t('checkout.freeShippingHint', { amount: formatINR(FREE_SHIPPING_MIN - cartTotal) })}
               </Text>
             )}
+
             <View style={styles.divider} />
+
             <View style={styles.summaryRow}>
               <Text style={styles.totalLabel}>{t('checkout.grandTotal')}</Text>
               <Text style={styles.totalValue}>₹{formatINR(grandTotal)}</Text>
             </View>
           </View>
 
-          <Text style={styles.payTitle}>{t('checkout.paymentMethod')}</Text>
+          {/* Place Order CTA Button */}
           <TouchableOpacity
-            style={[styles.payOption, paymentMethod === 'razorpay' && styles.payOptionActive]}
-            onPress={() => setPaymentMethod('razorpay')}
+            style={styles.button}
+            onPress={handlePlaceOrder}
+            disabled={loading}
+            activeOpacity={0.88}
           >
-            <Ionicons name="card-outline" size={22} color={Colors.primary} />
-            <View style={styles.payTextWrap}>
-              <Text style={styles.payOptionTitle}>{t('checkout.razorpayTitle')}</Text>
-              <Text style={styles.payOptionDesc}>{t('checkout.razorpayDesc')}</Text>
-            </View>
-            {paymentMethod === 'razorpay' && <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.payOption, paymentMethod === 'cod' && styles.payOptionActive]}
-            onPress={() => setPaymentMethod('cod')}
-          >
-            <Ionicons name="cash-outline" size={22} color={Colors.primary} />
-            <View style={styles.payTextWrap}>
-              <Text style={styles.payOptionTitle}>{t('checkout.codTitle')}</Text>
-              <Text style={styles.payOptionDesc}>{t('checkout.codDesc')}</Text>
-            </View>
-            {paymentMethod === 'cod' && <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.button} onPress={handlePlaceOrder} disabled={loading}>
             {loading ? (
               <ActivityIndicator color={Colors.white} />
             ) : (
               <>
                 <Text style={styles.buttonText}>
-                  {paymentMethod === 'razorpay' ? t('checkout.payWithRazorpay') : t('checkout.placeCodOrder')}
+                  {paymentMethod === 'razorpay'
+                    ? `Pay ₹${formatINR(grandTotal)} with Razorpay`
+                    : `Place Order (₹${formatINR(grandTotal)})`}
                 </Text>
                 <Feather name="lock" size={16} color={Colors.white} style={{ marginLeft: 8 }} />
               </>
             )}
           </TouchableOpacity>
+
+          <View style={styles.securityNote}>
+            <MaterialIcons name="security" size={16} color="#059669" />
+            <Text style={styles.securityNoteText}>
+              256-Bit SSL Encrypted & Verified Checkout
+            </Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -414,92 +522,287 @@ export default function CheckoutScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
-  keyboardView: { flex: 1 },
-  container: { flex: 1 },
-  content: { padding: 20, paddingBottom: 40 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
-  sectionTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: Colors.text },
-  manageLink: { fontSize: 13, fontWeight: '700', color: Colors.primary },
-  savedScroll: { marginBottom: 14, marginHorizontal: -4 },
-  savedScrollContent: { gap: 10, paddingHorizontal: 4 },
+  root: {
+    flex: 1,
+    backgroundColor: '#F3F6FB',
+  },
+  stepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stepCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepCircleActive: {
+    backgroundColor: Colors.primary,
+  },
+  stepNumber: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textLight,
+  },
+  stepNumberActive: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  stepLabel: {
+    fontSize: 12,
+    color: Colors.textLight,
+    fontWeight: '600',
+  },
+  stepLabelActive: {
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 8,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+  },
+  content: {
+    padding: 14,
+    paddingBottom: 40,
+    gap: 14,
+  },
+  cardSection: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.small,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 8,
+  },
+  sectionIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  manageLink: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  savedScroll: {
+    marginBottom: 14,
+    marginHorizontal: -4,
+  },
+  savedScrollContent: {
+    gap: 10,
+    paddingHorizontal: 4,
+  },
   savedCard: {
     width: 160,
-    backgroundColor: Colors.white,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     borderRadius: 12,
     padding: 12,
+    justifyContent: 'space-between',
   },
   savedCardActive: {
     borderColor: Colors.primary,
-    backgroundColor: Colors.lightBlue,
+    backgroundColor: '#EFF6FF',
   },
-  savedLabel: { fontSize: 13, fontWeight: '700', color: Colors.text, marginBottom: 4 },
-  savedText: { fontSize: 12, color: Colors.textLight, lineHeight: 16 },
-  savedMeta: { fontSize: 11, color: Colors.textLight, marginTop: 4 },
-  savedDefault: { fontSize: 10, fontWeight: '700', color: Colors.primary, marginTop: 6 },
+  savedCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  savedLabel: {
+    fontSize: 12.5,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  savedText: {
+    fontSize: 11.5,
+    color: Colors.textLight,
+    lineHeight: 16,
+  },
+  savedMeta: {
+    fontSize: 11,
+    color: Colors.textLight,
+    marginTop: 4,
+  },
+  savedDefault: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: Colors.primary,
+    marginTop: 6,
+    textTransform: 'uppercase',
+  },
   chooseHint: {
     fontSize: 12,
     color: Colors.textLight,
     marginBottom: 10,
-    lineHeight: 17,
   },
-  label: { fontSize: 12, fontWeight: '700', color: Colors.text, marginBottom: 8, textTransform: 'uppercase' },
+  label: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
   inputContainer: {
-    backgroundColor: Colors.white,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    marginBottom: 14,
-    minHeight: 50,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    minHeight: 46,
     justifyContent: 'center',
   },
-  input: { fontSize: 16, color: Colors.text, paddingVertical: Platform.OS === 'android' ? 8 : 10 },
-  row: { flexDirection: 'row' },
-  summaryContainer: {
-    backgroundColor: Colors.white,
-    padding: 18,
-    borderRadius: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    ...Shadows.small,
+  input: {
+    fontSize: 14,
+    color: Colors.text,
+    paddingVertical: Platform.OS === 'android' ? 6 : 8,
   },
-  summaryTitle: { fontSize: 16, fontWeight: '800', color: Colors.text, marginBottom: 12 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  summaryLabel: { fontSize: 14, color: Colors.textLight },
-  summaryValue: { fontSize: 15, color: Colors.text, fontWeight: '600' },
-  shippingHint: { fontSize: 11, color: Colors.primary, marginBottom: 4 },
-  divider: { height: 1, backgroundColor: Colors.border, marginVertical: 10 },
-  totalLabel: { fontSize: 16, fontWeight: 'bold', color: Colors.text },
-  totalValue: { fontSize: 20, fontWeight: '900', color: Colors.primary },
-  payTitle: { fontSize: 16, fontWeight: '800', color: Colors.text, marginTop: 20, marginBottom: 10 },
+  row: {
+    flexDirection: 'row',
+  },
   payOption: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: Colors.white,
+    backgroundColor: '#F8FAFC',
     borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderColor: '#E2E8F0',
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
   },
-  payOptionActive: { borderColor: Colors.primary, backgroundColor: Colors.lightBlue },
-  payTextWrap: { flex: 1 },
-  payOptionTitle: { fontSize: 14, fontWeight: '700', color: Colors.text },
-  payOptionDesc: { fontSize: 11, color: Colors.textLight, marginTop: 2 },
+  payOptionActive: {
+    borderColor: Colors.primary,
+    backgroundColor: '#EFF6FF',
+  },
+  payIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.small,
+  },
+  payTextWrap: {
+    flex: 1,
+  },
+  payOptionTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: Colors.text,
+  },
+  payOptionDesc: {
+    fontSize: 11,
+    color: Colors.textLight,
+    marginTop: 2,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  summaryLabel: {
+    fontSize: 13,
+    color: Colors.textLight,
+  },
+  summaryValue: {
+    fontSize: 13.5,
+    color: Colors.text,
+    fontWeight: '700',
+  },
+  shippingHint: {
+    fontSize: 11,
+    color: Colors.primary,
+    marginBottom: 6,
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 10,
+  },
+  totalLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: Colors.text,
+  },
+  totalValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.primaryDark,
+  },
   button: {
     backgroundColor: Colors.primary,
     flexDirection: 'row',
-    height: 56,
+    height: 54,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 4,
     ...Shadows.medium,
   },
-  buttonText: { color: Colors.white, fontSize: 16, fontWeight: 'bold' },
+  buttonText: {
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  securityNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 8,
+  },
+  securityNoteText: {
+    fontSize: 11.5,
+    color: '#059669',
+    fontWeight: '600',
+  },
 });

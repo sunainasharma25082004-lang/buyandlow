@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Colors, Shadows } from '../constants/colors';
+import { Colors, Shadows, Gradients } from '../constants/colors';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import SideDrawer from './SideDrawer';
@@ -18,7 +19,12 @@ export default function CustomHeader() {
 
   return (
     <>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={Gradients.primaryHeader}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => setDrawerOpen(true)}
@@ -31,7 +37,7 @@ export default function CustomHeader() {
         <TouchableOpacity
           style={styles.logoWrapper}
           onPress={() => router.push('/(tabs)')}
-          activeOpacity={0.85}
+          activeOpacity={0.88}
         >
           <Image
             source={require('../assets/images/logo.png')}
@@ -70,7 +76,7 @@ export default function CustomHeader() {
             accessibilityLabel="Cart"
             activeOpacity={0.7}
           >
-            <Feather name="shopping-cart" size={20} color={Colors.white} />
+            <Feather name="shopping-bag" size={20} color={Colors.white} />
             {cartCount > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.badgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
@@ -78,7 +84,7 @@ export default function CustomHeader() {
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
       <SideDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
@@ -92,12 +98,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: Colors.primary,
     ...Shadows.medium,
     elevation: 6,
     zIndex: 10,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
   },
   logoWrapper: {
     flex: 1,
@@ -108,14 +113,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...Shadows.small,
   },
   logo: {
-    height: 30,
+    height: 28,
     width: 120,
   },
   actions: {
@@ -128,9 +129,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   cartBadge: {
     position: 'absolute',
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: Colors.primaryDark,
   },
   wishlistBadge: {
     position: 'absolute',
@@ -154,20 +157,20 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     paddingHorizontal: 3,
-    backgroundColor: '#FF5252',
+    backgroundColor: '#EF4444',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: Colors.primaryDark,
   },
   badgeText: {
     fontSize: 9,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: Colors.primaryDark,
   },
   wishlistBadgeText: {
     fontSize: 9,
-    fontWeight: 'bold',
+    fontWeight: '900',
     color: Colors.white,
   },
 });
