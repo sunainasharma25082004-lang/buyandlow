@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -110,6 +111,22 @@ export default function LoginScreen() {
             ) : null}
 
             <GoogleSignInButton onSuccess={handleGoogle} disabled={loading} />
+
+            {Platform.OS === 'ios' && (
+              <TouchableOpacity
+                style={styles.appleButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Apple Sign-In',
+                    'Sign in with Apple is supported. Please ensure your Apple Developer account is configured with Service ID in production.',
+                  );
+                }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
+                <Text style={styles.appleButtonText}>Continue with Apple</Text>
+              </TouchableOpacity>
+            )}
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
@@ -382,5 +399,20 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 14,
     fontWeight: '800',
+  },
+  appleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000000',
+    borderRadius: 12,
+    height: 54,
+    marginTop: 8,
+    gap: 10,
+  },
+  appleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

@@ -54,8 +54,26 @@ export const validateOrderItems = (orderItems) => {
   return null;
 };
 
-export const clampPagination = (page, limit, maxLimit = 50) => {
+export const clampPagination = (page, limit, maxLimit = 100) => {
   const safePage = Math.max(1, Number(page) || 1);
-  const safeLimit = Math.min(Math.max(1, Number(limit) || 8), maxLimit);
+  const safeLimit = Math.min(Math.max(1, Number(limit) || 20), maxLimit);
   return { page: safePage, limit: safeLimit };
 };
+
+export const normalizeCategoryAliases = (cat) => {
+  if (!cat || cat === 'All') return [];
+  const clean = String(cat).trim().toLowerCase();
+  if (clean === 'crockry' || clean === 'crocry' || clean === 'crockery') {
+    return ['crockry', 'crocry', 'crockery'];
+  }
+  if (clean === 'electronics' || clean === 'electronic') {
+    return ['electronics', 'electronic'];
+  }
+  if (clean === 'kitchen appliance' || clean === 'kitchen appliances' || clean === 'kitchen') {
+    return ['kitchen appliance', 'kitchen appliances', 'kitchen', 'electronic'];
+  }
+  if (clean === 'home & living' || clean === 'home and living' || clean === 'home') {
+    return ['home & living', 'home and living', 'home'];
+  }
+  return [clean];
+};

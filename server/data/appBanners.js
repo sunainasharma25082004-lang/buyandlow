@@ -42,11 +42,11 @@ export const formatBanner = (banner) => ({
 });
 
 export const normalizeBannerBody = (body) => ({
-  label: body.label?.trim(),
-  title: body.title?.trim(),
+  label: (body.label || body.badge || 'PROMO').trim(),
+  title: (body.title || 'Featured Offer').trim(),
   subtitle: body.subtitle?.trim() || '',
-  image: body.image?.trim(),
+  image: body.image?.trim() || '',
   route: body.route?.trim() || '/(tabs)/categories',
-  sortOrder: body.sortOrder !== undefined ? Number(body.sortOrder) : 0,
+  sortOrder: body.sortOrder !== undefined && !isNaN(Number(body.sortOrder)) ? Number(body.sortOrder) : 0,
   isActive: body.isActive !== undefined ? Boolean(body.isActive) : true,
 });

@@ -1,20 +1,28 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import Logo from "./Logo";
+import API_URL from "../config/api";
 import "./Navbar.css";
 
-const navItems = [
-  { to: "/", label: "Home", icon: "🏠" },
-  { to: "/allproducts", label: "Shop All", icon: "🛍️" },
-  { to: "/allproducts?category=Grocery", label: "Grocery", icon: "🥦" },
+const DEFAULT_CATEGORY_NAV = [
   { to: "/allproducts?category=Electronics", label: "Electronics", icon: "📱" },
-  { to: "/allproducts?category=Fashion", label: "Fashion", icon: "👕" },
-  { to: "/allproducts?category=Home", label: "Home", icon: "🪴" },
-  { to: "/allproducts?category=Beauty", label: "Beauty", icon: "💄" },
-  { to: "/allproducts?sale=true&title=Sale Items", label: "Deals & Offers", icon: "🏷️" },
+  { to: "/allproducts?category=Crockery", label: "Crockery & Dining", icon: "🍽️" },
+  { to: "/allproducts?category=Kitchen Appliance", label: "Kitchen Appliances", icon: "🍳" },
 ];
+
+const getCategoryEmoji = (name = "") => {
+  const lower = name.toLowerCase();
+  if (lower.includes("elect")) return "📱";
+  if (lower.includes("crock") || lower.includes("din") || lower.includes("plate")) return "🍽️";
+  if (lower.includes("kitch") || lower.includes("appliance")) return "🍳";
+  if (lower.includes("home")) return "🪴";
+  if (lower.includes("fashion") || lower.includes("cloth")) return "👕";
+  if (lower.includes("beauty")) return "💄";
+  return "🏷️";
+};
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -25,7 +33,42 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryNav, setCategoryNav] = useState(DEFAULT_CATEGORY_NAV);
   const profileRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    axios
+      .get(`${API_URL}/categories`)
+      .then((res) => {
+        if (!active) return;
+        const list = (res.data.categories || []).filter((c) => c.isActive !== false);
+        if (list.length > 0) {
+          setCategoryNav(
+            list.map((c) => {
+              const label = c.title || c.displayName || c.name;
+              return {
+                to: `/allproducts?category=${encodeURIComponent(c.name)}&title=${encodeURIComponent(label)}`,
+                label,
+                icon: getCategoryEmoji(c.name),
+              };
+            })
+          );
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const allNavItems = [
+    { to: "/", label: "Home", icon: "🏠" },
+    { to: "/allproducts", label: "Shop All", icon: "🛍️" },
+    ...categoryNav,
+    { to: "/allproducts?sale=true&title=Sale Items", label: "Deals & Offers", icon: "⚡" },
+  ];
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -117,7 +160,7 @@ const Navbar = () => {
         </div>
 
         <ul className="mobile-drawer-nav">
-          {navItems.map((item) => (
+          {allNavItems.map((item) => (
             <li key={item.label} className="nav-item" onClick={closeMobileMenu}>
               <Link to={item.to}>
                 <span className="nav-item-icon" aria-hidden="true">{item.icon}</span>

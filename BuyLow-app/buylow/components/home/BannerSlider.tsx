@@ -13,7 +13,7 @@ import { getAppBanners, resolveMediaUrl } from '../../services/api';
 import type { AppBanner } from '../../types/api';
 import { useLanguage } from '../../context/LanguageContext';
 
-const bannerHeight = isTablet ? 220 : Math.min(SCREEN_WIDTH * 0.48, 200);
+const bannerHeight = isTablet ? 210 : Math.round(Math.min(SCREEN_WIDTH * 0.44, 185));
 
 type BannerSlide = {
   id: string;
@@ -36,6 +36,7 @@ const toSlide = (banner: AppBanner): BannerSlide => ({
 export default function BannerSlider() {
   const router = useRouter();
   const { t } = useLanguage();
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const fallbackSlides: BannerSlide[] = useMemo(
     () =>
@@ -43,19 +44,19 @@ export default function BannerSlider() {
         const key = item.id as '1' | '2' | '3';
         const labels: Record<string, { label: string; title: string; subtitle: string }> = {
           '1': {
-            label: t('home.banner1Label'),
-            title: t('home.banner1Title'),
-            subtitle: t('home.banner1Subtitle'),
+            label: t('home.banner1Label') || 'DEAL OF THE DAY',
+            title: t('home.banner1Title') || 'Electronics Fest',
+            subtitle: t('home.banner1Subtitle') || 'Up to 60% off on top gadgets',
           },
           '2': {
-            label: t('home.banner2Label'),
-            title: t('home.banner2Title'),
-            subtitle: t('home.banner2Subtitle'),
+            label: t('home.banner2Label') || 'KITCHEN SPECIAL',
+            title: t('home.banner2Title') || 'Modern Kitchen',
+            subtitle: t('home.banner2Subtitle') || 'Appliances starting at ₹499',
           },
           '3': {
-            label: t('home.banner3Label'),
-            title: t('home.banner3Title'),
-            subtitle: t('home.banner3Subtitle'),
+            label: t('home.banner3Label') || 'DINING & DECOR',
+            title: t('home.banner3Title') || 'Premium Crockery',
+            subtitle: t('home.banner3Subtitle') || 'Elegant sets at low prices',
           },
         };
         const copy = labels[key] || labels['1'];
@@ -70,6 +71,7 @@ export default function BannerSlider() {
       }),
     [t],
   );
+
   const [slides, setSlides] = useState<BannerSlide[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -97,7 +99,11 @@ export default function BannerSlider() {
   const data = useMemo(() => slides, [slides]);
 
   const renderItem = ({ item }: { item: BannerSlide }) => (
-    <View style={styles.bannerWrap}>
+    <TouchableOpacity
+      style={styles.bannerWrap}
+      activeOpacity={0.94}
+      onPress={() => router.push(item.route as any)}
+    >
       <Image
         source={{ uri: item.image }}
         style={styles.bannerImage}
@@ -105,24 +111,23 @@ export default function BannerSlider() {
         {...(Platform.OS === 'web' ? { referrerPolicy: 'no-referrer' as const } : {})}
       />
       <LinearGradient
-        colors={['rgba(13,71,161,0.85)', 'rgba(21,101,192,0.55)', 'transparent']}
+        colors={['rgba(15,23,42,0.85)', 'rgba(15,23,42,0.45)', 'transparent']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.overlay}
       />
       <View style={styles.content}>
-        <Text style={styles.label}>{item.label}</Text>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.subtitle}>{item.subtitle}</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push(item.route as any)}
-        >
-          <Text style={styles.buttonText}>{t('common.shopNow')}</Text>
-          <Feather name="arrow-right" size={16} color={Colors.primary} />
-        </TouchableOpacity>
+        <View style={styles.labelPill}>
+          <Text style={styles.labelText}>{item.label}</Text>
+        </View>
+        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.subtitle} numberOfLines={2}>{item.subtitle}</Text>
+        <View style={styles.ctaButton}>
+          <Text style={styles.buttonText}>{t('common.shopNow') || 'Shop Now'}</Text>
+          <Feather name="arrow-right" size={13} color={Colors.white} />
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   if (loading) {
@@ -137,12 +142,28 @@ export default function BannerSlider() {
         height={bannerHeight}
         autoPlay
         data={data}
-        scrollAnimationDuration={900}
-        autoPlayInterval={3500}
+        scrollAnimationDuration={800}
+        autoPlayInterval={3600}
+        onSnapToItem={(index) => setActiveIndex(index)}
         renderItem={renderItem}
         mode="parallax"
-        modeConfig={{ parallaxScrollingScale: 0.92, parallaxScrollingOffset: 42 }}
+        modeConfig={{ parallaxScrollingScale: 0.94, parallaxScrollingOffset: 34 }}
       />
+
+      {/* Pagination Indicator Dots */}
+      {data.length > 1 && (
+        <View style={styles.paginationWrap}>
+          {data.map((_, i) => (
+            <View
+              key={`banner-dot-${i}`}
+              style={[
+                styles.dot,
+                i === activeIndex ? styles.dotActive : styles.dotInactive,
+              ]}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -150,16 +171,18 @@ export default function BannerSlider() {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: horizontalPadding,
-    paddingVertical: 10,
+    paddingTop: 8,
+    paddingBottom: 6,
     backgroundColor: Colors.white,
     alignItems: 'center',
   },
   bannerWrap: {
-    borderRadius: 18,
+    borderRadius: 16,
     overflow: 'hidden',
     height: '100%',
     width: '100%',
-    ...Shadows.medium,
+    backgroundColor: '#0F172A',
+    ...Shadows.small,
   },
   bannerImage: {
     ...StyleSheet.absoluteFillObject,
@@ -170,42 +193,69 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 22,
-    maxWidth: '68%',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    maxWidth: '72%',
   },
-  label: {
-    color: Colors.accent,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
+  labelPill: {
+    backgroundColor: Colors.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
     marginBottom: 6,
+  },
+  labelText: {
+    color: Colors.primaryDark,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
   title: {
-    fontSize: 26,
+    fontSize: 21,
     fontWeight: '900',
     color: Colors.white,
-    lineHeight: 30,
-    marginBottom: 6,
+    lineHeight: 25,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: 'rgba(255,255,255,0.9)',
-    marginBottom: 14,
-    lineHeight: 18,
+    marginBottom: 10,
+    lineHeight: 16,
   },
-  button: {
-    backgroundColor: Colors.accent,
+  ctaButton: {
+    backgroundColor: Colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 18,
     alignSelf: 'flex-start',
-    gap: 6,
+    gap: 5,
   },
   buttonText: {
-    color: Colors.primary,
+    color: Colors.white,
     fontWeight: '800',
-    fontSize: 12,
+    fontSize: 11.5,
+  },
+  paginationWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    gap: 5,
+  },
+  dot: {
+    height: 5,
+    borderRadius: 3,
+  },
+  dotActive: {
+    width: 18,
+    backgroundColor: Colors.primary,
+  },
+  dotInactive: {
+    width: 5,
+    backgroundColor: '#CBD5E1',
   },
 });

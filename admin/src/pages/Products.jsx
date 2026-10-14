@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getProducts, getCategories, deleteProduct } from '../api';
+import { getProducts, getCategories, deleteProduct, updateProduct } from '../api';
 import { formatINR } from '../utils/currency';
 import AdminImage from '../components/AdminImage';
 import Pagination from '../components/Pagination';
@@ -109,6 +109,18 @@ const Products = () => {
       alert(err.response?.data?.message || 'Delete failed');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleToggleStatus = async (product) => {
+    const newStatus = product.isActive === false;
+    try {
+      await updateProduct(product._id, { isActive: newStatus });
+      setProducts((prev) =>
+        prev.map((p) => (p._id === product._id ? { ...p, isActive: newStatus } : p))
+      );
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update product status');
     }
   };
 
@@ -235,6 +247,7 @@ const Products = () => {
                     <th>Stock</th>
                     <th>Rating</th>
                     <th>Badge</th>
+                    <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -338,6 +351,28 @@ const Products = () => {
                         <td data-label="Stock">{p.stock ?? '—'}</td>
                         <td data-label="Rating">★ {p.rating} ({p.reviews})</td>
                         <td data-label="Badge">{p.badge ? <span className="badge badge-warning">{p.badge}</span> : '—'}</td>
+                        <td data-label="Status">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(p)}
+                            style={{
+                              padding: '4px 9px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              border: p.isActive !== false ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+                              cursor: 'pointer',
+                              background: p.isActive !== false ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                              color: p.isActive !== false ? '#10b981' : '#ef4444',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                            title="Click to toggle visibility on Store & App"
+                          >
+                            <span>{p.isActive !== false ? '● Active' : '○ Hidden'}</span>
+                          </button>
+                        </td>
                         <td data-label="Actions">
                           <div className="actions-cell">
                             <Link to={`/products/edit/${p._id}`} className="btn btn-outline btn-sm">Edit</Link>

@@ -1,122 +1,109 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
-import { Feather, Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors, Shadows, Gradients } from '../../constants/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors, Shadows } from '../../constants/colors';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import SideDrawer from '../SideDrawer';
+import QuickCategoryNav from './QuickCategoryNav';
 
 export default function Header() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { cartCount } = useCart();
   const { user } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const wishlistCount = Array.isArray(user?.wishlist) ? user.wishlist.length : 0;
   const defaultAddress = user?.addresses?.find((a) => a.isDefault) || user?.addresses?.[0];
-  const deliveryCity = defaultAddress?.city ? `${defaultAddress.city} ${defaultAddress.postalCode || ''}` : 'India';
+  const addressLabel = defaultAddress?.label || 'HOME';
+  const addressDetail = defaultAddress?.city
+    ? `${defaultAddress.city}${defaultAddress.postalCode ? `, ${defaultAddress.postalCode}` : ''}`
+    : 'Select your pincode for fast delivery';
 
   return (
     <>
-      <LinearGradient
-        colors={Gradients.primaryHeader}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.container}
-      >
-        {/* Top Navigation Row */}
-        <View style={styles.topRow}>
-          {/* Hamburger Menu */}
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, Platform.OS === 'ios' ? 12 : 8) }]}>
+        {/* Row 1: Delivery ETA, Location & Profile/Rewards */}
+        <View style={styles.topBar}>
+          {/* Left: Express Delivery Tag & Address Picker */}
           <TouchableOpacity
-            onPress={() => setDrawerOpen(true)}
-            style={styles.iconButton}
-            accessibilityLabel="Open Menu"
-            activeOpacity={0.7}
+            style={styles.locationBlock}
+            onPress={() => router.push(user ? ('/(tabs)/account/addresses' as any) : '/(auth)/login')}
+            activeOpacity={0.8}
           >
-            <Feather name="menu" size={22} color={Colors.white} />
+            <View style={styles.etaRow}>
+              <View style={styles.lightningWrap}>
+                <Ionicons name="flash" size={11} color="#FFFFFF" />
+              </View>
+              <Text style={styles.etaBrand}>BuyLow Express</Text>
+              <View style={styles.etaPill}>
+                <Text style={styles.etaPillText}>15-25 Mins</Text>
+              </View>
+            </View>
+
+            <View style={styles.addressRow}>
+              <Text style={styles.addressType}>{addressLabel} -</Text>
+              <Text style={styles.addressText} numberOfLines={1}>
+                {addressDetail}
+              </Text>
+              <Feather name="chevron-down" size={13} color="#0F172A" />
+            </View>
           </TouchableOpacity>
 
-          {/* Logo */}
-          <TouchableOpacity
-            style={styles.logoWrapper}
-            onPress={() => router.push('/(tabs)')}
-            activeOpacity={0.88}
-          >
-            <Image
-              source={require('../../assets/images/logo.png')}
-              style={styles.logo}
-              contentFit="contain"
-            />
-          </TouchableOpacity>
-
-          {/* Right Action Icons: Wishlist & Cart */}
-          <View style={styles.iconGroup}>
+          {/* Right: Rewards Coins & Profile Avatar */}
+          <View style={styles.rightActions}>
             <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => router.push('/wishlist')}
-              accessibilityLabel="Wishlist"
-              activeOpacity={0.7}
+              style={styles.rewardsPill}
+              onPress={() => router.push('/(tabs)/account' as any)}
+              activeOpacity={0.8}
             >
-              <Feather name="heart" size={20} color={Colors.white} />
-              {wishlistCount > 0 && (
-                <View style={styles.wishlistBadge}>
-                  <Text style={styles.wishlistBadgeText}>{wishlistCount > 9 ? '9+' : wishlistCount}</Text>
-                </View>
-              )}
+              <MaterialCommunityIcons name="bitcoin" size={15} color="#D97706" />
+              <Text style={styles.rewardsText}>50</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => router.push('/cart')}
-              accessibilityLabel="Shopping Cart"
-              activeOpacity={0.7}
+              style={styles.profileAvatar}
+              onPress={() => setDrawerOpen(true)}
+              activeOpacity={0.8}
+              accessibilityLabel="Account Menu"
             >
-              <Feather name="shopping-bag" size={20} color={Colors.white} />
-              {cartCount > 0 && (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.badgeText}>{cartCount > 9 ? '9+' : cartCount}</Text>
-                </View>
+              {user?.name ? (
+                <Text style={styles.avatarInitial}>{user.name.charAt(0).toUpperCase()}</Text>
+              ) : (
+                <Feather name="user" size={16} color="#0F172A" />
               )}
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Location Ticker Row (Amazon / Flipkart Style) */}
-        <TouchableOpacity
-          style={styles.locationRow}
-          onPress={() => router.push(user ? '/(tabs)/account/addresses' as any : '/(auth)/login')}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="location-sharp" size={13} color={Colors.accent} />
-          <Text style={styles.locationLabel}>Deliver to:</Text>
-          <Text style={styles.locationText} numberOfLines={1}>
-            {user ? `${user.name?.split(' ')[0]} - ${deliveryCity}` : 'Select your delivery location'}
-          </Text>
-          <Feather name="chevron-down" size={12} color="rgba(255,255,255,0.7)" />
-        </TouchableOpacity>
-
-        {/* Integrated Quick Search Bar */}
-        <TouchableOpacity
-          style={styles.searchBar}
-          onPress={() => router.push('/(tabs)/search')}
-          activeOpacity={0.92}
-        >
-          <View style={styles.searchInner}>
-            <Feather name="search" size={18} color={Colors.primary} style={styles.searchIcon} />
+        {/* Row 2: Flipkart / Blinkit Style Search Pill with Voice Mic */}
+        <View style={styles.searchWrapper}>
+          <TouchableOpacity
+            style={styles.searchPill}
+            onPress={() => router.push('/(tabs)/search')}
+            activeOpacity={0.92}
+          >
+            <Feather name="search" size={17} color="#475569" style={styles.searchIcon} />
             <Text style={styles.searchPlaceholder} numberOfLines={1}>
-              Search for products, brands & more...
+              Search for kettles, crockery, iron and more
             </Text>
-          </View>
-          <View style={styles.searchPill}>
-            <Text style={styles.searchPillText}>Search</Text>
-          </View>
-        </TouchableOpacity>
-      </LinearGradient>
+            <TouchableOpacity
+              style={styles.micBtn}
+              onPress={() => router.push('/(tabs)/search')}
+              activeOpacity={0.7}
+            >
+              <Feather name="mic" size={16} color="#0F172A" />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
 
-      {/* Side Drawer */}
+        {/* Row 3: Horizontal Category Sub-Nav Icon Strip */}
+        <QuickCategoryNav />
+      </View>
+
+      {/* Side Drawer Modal */}
       <SideDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
   );
@@ -124,143 +111,136 @@ export default function Header() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 14,
-    paddingTop: 8,
-    paddingBottom: 14,
-    ...Shadows.medium,
-    elevation: 8,
-    zIndex: 10,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    backgroundColor: '#FFFBEB', // Light warm festive tint matching screenshot 4
+    borderBottomWidth: 1,
+    borderBottomColor: '#FDE68A',
+    ...Shadows.small,
+    elevation: 3,
+    zIndex: 20,
   },
-  topRow: {
+  topBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
-  logoWrapper: {
+  locationBlock: {
     flex: 1,
-    marginHorizontal: 10,
-    backgroundColor: Colors.white,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
+    paddingRight: 10,
+  },
+  etaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 2,
+  },
+  lightningWrap: {
+    width: 17,
+    height: 17,
+    borderRadius: 9,
+    backgroundColor: '#059669', // Express green
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.small,
   },
-  logo: {
-    height: 28,
-    width: 125,
+  etaBrand: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.2,
   },
-  iconGroup: {
+  etaPill: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
+    borderWidth: 0.5,
+    borderColor: '#A7F3D0',
+  },
+  etaPillText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    color: '#065F46',
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  addressType: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  addressText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#475569',
+    maxWidth: 160,
+  },
+  rightActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  iconButton: {
-    position: 'relative',
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 4,
-    backgroundColor: Colors.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.primaryDark,
-  },
-  wishlistBadge: {
-    position: 'absolute',
-    top: -3,
-    right: -3,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 4,
-    backgroundColor: '#EF4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.primaryDark,
-  },
-  badgeText: {
-    fontSize: 9.5,
-    fontWeight: '900',
-    color: Colors.primaryDark,
-  },
-  wishlistBadgeText: {
-    fontSize: 9.5,
-    fontWeight: '900',
-    color: Colors.white,
-  },
-  locationRow: {
+  rewardsPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    paddingHorizontal: 4,
-    marginBottom: 8,
-  },
-  locationLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.75)',
-    fontWeight: '500',
-  },
-  locationText: {
-    fontSize: 11.5,
-    color: Colors.white,
-    fontWeight: '700',
-    flex: 1,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.white,
     borderRadius: 14,
-    paddingLeft: 12,
-    paddingRight: 6,
-    height: 44,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  rewardsText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#92400E',
+  },
+  profileAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.white,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
     ...Shadows.small,
   },
-  searchInner: {
+  avatarInitial: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: Colors.primary,
+  },
+  searchWrapper: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  searchPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.small,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchPlaceholder: {
-    fontSize: 13,
-    color: Colors.textLight,
+    fontSize: 12.5,
+    color: '#64748B',
     flex: 1,
     fontWeight: '500',
   },
-  searchPill: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 10,
-  },
-  searchPillText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: Colors.white,
+  micBtn: {
+    padding: 6,
+    marginLeft: 4,
   },
 });

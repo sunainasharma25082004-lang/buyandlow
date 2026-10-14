@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config/api';
 import ProductCard from './ProductCard';
-import { products as fallbackProducts } from '../data/products';
 import './FlashDeals.css';
 
 const FlashDeals = () => {
@@ -47,11 +46,17 @@ const FlashDeals = () => {
         if (list.length > 0) {
           setProducts(list);
         } else {
-          setProducts(fallbackProducts.filter((p) => p.oldPrice));
+          // If no items flagged on sale, fetch highest discounted items
+          return axios.get(`${API_URL}/products`, { params: { limit: 12 } }).then((allRes) => {
+            if (!active) return;
+            const all = allRes.data.products || [];
+            const withDiscount = all.filter((p) => p.oldPrice && Number(p.oldPrice) > Number(p.price));
+            setProducts(withDiscount.length > 0 ? withDiscount : all.slice(0, 6));
+          });
         }
       })
       .catch(() => {
-        if (active) setProducts(fallbackProducts.filter((p) => p.oldPrice));
+        if (active) setProducts([]);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -64,7 +69,7 @@ const FlashDeals = () => {
 
   const formatDigit = (n) => String(n).padStart(2, '0');
 
-  const dealProducts = products.length > 0 ? products.slice(0, 6) : fallbackProducts.slice(0, 6);
+  const dealProducts = products.slice(0, 6);
 
   return (
     <section className="flash-deals-section">
@@ -97,6 +102,8 @@ const FlashDeals = () => {
         {/* Deals Products Grid */}
         {loading ? (
           <div className="flash-loading">Loading flash deals...</div>
+        ) : dealProducts.length === 0 ? (
+          <div className="flash-loading">Check back soon for new flash deals!</div>
         ) : (
           <div className="flash-products-grid">
             {dealProducts.map((product) => (
@@ -110,3 +117,4 @@ const FlashDeals = () => {
 };
 
 export default FlashDeals;
+

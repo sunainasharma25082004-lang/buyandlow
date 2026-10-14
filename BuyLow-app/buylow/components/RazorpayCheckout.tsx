@@ -120,12 +120,12 @@ export default function RazorpayCheckout({
             ) {
               return true;
             }
-            Linking.canOpenURL(url).then((canOpen) => {
-              if (canOpen) {
-                Linking.openURL(url);
-              }
-            }).catch((err) => {
+            Linking.openURL(url).catch((err) => {
               console.warn('Could not launch external payment scheme:', err);
+              Alert.alert(
+                'Payment App Not Found',
+                'Could not open the selected payment app on your device. You can also pay securely using Cards, Net Banking, or UPI QR code inside the payment window.',
+              );
             });
             return false;
           }}

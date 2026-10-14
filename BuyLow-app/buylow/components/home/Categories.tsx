@@ -8,21 +8,22 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Colors, Shadows } from '../../constants/colors';
 import { getCategories } from '../../services/api';
 import RemoteImage from '../RemoteImage';
 import { PLACEHOLDER_CATEGORY } from '../../constants/images';
 import type { Category } from '../../types/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 type CategoriesProps = {
   homeOnly?: boolean;
   showHeader?: boolean;
 };
 
-export default function Categories({ homeOnly = true, showHeader = true }: CategoriesProps) {
+export default function Categories({ homeOnly = false, showHeader = true }: CategoriesProps) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -32,16 +33,15 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
 
     getCategories(homeOnly)
       .then((res) => {
-        if (active) {
-          setCategories(res.categories || []);
-          setError('');
-        }
+        if (!active) return;
+        const list = (res.categories || []).filter((c) => c.isActive !== false);
+        setCategories(list);
+        setError('');
       })
       .catch((err: Error) => {
-        if (active) {
-          setCategories([]);
-          setError(err.message || 'Could not load categories.');
-        }
+        if (!active) return;
+        setCategories([]);
+        setError(err.message || 'Could not load categories.');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -59,20 +59,15 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
       {showHeader && (
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={styles.iconWrap}>
-              <Feather name="grid" size={16} color={Colors.primary} />
-            </View>
-            <View>
-              <Text style={styles.title}>Top Categories</Text>
-              <Text style={styles.subtitle}>Explore curated collections</Text>
-            </View>
+            <Text style={styles.title}>{t('categories.allCategories') || 'Shop by Category'}</Text>
+            <Text style={styles.subtitle}>Curated collections at guaranteed low prices</Text>
           </View>
           <TouchableOpacity
-            style={styles.viewAll}
+            style={styles.viewAllBtn}
             onPress={() => router.push('/(tabs)/categories')}
             activeOpacity={0.7}
           >
-            <Text style={styles.viewAllText}>View All</Text>
+            <Text style={styles.viewAllText}>{t('common.viewAll') || 'View All'}</Text>
             <Feather name="chevron-right" size={13} color={Colors.primary} />
           </TouchableOpacity>
         </View>
@@ -80,14 +75,14 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
 
       {loading ? (
         <View style={styles.stateBox}>
-          <ActivityIndicator color={Colors.primary} />
+          <ActivityIndicator color={Colors.primary} size="small" />
           <Text style={styles.stateText}>Loading categories...</Text>
         </View>
       ) : categories.length === 0 ? (
         <View style={styles.stateBox}>
-          <Ionicons name="grid-outline" size={28} color={Colors.textLight} />
+          <Ionicons name="grid-outline" size={24} color={Colors.textLight} />
           <Text style={styles.stateText}>
-            {error || 'Categories will appear here once added from the admin panel.'}
+            {error || 'Categories will appear here once added.'}
           </Text>
         </View>
       ) : (
@@ -96,39 +91,32 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scroll}
         >
-          {categories.map((item, index) => {
-            const ringColors =
-              index % 3 === 0
-                ? ['#1E88E5', '#1565C0']
-                : index % 3 === 1
-                ? ['#F59E0B', '#FBBF24']
-                : ['#10B981', '#059669'];
+          {categories.map((item) => {
+            const label = getLabel(item);
 
             return (
               <TouchableOpacity
-                key={item._id}
+                key={item._id || item.name}
                 style={styles.item}
                 onPress={() => router.push(`/category/${encodeURIComponent(item.name)}`)}
                 activeOpacity={0.82}
               >
-                <LinearGradient
-                  colors={ringColors as any}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.imageRing}
-                >
-                  <View style={styles.imageCircle}>
-                    <RemoteImage
-                      uri={item.image}
-                      style={styles.image}
-                      fallback={PLACEHOLDER_CATEGORY}
-                      contentFit="cover"
-                    />
-                  </View>
-                </LinearGradient>
+                <View style={styles.imageCard}>
+                  <RemoteImage
+                    uri={item.image}
+                    style={styles.image}
+                    fallback={PLACEHOLDER_CATEGORY}
+                    contentFit="contain"
+                  />
+                </View>
                 <Text style={styles.name} numberOfLines={2}>
-                  {getLabel(item)}
+                  {label}
                 </Text>
+                {item.productCount ? (
+                  <Text style={styles.countText}>
+                    {item.productCount} items
+                  </Text>
+                ) : null}
               </TouchableOpacity>
             );
           })}
@@ -141,8 +129,10 @@ export default function Categories({ homeOnly = true, showHeader = true }: Categ
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.white,
-    paddingVertical: 14,
-    marginTop: 6,
+    paddingTop: 14,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   header: {
     flexDirection: 'row',
@@ -152,65 +142,53 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1,
   },
   title: {
-    fontSize: 16.5,
+    fontSize: 17,
     fontWeight: '800',
-    color: Colors.text,
+    color: '#0F172A',
+    letterSpacing: -0.2,
   },
   subtitle: {
     fontSize: 11.5,
-    color: Colors.textLight,
-    marginTop: 1,
+    color: '#64748B',
+    marginTop: 2,
   },
-  viewAll: {
+  viewAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 3,
     backgroundColor: '#EFF6FF',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
   },
   viewAllText: {
-    color: Colors.primary,
     fontSize: 11.5,
     fontWeight: '700',
+    color: Colors.primary,
   },
   scroll: {
-    paddingHorizontal: 14,
-    gap: 14,
-    paddingBottom: 2,
+    paddingHorizontal: 16,
+    gap: 12,
   },
   item: {
     alignItems: 'center',
-    width: 78,
+    width: 82,
   },
-  imageRing: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    padding: 2.5,
+  imageCard: {
+    width: 66,
+    height: 66,
+    borderRadius: 18,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 6,
     marginBottom: 6,
     ...Shadows.small,
-  },
-  imageCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 32,
-    overflow: 'hidden',
-    backgroundColor: Colors.white,
   },
   image: {
     width: '100%',
@@ -219,21 +197,24 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 11.5,
     fontWeight: '700',
-    color: Colors.text,
+    color: '#0F172A',
     textAlign: 'center',
     lineHeight: 15,
   },
+  countText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: Colors.primary,
+    marginTop: 2,
+  },
   stateBox: {
-    minHeight: 90,
+    paddingVertical: 20,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingHorizontal: 24,
   },
   stateText: {
     fontSize: 12,
-    color: Colors.textLight,
-    textAlign: 'center',
-    lineHeight: 18,
+    color: '#64748B',
   },
 });

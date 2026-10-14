@@ -75,3 +75,5 @@ server/uploads/products/*
 !server/uploads/products/.gitkeep
 
 *.bak
+.expo/
+**/.expo/

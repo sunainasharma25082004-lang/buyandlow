@@ -57,14 +57,28 @@ async function downloadImageIfMissing(imageUrl, liveHost, uploadsDir) {
 async function sync() {
   console.log('🔄 Fetching live products and categories from production...');
 
-  const { data: prodData, host: prodHost } = await fetchFromLive('/api/products?limit=100');
-  const { data: catData, host: catHost } = await fetchFromLive('/api/categories');
+  let rawProducts = [];
+  let page = 1;
+  let totalProductsCount = 0;
+  let prodHost = LIVE_HOSTS[0];
 
-  const rawProducts = Array.isArray(prodData) ? prodData : (prodData.products || prodData.data || []);
+  while (true) {
+    const { data: prodData, host } = await fetchFromLive(`/api/products?page=${page}&limit=50`);
+    prodHost = host;
+    const batch = Array.isArray(prodData) ? prodData : (prodData.products || prodData.data || []);
+    if (!batch || batch.length === 0) break;
+    rawProducts.push(...batch);
+    totalProductsCount = prodData.total || rawProducts.length;
+    console.log(`  Fetched page ${page}: got ${batch.length} products (running total: ${rawProducts.length}/${totalProductsCount})`);
+    if (rawProducts.length >= totalProductsCount || batch.length < 50) break;
+    page++;
+  }
+
+  const { data: catData, host: catHost } = await fetchFromLive('/api/categories');
   const rawCategories = catData.categories || catData.data || (Array.isArray(catData) ? catData : []);
 
-  console.log(`✅ Fetched ${rawProducts.length} products from ${prodHost}`);
-  console.log(`✅ Fetched ${rawCategories.length} categories from ${catHost}`);
+  console.log(`✅ Fetched total of ${rawProducts.length} products from ${prodHost}`);
+  console.log(`✅ Fetched total of ${rawCategories.length} categories from ${catHost}`);
 
   const uploadsDir = path.join(__dirname, '../uploads');
 
@@ -99,13 +113,14 @@ async function sync() {
     badge: p.badge || '',
     category: p.category || 'General',
     subcategory: p.subcategory || '',
-    brand: p.brand || 'Truemart',
-    sku: p.sku || `SKU-${idx + 1}`,
+    brand: p.brand || 'BuyLow',
+    sku: p.sku || `TRD-${(p.category || 'GEN').substring(0, 3).toUpperCase()}-${idx + 1}`,
     stock: p.stock ?? 10,
     colors: p.colors || [],
     description: p.description || '',
     keyFeatures: p.keyFeatures || [],
-    tags: p.tags || []
+    tags: p.tags || [],
+    isActive: p.isActive !== false,
   }));
 
   // Clean categories

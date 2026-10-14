@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
 import User from '../models/User.js';
@@ -157,13 +158,22 @@ const applyOrderUpdates = (order, body) => {
 
   return null;
 };
-
 const getAllProductsOffline = () => {
-  const staticMapped = staticProducts.map((p, i) => ({
-    _id: `static_id_${p.id || i}`,
-    ...p,
-  }));
-  return [...(global.adminProducts || []), ...staticMapped];
+  const deletedSet = global.deletedProductIds || new Set();
+  const staticMapped = staticProducts
+    .filter((p, i) => {
+      const id1 = `static_id_${p.id || i}`;
+      const id2 = String(p.id || '');
+      const id3 = String(p._id || '');
+      return !deletedSet.has(id1) && !deletedSet.has(id2) && !deletedSet.has(id3);
+    })
+    .map((p, i) => ({
+      _id: `static_id_${p.id || i}`,
+      ...p,
+      isActive: p.isActive !== undefined ? p.isActive : true,
+    }));
+  const adminList = (global.adminProducts || []).filter((p) => !deletedSet.has(String(p._id)));
+  return [...adminList, ...staticMapped];
 };
 
 router.get('/dashboard', protect, admin, asyncHandler(async (req, res) => {
@@ -288,12 +298,40 @@ router.get('/products', protect, admin, asyncHandler(async (req, res) => {
   res.json(products);
 }));
 
+router.get('/products/:id', protect, admin, asyncHandler(async (req, res) => {
+  if (!requireDbOrOffline(res)) return;
+
+  const safeId = String(req.params.id || '').trim();
+
+  if (!global.isDbConnected) {
+    const all = getAllProductsOffline();
+    const found = all.find((p) => String(p._id) === safeId || String(p.id) === safeId || p.sku === safeId);
+    if (!found) return res.status(404).json({ success: false, message: 'Product not found' });
+    return res.json(found);
+  }
+
+  let product = null;
+  if (safeId.match(/^[0-9a-fA-F]{24}$/)) {
+    product = await Product.findById(safeId);
+  }
+  if (!product) {
+    product = await Product.findOne({ sku: safeId });
+  }
+  if (!product) {
+    const all = getAllProductsOffline();
+    product = all.find((p) => String(p._id) === safeId || String(p.id) === safeId || p.sku === safeId);
+  }
+
+  if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+  res.json(product);
+}));
+
 router.post('/products', protect, admin, asyncHandler(async (req, res) => {
   if (!requireDbOrOffline(res)) return;
 
   const {
     name, price, oldPrice, rating, reviews, image, images,
-    badge, category, subcategory, brand, sku, stock, colors, description, keyFeatures, tags,
+    badge, category, subcategory, brand, sku, stock, colors, description, keyFeatures, tags, isActive,
   } = req.body;
 
   if (!name || !String(name).trim()) {
@@ -383,13 +421,13 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
     badge: badge || null,
     category: resolvedCategory,
     subcategory: resolvedSubcategory,
-    brand: brand || 'Truemart',
+    brand: brand || 'BuyLow',
     sku: generatedSku,
     stock: stock !== undefined && stock !== '' && !isNaN(Number(stock)) ? Number(stock) : 10,
     colors: colors || [],
-    description: description || '',
-    keyFeatures: keyFeatures || [],
+    keyFeatures: Array.isArray(keyFeatures) ? keyFeatures.filter((k) => k && k.title && k.desc) : [],
     tags: tags || [],
+    isActive: isActive !== undefined ? Boolean(isActive) : true,
   };
 
   if (!global.isDbConnected) {
@@ -410,15 +448,27 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
 router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
   if (!requireDbOrOffline(res)) return;
 
+  const targetId = String(req.params.id || '').trim();
+
   if (!global.isDbConnected) {
-    const staticIdx = staticProducts.findIndex(
-      (p) => `static_id_${p.id}` === req.params.id || String(p.id) === req.params.id
-    );
-    if (staticIdx > -1) {
-      return res.status(400).json({ success: false, message: 'Cannot edit seeded static products in offline mode' });
+    let idx = global.adminProducts.findIndex((p) => p._id === targetId || p.sku === targetId);
+
+    if (idx === -1) {
+      // If it is a static product, promote it to an editable admin product
+      const staticMatch = staticProducts.find(
+        (p) => `static_id_${p.id}` === targetId || String(p.id) === targetId || p.sku === targetId
+      );
+      if (staticMatch) {
+        const cloned = {
+          _id: targetId,
+          ...staticMatch,
+          createdAt: new Date().toISOString(),
+        };
+        global.adminProducts.unshift(cloned);
+        idx = 0;
+      }
     }
 
-    const idx = global.adminProducts.findIndex((p) => p._id === req.params.id);
     if (idx === -1) return res.status(404).json({ success: false, message: 'Product not found' });
 
     const cleanImgs = req.body.images !== undefined
@@ -433,6 +483,7 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
       price: req.body.price !== undefined ? Number(req.body.price) : global.adminProducts[idx].price,
       oldPrice: req.body.oldPrice !== undefined ? (req.body.oldPrice ? Number(req.body.oldPrice) : null) : global.adminProducts[idx].oldPrice,
       stock: req.body.stock !== undefined ? Number(req.body.stock) : global.adminProducts[idx].stock,
+      isActive: req.body.isActive !== undefined ? Boolean(req.body.isActive) : global.adminProducts[idx].isActive !== false,
       subcategory: req.body.subcategory !== undefined ? String(req.body.subcategory).trim() : global.adminProducts[idx].subcategory || '',
       updatedAt: new Date().toISOString(),
     };
@@ -452,17 +503,74 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
     return res.json(global.adminProducts[idx]);
   }
 
-  let product = await Product.findById(req.params.id);
+  let product = null;
+  if (targetId.match(/^[0-9a-fA-F]{24}$/)) {
+    product = await Product.findById(targetId);
+  }
+  if (!product) {
+    product = await Product.findOne({ sku: targetId });
+  }
+  if (!product) {
+    // If product is in master seed catalog, promote it to MongoDB
+    const staticMatch = staticProducts.find(
+      (p, i) =>
+        String(p.id) === targetId ||
+        String(p._id) === targetId ||
+        p.sku === targetId ||
+        targetId === `static_id_${p.id || i}`
+    );
+    if (staticMatch) {
+      const { id, _id, ...cleanProps } = staticMatch;
+      product = new Product({
+        _id: targetId.match(/^[0-9a-fA-F]{24}$/) ? targetId : undefined,
+        ...cleanProps,
+      });
+    }
+  }
+  if (!product) {
+    const adminMatch = (global.adminProducts || []).find(
+      (p) => String(p._id) === targetId || String(p.id) === targetId || p.sku === targetId
+    );
+    if (adminMatch) {
+      const { id, _id, ...cleanProps } = adminMatch;
+      product = new Product({
+        _id: targetId.match(/^[0-9a-fA-F]{24}$/) ? targetId : undefined,
+        ...cleanProps,
+      });
+    }
+  }
+
   if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
   const fields = [
     'name', 'price', 'oldPrice', 'rating', 'reviews', 'image', 'images',
-    'badge', 'category', 'subcategory', 'brand', 'sku', 'stock', 'colors', 'description', 'keyFeatures', 'tags',
+    'badge', 'category', 'subcategory', 'brand', 'stock', 'colors', 'description', 'keyFeatures', 'tags', 'isActive',
   ];
 
   fields.forEach((field) => {
     if (req.body[field] !== undefined) product[field] = req.body[field];
   });
+
+  // Sanitize SKU: empty string causes MongoDB E11000 sparse unique index collision
+  if (req.body.sku !== undefined) {
+    const trimmed = String(req.body.sku || '').trim();
+    if (trimmed) {
+      product.sku = trimmed;
+    } else {
+      product.sku = undefined;
+      product.set('sku', undefined);
+    }
+  } else if (!product.sku || !String(product.sku).trim()) {
+    product.sku = undefined;
+    product.set('sku', undefined);
+  }
+
+  // Sanitize keyFeatures: only keep valid entries with title and desc
+  if (Array.isArray(product.keyFeatures)) {
+    product.keyFeatures = product.keyFeatures.filter((kf) => kf && kf.title && kf.desc);
+  } else {
+    product.keyFeatures = [];
+  }
 
   if (Array.isArray(req.body.images)) {
     const clean = req.body.images.map((i) => (typeof i === 'string' ? i.trim() : '')).filter(Boolean);
@@ -474,6 +582,16 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
 
   product = await product.save();
 
+  // Also update in-memory cache if present
+  if (global.adminProducts) {
+    const adminIdx = global.adminProducts.findIndex(
+      (p) => String(p._id) === targetId || String(p.id) === targetId
+    );
+    if (adminIdx !== -1) {
+      global.adminProducts[adminIdx] = product.toObject ? product.toObject() : product;
+    }
+  }
+
   if (product.subcategory && product.category) {
     await Category.updateOne(
       { name: new RegExp(`^${escapeRegex(product.category)}$`, 'i') },
@@ -482,6 +600,43 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
   }
 
   res.json(product);
+}));
+
+router.delete('/products/:id', protect, admin, asyncHandler(async (req, res) => {
+  if (!requireDbOrOffline(res)) return;
+  const targetId = String(req.params.id || '').trim();
+
+  if (!global.deletedProductIds) global.deletedProductIds = new Set();
+  global.deletedProductIds.add(targetId);
+
+  if (!global.isDbConnected) {
+    if (global.adminProducts) {
+      global.adminProducts = global.adminProducts.filter(
+        (p) => String(p._id) !== targetId && String(p.id) !== targetId && p.sku !== targetId
+      );
+    }
+    return res.json({ success: true, message: 'Product deleted' });
+  }
+
+  let product = null;
+  if (targetId.match(/^[0-9a-fA-F]{24}$/)) {
+    product = await Product.findById(targetId);
+  }
+  if (!product) {
+    product = await Product.findOne({ sku: targetId });
+  }
+
+  if (product) {
+    await product.deleteOne();
+  }
+
+  if (global.adminProducts) {
+    global.adminProducts = global.adminProducts.filter(
+      (p) => String(p._id) !== targetId && String(p.id) !== targetId && p.sku !== targetId
+    );
+  }
+
+  res.json({ success: true, message: 'Product deleted' });
 }));
 
 router.get('/categories', protect, admin, asyncHandler(async (req, res) => {
@@ -887,9 +1042,17 @@ router.put('/app-banners/:id', protect, admin, asyncHandler(async (req, res) => 
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
     const banners = getMockAppBanners();
-    const idx = banners.findIndex((item) => item._id === req.params.id);
+    const idx = banners.findIndex((item) => String(item._id) === String(req.params.id));
     if (idx === -1) {
-      return res.status(404).json({ success: false, message: 'App banner not found' });
+      const newMock = {
+        _id: String(req.params.id),
+        ...payload,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      banners.push(newMock);
+      global.mockAppBanners = banners;
+      return res.json(formatBanner(newMock));
     }
     banners[idx] = {
       ...banners[idx],
@@ -900,12 +1063,25 @@ router.put('/app-banners/:id', protect, admin, asyncHandler(async (req, res) => 
     return res.json(formatBanner(banners[idx]));
   }
 
-  const banner = await AppBanner.findByIdAndUpdate(req.params.id, payload, {
-    new: true,
-    runValidators: true,
-  });
+  const isMongoId = mongoose.Types.ObjectId.isValid(req.params.id);
+  let banner = null;
+  if (isMongoId) {
+    banner = await AppBanner.findByIdAndUpdate(req.params.id, payload, {
+      new: true,
+      runValidators: true,
+    });
+  }
   if (!banner) {
-    return res.status(404).json({ success: false, message: 'App banner not found' });
+    banner = await AppBanner.findOne({ _id: req.params.id }).catch(() => null);
+    if (banner) {
+      Object.assign(banner, payload);
+      banner = await banner.save();
+    } else {
+      banner = await AppBanner.create({
+        ...payload,
+        ...(isMongoId ? { _id: req.params.id } : {}),
+      });
+    }
   }
   res.json(formatBanner(banner));
 }));
@@ -916,39 +1092,50 @@ router.delete('/app-banners/:id', protect, admin, asyncHandler(async (req, res) 
       return res.status(503).json({ success: false, message: 'Database unavailable' });
     }
     const banners = getMockAppBanners();
-    const idx = banners.findIndex((item) => item._id === req.params.id);
-    if (idx === -1) {
-      return res.status(404).json({ success: false, message: 'App banner not found' });
-    }
-    global.mockAppBanners = banners.filter((item) => item._id !== req.params.id);
+    global.mockAppBanners = banners.filter((item) => String(item._id) !== String(req.params.id));
     return res.json({ success: true, message: 'App banner deleted' });
   }
 
-  const banner = await AppBanner.findById(req.params.id);
-  if (!banner) {
-    return res.status(404).json({ success: false, message: 'App banner not found' });
+  const isMongoId = mongoose.Types.ObjectId.isValid(req.params.id);
+  let banner = null;
+  if (isMongoId) {
+    banner = await AppBanner.findById(req.params.id);
   }
-
-  await banner.deleteOne();
+  if (!banner) {
+    banner = await AppBanner.findOne({ _id: req.params.id }).catch(() => null);
+  }
+  if (banner) {
+    await banner.deleteOne();
+  }
   res.json({ success: true, message: 'App banner deleted' });
 }));
 
 router.delete('/products/:id', protect, admin, asyncHandler(async (req, res) => {
   if (!requireDbOrOffline(res)) return;
 
+  const targetId = String(req.params.id || '').trim();
+  global.deletedProductIds = global.deletedProductIds || new Set();
+
   if (!global.isDbConnected) {
-    const idx = global.adminProducts.findIndex((p) => p._id === req.params.id);
-    if (idx === -1) {
-      return res.status(400).json({ success: false, message: 'Can only delete admin-added products in offline mode' });
+    const idx = (global.adminProducts || []).findIndex((p) => p._id === targetId || p.sku === targetId);
+    if (idx !== -1) {
+      global.adminProducts.splice(idx, 1);
     }
-    global.adminProducts.splice(idx, 1);
+    global.deletedProductIds.add(targetId);
     return res.json({ success: true, message: 'Product removed' });
   }
 
-  const product = await Product.findById(req.params.id);
+  let product = null;
+  if (targetId.match(/^[0-9a-fA-F]{24}$/)) {
+    product = await Product.findById(targetId);
+  }
+  if (!product) {
+    product = await Product.findOne({ sku: targetId });
+  }
   if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
   await product.deleteOne();
+  global.deletedProductIds.add(targetId);
   res.json({ success: true, message: 'Product removed' });
 }));
 

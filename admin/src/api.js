@@ -22,6 +22,7 @@ export const getUsers = () => API.get('/admin/users');
 export const getOrders = () => API.get('/admin/orders');
 export const updateOrder = (id, data) => API.put(`/admin/orders/${id}`, data);
 export const getProducts = () => API.get('/admin/products');
+export const getProduct = (id) => API.get(`/admin/products/${id}`);
 export const createProduct = (data) => API.post('/admin/products', data);
 export const updateProduct = (id, data) => API.put(`/admin/products/${id}`, data);
 export const deleteProduct = (id) => API.delete(`/admin/products/${id}`);

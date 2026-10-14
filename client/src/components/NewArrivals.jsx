@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import API_URL from '../config/api';
 import ProductCard from './ProductCard';
-import { products as fallbackProducts } from '../data/products';
 import './NewArrivals.css';
 
 const NewArrivals = () => {
@@ -18,14 +17,10 @@ const NewArrivals = () => {
       .then((res) => {
         if (!active) return;
         const list = res.data.products || [];
-        if (list.length > 0) {
-          setProducts(list);
-        } else {
-          setProducts(fallbackProducts);
-        }
+        setProducts(list);
       })
       .catch(() => {
-        if (active) setProducts(fallbackProducts);
+        if (active) setProducts([]);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -36,7 +31,7 @@ const NewArrivals = () => {
     };
   }, []);
 
-  const items = products.length > 0 ? products.slice(0, 6) : fallbackProducts.slice(0, 6);
+  const items = products.slice(0, 6);
 
   return (
     <section className="new-arrivals-section">
@@ -62,6 +57,8 @@ const NewArrivals = () => {
         {/* 6-column Grid */}
         {loading ? (
           <div className="arrivals-loading">Loading new arrivals...</div>
+        ) : items.length === 0 ? (
+          <div className="arrivals-loading">New arrivals will appear here once added to catalog.</div>
         ) : (
           <div className="arrivals-products-grid">
             {items.map((product) => (

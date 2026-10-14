@@ -1,41 +1,64 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Feather } from '@expo/vector-icons';
-import { Colors, Shadows } from '../../constants/colors';
-import { FEATURE_IMAGES } from '../../constants/images';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../constants/colors';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function Features() {
   const { t } = useLanguage();
-  const features = [
-    { icon: 'award' as const, text: t('home.featureLowest'), image: FEATURE_IMAGES.delivery },
-    { icon: 'check-circle' as const, text: t('home.featureOriginal'), image: FEATURE_IMAGES.secure },
-    { icon: 'truck' as const, text: t('home.featureDelivery'), image: FEATURE_IMAGES.delivery },
-    { icon: 'refresh-ccw' as const, text: t('home.featureReturns'), image: FEATURE_IMAGES.returns },
-    { icon: 'headphones' as const, text: t('home.featureSupport'), image: FEATURE_IMAGES.support },
+
+  const trustBadges = [
+    {
+      id: 'genuine',
+      icon: <Ionicons name="shield-checkmark" size={18} color="#059669" />,
+      bg: '#D1FAE5',
+      title: '100% Genuine',
+      sub: 'Direct Sourced',
+    },
+    {
+      id: 'shipping',
+      icon: <Feather name="truck" size={18} color="#2563EB" />,
+      bg: '#DBEAFE',
+      title: 'Free Shipping',
+      sub: 'Orders ₹999+',
+    },
+    {
+      id: 'dispatch',
+      icon: <Feather name="box" size={18} color="#D97706" />,
+      bg: '#FEF3C7',
+      title: 'Fast Dispatch',
+      sub: 'Direct Warehouse',
+    },
+    {
+      id: 'payments',
+      icon: <Feather name="lock" size={17} color="#7C3AED" />,
+      bg: '#EDE9FE',
+      title: 'Safe Payments',
+      sub: 'UPI, Cards & COD',
+    },
+    {
+      id: 'support',
+      icon: <Feather name="headphones" size={18} color="#BE123C" />,
+      bg: '#FFE4E6',
+      title: 'Customer Care',
+      sub: 'Dedicated Support',
+    },
   ];
+
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {features.map((item, index) => (
-          <View key={index} style={styles.featureItem}>
-            <LinearGradient
-              colors={[Colors.lightBlue, Colors.white]}
-              style={styles.iconContainer}
-            >
-              <Image
-                source={{ uri: item.image }}
-                style={styles.featureImage}
-                contentFit="cover"
-                {...(Platform.OS === 'web' ? { referrerPolicy: 'no-referrer' as const } : {})}
-              />
-              <View style={styles.iconBadge}>
-                <Feather name={item.icon} size={14} color={Colors.primary} />
-              </View>
-            </LinearGradient>
-            <Text style={styles.text}>{item.text}</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
+        {trustBadges.map((item) => (
+          <View key={item.id} style={styles.badgeItem}>
+            <View style={[styles.iconBox, { backgroundColor: item.bg }]}>
+              {item.icon}
+            </View>
+            <Text style={styles.badgeTitle}>{item.title}</Text>
+            <Text style={styles.badgeSub}>{item.sub}</Text>
           </View>
         ))}
       </ScrollView>
@@ -47,50 +70,37 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.white,
     paddingVertical: 14,
-    marginTop: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   scroll: {
     paddingHorizontal: 16,
-    gap: 14,
-    justifyContent: 'space-between',
-    flexGrow: 1,
+    gap: 12,
   },
-  featureItem: {
+  badgeItem: {
     alignItems: 'center',
-    width: 72,
+    width: 96,
   },
-  iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    overflow: 'hidden',
-    ...Shadows.small,
+    marginBottom: 6,
   },
-  featureImage: {
-    width: '100%',
-    height: '100%',
-    opacity: 0.35,
-  },
-  iconBadge: {
-    position: 'absolute',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.small,
-  },
-  text: {
-    fontSize: 10,
+  badgeTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0F172A',
     textAlign: 'center',
-    color: Colors.text,
-    fontWeight: '600',
     lineHeight: 14,
+  },
+  badgeSub: {
+    fontSize: 9.5,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 2,
+    lineHeight: 12,
   },
 });

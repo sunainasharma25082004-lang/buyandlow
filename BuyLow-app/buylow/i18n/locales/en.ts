@@ -34,6 +34,7 @@ export const en: TranslationTree = {
     categories: "Categories",
     search: "Search",
     orders: "Orders",
+    cart: "Cart",
     account: "Account",
   },
   auth: {
@@ -259,8 +260,8 @@ export const en: TranslationTree = {
     all: "All",
     browse: "Browse by category",
     noProducts: "No products in this category yet",
-    allCategories: "All Categories",
-    browseAdmin: "Browse collections uploaded from admin panel",
+    allCategories: "Shop by Category",
+    browseAdmin: "Explore curated collections at guaranteed low prices",
     loadingCategories: "Loading categories...",
     noCategoriesYet: "No categories yet",
     loadError:

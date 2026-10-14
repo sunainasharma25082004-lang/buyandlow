@@ -34,6 +34,7 @@ export const pa: TranslationTree = {
     categories: "ਸ਼੍ਰੇਣੀਆਂ",
     search: "ਖੋਜ",
     orders: "ਆਰਡਰ",
+    cart: "ਕਾਰਟ",
     account: "ਖਾਤਾ",
   },
   auth: {
@@ -255,8 +256,8 @@ export const pa: TranslationTree = {
     all: "ਸਾਰੇ",
     browse: "ਸ਼੍ਰੇਣੀ ਅਨੁਸਾਰ ਬ੍ਰਾਊਜ਼ ਕਰੋ",
     noProducts: "ਇਸ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਹਾਲੇ ਕੋਈ ਉਤਪਾਦ ਨਹੀਂ",
-    allCategories: "ਸਾਰੀਆਂ ਸ਼੍ਰੇਣੀਆਂ",
-    browseAdmin: "ਐਡਮਿਨ ਪੈਨਲ ਤੋਂ ਅਪਲੋਡ ਕੀਤੀਆਂ ਕਲੈਕਸ਼ਨਾਂ ਵੇਖੋ",
+    allCategories: "ਕੈਟੇਗਰੀ ਅਨੁਸਾਰ ਖਰੀਦੋ",
+    browseAdmin: "ਕਿਫਾਇਤੀ ਕੀਮਤਾਂ 'ਤੇ ਸ਼ਾਨਦਾਰ ਕਲੈਕਸ਼ਨ ਵੇਖੋ",
     loadingCategories: "ਸ਼੍ਰੇਣੀਆਂ ਲੋਡ ਹੋ ਰਹੀਆਂ ਹਨ...",
     noCategoriesYet: "ਹਾਲੇ ਕੋਈ ਸ਼੍ਰੇਣੀ ਨਹੀਂ",
     loadError:

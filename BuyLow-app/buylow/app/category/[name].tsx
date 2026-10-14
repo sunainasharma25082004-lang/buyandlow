@@ -18,6 +18,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useCart } from '../../context/CartContext';
 import ProductGridCard from '../../components/home/ProductGridCard';
 
+const PAGE_SIZE = 20;
+
 type SortOption = 'default' | 'price_asc' | 'price_desc' | 'rating';
 
 export default function CategoryProductsScreen() {
@@ -26,34 +28,65 @@ export default function CategoryProductsScreen() {
   const { t } = useLanguage();
   const { cartCount } = useCart();
   const categoryName = decodeURIComponent(Array.isArray(name) ? name[0] : (name || ''));
+
   const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('default');
 
-  const fetchCategoryProducts = useCallback(async () => {
+  const fetchCategoryProducts = useCallback(async (pageNum: number, append: boolean) => {
     if (!categoryName) {
       setLoading(false);
       return;
     }
+    if (append) setLoadingMore(true);
+    else setLoading(true);
+
     try {
-      const res = await getProducts({ category: categoryName });
-      setProducts(res.products || []);
+      const res = await getProducts({
+        category: categoryName,
+        page: pageNum,
+        limit: PAGE_SIZE,
+      });
+
+      setProducts((prev) => {
+        if (!append) return res.products || [];
+        const existingIds = new Set(prev.map((p) => String(p._id || p.id)));
+        const newItems = (res.products || []).filter((p) => {
+          const id = String(p._id || p.id);
+          return id && !existingIds.has(id);
+        });
+        return [...prev, ...newItems];
+      });
+
+      setPage(pageNum);
+      setTotalPages(res.pages || 1);
+      setTotalCount(res.total || (res.products || []).length);
     } catch {
-      setProducts([]);
+      if (!append) setProducts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
   }, [categoryName]);
 
   useEffect(() => {
-    fetchCategoryProducts();
+    fetchCategoryProducts(1, false);
   }, [fetchCategoryProducts]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchCategoryProducts();
+    fetchCategoryProducts(1, false);
+  };
+
+  const loadMore = () => {
+    if (loadingMore || loading || refreshing || page >= totalPages) return;
+    fetchCategoryProducts(page + 1, true);
   };
 
   const sortedProducts = useMemo(() => {
@@ -70,7 +103,27 @@ export default function CategoryProductsScreen() {
     }
   }, [products, sortBy]);
 
-  if (loading) {
+  const renderFooter = () => {
+    if (loadingMore) {
+      return (
+        <View style={styles.footerLoader}>
+          <ActivityIndicator size="small" color={Colors.primary} />
+          <Text style={styles.footerLoaderText}>Loading more products...</Text>
+        </View>
+      );
+    }
+    if (!loading && products.length > 0 && page >= totalPages) {
+      return (
+        <View style={styles.endContainer}>
+          <Feather name="check-circle" size={14} color="#059669" />
+          <Text style={styles.endText}>You&apos;ve seen all {totalCount || products.length} products in this category</Text>
+        </View>
+      );
+    }
+    return null;
+  };
+
+  if (loading && products.length === 0) {
     return (
       <SafeAreaView style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -88,7 +141,9 @@ export default function CategoryProductsScreen() {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} numberOfLines={1}>{categoryName}</Text>
-          <Text style={styles.itemCountText}>{products.length} {products.length === 1 ? 'item' : 'items'}</Text>
+          <Text style={styles.itemCountText}>
+            {totalCount || products.length} {totalCount === 1 ? 'item' : 'items'}
+          </Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -158,10 +213,13 @@ export default function CategoryProductsScreen() {
 
       <FlatList
         data={sortedProducts}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item) => String(item._id || item.id)}
         numColumns={2}
         contentContainerStyle={styles.list}
         columnWrapperStyle={styles.row}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={renderFooter}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -325,5 +383,30 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontWeight: '700',
     fontSize: 13,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 18,
+  },
+  footerLoaderText: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  endContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+  },
+  endText: {
+    fontSize: 12.5,
+    color: '#059669',
+    fontWeight: '600',
   },
 });

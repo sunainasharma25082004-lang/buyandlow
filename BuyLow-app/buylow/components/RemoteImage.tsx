@@ -3,7 +3,6 @@ import { Image, ImageStyle } from 'expo-image';
 import { Platform, StyleProp, StyleSheet, View } from 'react-native';
 import { resolveMediaUrl } from '../config/api';
 import { PLACEHOLDER_PRODUCT } from '../constants/images';
-import { Colors } from '../constants/colors';
 import Skeleton from './ui/Skeleton';
 
 type Props = {
@@ -46,21 +45,26 @@ export default function RemoteImage({
     setLoaded(true);
   };
 
+  const isWeb = Platform.OS === 'web';
+
   return (
     <View style={[styles.wrap, style]}>
-      {!loaded ? (
+      {!isWeb && !loaded ? (
         <Skeleton borderRadius={0} style={StyleSheet.absoluteFillObject} />
       ) : null}
       <Image
         key={displayUri}
         source={{ uri: displayUri }}
-        style={[StyleSheet.absoluteFillObject, loaded ? styles.visible : styles.hidden]}
+        style={[
+          StyleSheet.absoluteFillObject,
+          !isWeb && !loaded ? styles.hidden : styles.visible,
+        ]}
         contentFit={contentFit}
-        transition={200}
+        transition={isWeb ? undefined : 200}
         onLoad={handleLoad}
         onError={handleError}
         recyclingKey={displayUri}
-        {...(Platform.OS === 'web' ? { referrerPolicy: 'no-referrer' as const } : {})}
+        {...(isWeb ? { referrerPolicy: 'no-referrer' as const } : {})}
       />
     </View>
   );
@@ -69,7 +73,7 @@ export default function RemoteImage({
 const styles = StyleSheet.create({
   wrap: {
     overflow: 'hidden',
-    backgroundColor: Colors.lightBlue,
+    backgroundColor: 'transparent',
   },
   visible: {
     opacity: 1,

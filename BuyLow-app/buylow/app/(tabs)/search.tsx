@@ -35,6 +35,10 @@ export default function SearchScreen() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [addedIds, setAddedIds] = useState<Record<string, boolean>>({});
 
@@ -82,31 +86,53 @@ export default function SearchScreen() {
     setRecentSearches([]);
   };
 
-  // Perform search
+  // Perform search with pagination
   const performSearch = useCallback(
-    (term: string, sortVal: string, catVal: string) => {
+    (term: string, sortVal: string, catVal: string, pageNum = 1, append = false) => {
       const trimmed = term.trim();
       if (!trimmed && catVal === 'All') {
         setProducts([]);
         setLoading(false);
+        setLoadingMore(false);
         return;
       }
 
-      setLoading(true);
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+
       getProducts({
         keyword: trimmed || undefined,
         category: catVal !== 'All' ? catVal : undefined,
         sort: sortVal,
-        limit: 30,
+        page: pageNum,
+        limit: 20,
       })
         .then((res) => {
-          setProducts(res.products || []);
+          setProducts((prev) => {
+            if (!append) return res.products || [];
+            const existing = new Set(prev.map((p) => String(p._id || p.id)));
+            const newItems = (res.products || []).filter((p) => !existing.has(String(p._id || p.id)));
+            return [...prev, ...newItems];
+          });
+          setPage(pageNum);
+          setTotalPages(res.pages || 1);
+          setTotalCount(res.total || (res.products || []).length);
         })
-        .catch(() => setProducts([]))
-        .finally(() => setLoading(false));
+        .catch(() => {
+          if (!append) setProducts([]);
+        })
+        .finally(() => {
+          setLoading(false);
+          setLoadingMore(false);
+        });
     },
     [],
   );
+
+  const loadMoreSearch = () => {
+    if (loading || loadingMore || page >= totalPages) return;
+    performSearch(keyword, selectedSort, selectedCategory, page + 1, true);
+  };
 
   // Debounced search on input change
   useEffect(() => {
@@ -297,15 +323,29 @@ export default function SearchScreen() {
       ) : (
         <FlatList
           data={products}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item) => String(item._id || item.id)}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
+          onEndReached={loadMoreSearch}
+          onEndReachedThreshold={0.4}
           ListHeaderComponent={
             <View style={styles.resultsHeader}>
               <Text style={styles.resultsCount}>
-                Found <Text style={{ fontWeight: '800', color: Colors.text }}>{products.length}</Text> items
+                Found <Text style={{ fontWeight: '800', color: Colors.text }}>{totalCount || products.length}</Text> items
               </Text>
             </View>
+          }
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={{ paddingVertical: 18, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 }}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+                <Text style={{ fontSize: 13, color: '#64748B' }}>Loading more results...</Text>
+              </View>
+            ) : !loading && products.length > 0 && page >= totalPages ? (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 12, color: '#94A3B8', fontWeight: '500' }}>You&apos;ve reached the end of search results</Text>
+              </View>
+            ) : null
           }
           renderItem={({ item }) => {
             const discount = getDiscountPercent(item.price, item.oldPrice);

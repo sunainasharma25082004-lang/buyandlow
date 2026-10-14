@@ -34,6 +34,7 @@ export const hi: TranslationTree = {
     categories: "श्रेणियाँ",
     search: "खोजें",
     orders: "ऑर्डर",
+    cart: "कार्ट",
     account: "अकाउंट",
   },
   auth: {
@@ -256,8 +257,8 @@ export const hi: TranslationTree = {
     all: "सभी",
     browse: "श्रेणी के अनुसार ब्राउज़ करें",
     noProducts: "इस श्रेणी में अभी कोई उत्पाद नहीं",
-    allCategories: "सभी श्रेणियाँ",
-    browseAdmin: "एडमिन पैनल से अपलोड की गई कलेक्शन देखें",
+    allCategories: "श्रेणी अनुसार खरीदारी करें",
+    browseAdmin: "किफ़ायती दामों पर बेहतरीन कलेक्शन देखें",
     loadingCategories: "श्रेणियाँ लोड हो रही हैं...",
     noCategoriesYet: "अभी कोई श्रेणी नहीं",
     loadError:

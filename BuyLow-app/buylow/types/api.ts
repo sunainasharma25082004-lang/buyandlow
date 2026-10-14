@@ -9,10 +9,12 @@ export type Category = {
   showOnHome?: boolean;
   productCount?: number;
   displayName?: string;
+  subcategories?: string[];
 };
 
 export type Product = {
   _id: string;
+  id?: string;
   name: string;
   price: number;
   oldPrice?: number | null;

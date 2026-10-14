@@ -12,7 +12,7 @@ import GoogleSignInButton from '../../../components/GoogleSignInButton';
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { user, logout, loginWithGoogle } = useAuth();
+  const { user, logout, deleteAccount, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
 
   const requireLogin = (route: string) => {
@@ -48,6 +48,28 @@ export default function AccountScreen() {
         },
       },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your BuyLow account? This action is irreversible and removes your personal data, saved addresses, and profile details.',
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: 'Delete Forever',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+            } catch (err: any) {
+              Alert.alert('Error', err?.message || 'Could not delete account. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderMenuItem = (
@@ -241,12 +263,21 @@ export default function AccountScreen() {
           </View>
         </View>
 
-        {/* Logout Button */}
+        {/* Logout and Delete Account Buttons */}
         {user && (
           <View style={styles.logoutContainer}>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
               <Feather name="log-out" size={18} color="#EF4444" />
               <Text style={styles.logoutText}>{t('common.logout')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.logoutButton, { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', marginTop: 10 }]}
+              onPress={handleDeleteAccount}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="trash-outline" size={17} color="#64748B" />
+              <Text style={[styles.logoutText, { color: '#64748B', fontWeight: '600' }]}>Delete Account & Data</Text>
             </TouchableOpacity>
           </View>
         )}

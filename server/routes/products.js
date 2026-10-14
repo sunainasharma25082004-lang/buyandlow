@@ -6,7 +6,7 @@ import User from '../models/User.js';
 import { products as staticProducts } from '../data/products.js';
 import { protect, getJwtSecret } from '../middleware/authMiddleware.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { clampPagination } from '../utils/validators.js';
+import { clampPagination, normalizeCategoryAliases } from '../utils/validators.js';
 import { recalculateProductRating } from '../utils/reviews.js';
 import { isProduction } from '../config/env.js';
 
@@ -28,27 +28,39 @@ const filterStaticProducts = (queryOptions) => {
   }));
   const combined = [...adminAdded, ...staticMapped];
   const seenMap = new Set();
+  const deletedSet = global.deletedProductIds || new Set();
+
   let list = combined.filter((p) => {
     const id = String(p._id || p.id || '');
-    if (!id || seenMap.has(id)) return false;
+    if (!id || seenMap.has(id) || deletedSet.has(id)) return false;
+    if (p.isActive === false) return false;
     seenMap.add(id);
     return true;
   });
 
   if (keyword) {
-    const kw = keyword.toLowerCase();
+    const kw = keyword.toLowerCase().trim();
     list = list.filter((p) =>
-      p.name.toLowerCase().includes(kw) ||
-      (p.description && p.description.toLowerCase().includes(kw))
+      (p.name && p.name.toLowerCase().includes(kw)) ||
+      (p.description && p.description.toLowerCase().includes(kw)) ||
+      (p.category && p.category.toLowerCase().includes(kw)) ||
+      (p.subcategory && p.subcategory.toLowerCase().includes(kw))
     );
   }
 
   if (category && category !== 'All') {
-    list = list.filter((p) => p.category && p.category.toLowerCase() === category.toLowerCase());
+    const aliases = normalizeCategoryAliases(category);
+    if (aliases.length > 0) {
+      list = list.filter((p) => {
+        const pCat = p.category ? p.category.trim().toLowerCase() : '';
+        return aliases.includes(pCat);
+      });
+    }
   }
 
   if (subcategory && subcategory !== 'All') {
-    list = list.filter((p) => p.subcategory && p.subcategory.toLowerCase() === subcategory.toLowerCase());
+    const subClean = subcategory.trim().toLowerCase();
+    list = list.filter((p) => p.subcategory && p.subcategory.trim().toLowerCase() === subClean);
   }
 
   if (sale === 'true') {
@@ -61,19 +73,21 @@ const filterStaticProducts = (queryOptions) => {
 
   if (sort === 'Price: Low to High') list.sort((a, b) => a.price - b.price);
   else if (sort === 'Price: High to Low') list.sort((a, b) => b.price - a.price);
-  else if (sort === 'Best Rating') list.sort((a, b) => b.rating - a.rating);
-  else if (sort === 'Popular') list.sort((a, b) => (b.reviews || 0) - (a.reviews || 0) || b.rating - a.rating);
+  else if (sort === 'Best Rating') list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  else if (sort === 'Popular') list.sort((a, b) => (b.reviews || 0) - (a.reviews || 0) || (b.rating || 0) - (a.rating || 0));
   else if (sort === 'Newest') list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
   const total = list.length;
   const skip = (page - 1) * limit;
+  const paginated = list.slice(skip, skip + limit);
 
   return {
     success: true,
-    products: list.slice(skip, skip + limit),
+    products: paginated,
     page,
     pages: Math.ceil(total / limit) || 1,
     total,
+    hasMore: (skip + limit) < total,
   };
 };
 
@@ -84,21 +98,29 @@ router.get('/', asyncHandler(async (req, res) => {
 
   const { keyword, category, subcategory, minPrice, maxPrice, rating, sort, sale } = req.query;
   const { page, limit } = clampPagination(req.query.page, req.query.limit);
-  const query = {};
+  const query = { isActive: { $ne: false } };
 
   if (keyword) {
+    const kwRegex = escapeRegex(keyword.trim());
     query.$or = [
-      { name: { $regex: keyword, $options: 'i' } },
-      { description: { $regex: keyword, $options: 'i' } },
+      { name: { $regex: kwRegex, $options: 'i' } },
+      { description: { $regex: kwRegex, $options: 'i' } },
+      { category: { $regex: kwRegex, $options: 'i' } },
+      { subcategory: { $regex: kwRegex, $options: 'i' } },
     ];
   }
 
   if (category && category !== 'All') {
-    query.category = new RegExp(`^${escapeRegex(category)}$`, 'i');
+    const aliases = normalizeCategoryAliases(category);
+    if (aliases.length > 0) {
+      query.category = {
+        $in: aliases.map((a) => new RegExp(`^${escapeRegex(a)}$`, 'i')),
+      };
+    }
   }
 
   if (subcategory && subcategory !== 'All') {
-    query.subcategory = new RegExp(`^${escapeRegex(subcategory)}$`, 'i');
+    query.subcategory = new RegExp(`^${escapeRegex(subcategory.trim())}$`, 'i');
   }
 
   if (sale === 'true') {
@@ -114,13 +136,14 @@ router.get('/', asyncHandler(async (req, res) => {
 
   if (rating) query.rating = { $gte: Number(rating) };
 
-  const sortOptions = {
-    'Price: Low to High': { price: 1 },
-    'Price: High to Low': { price: -1 },
-    'Best Rating': { rating: -1 },
-    'Popular': { reviews: -1, rating: -1 },
-    'Newest': { createdAt: -1 },
-  }[sort] || { createdAt: -1 };
+  const sortFieldMap = {
+    'Price: Low to High': { price: 1, _id: -1 },
+    'Price: High to Low': { price: -1, _id: -1 },
+    'Best Rating': { rating: -1, _id: -1 },
+    'Popular': { reviews: -1, rating: -1, _id: -1 },
+    'Newest': { createdAt: -1, _id: -1 },
+  };
+  const sortOptions = sortFieldMap[sort] || { createdAt: -1, _id: -1 };
 
   const skip = (page - 1) * limit;
   const [count, products] = await Promise.all([
@@ -142,31 +165,61 @@ router.get('/', asyncHandler(async (req, res) => {
     page,
     pages: Math.ceil(count / limit) || 1,
     total: count,
+    hasMore: (skip + limit) < count,
   });
 }));
 
 const findProductById = async (id) => {
+  const safeId = String(id || '').trim();
+  if (!safeId) return null;
+
   if (!global.isDbConnected) {
-    const adminMatch = (global.adminProducts || []).find((p) => p._id === id);
+    if (global.deletedProductIds && global.deletedProductIds.has(safeId)) return null;
+    const adminMatch = (global.adminProducts || []).find((p) => p._id === safeId);
     if (adminMatch) return adminMatch;
 
     const idMatch = staticProducts.find(
-      (p) => String(p.id) === String(id) || String(p._id) === String(id) || `static_id_${p.id}` === String(id)
+      (p) => String(p.id) === safeId || String(p._id) === safeId || `static_id_${p.id}` === safeId
     );
     if (idMatch) return { _id: idMatch.id ? String(idMatch.id) : (idMatch._id ? String(idMatch._id) : `static_id_${idMatch.id}`), ...idMatch };
 
-    const skuMatch = staticProducts.find((p) => p.sku === id);
+    const skuMatch = staticProducts.find((p) => p.sku === safeId);
     if (skuMatch) return { _id: skuMatch.id ? String(skuMatch.id) : `static_id_${skuMatch.id}`, ...skuMatch };
 
     return null;
   }
 
-  if (id.match(/^[0-9a-fA-F]{24}$/)) {
-    const byId = await Product.findById(id);
+  if (safeId.match(/^[0-9a-fA-F]{24}$/)) {
+    const byId = await Product.findById(safeId);
     if (byId) return byId;
   }
 
-  return Product.findOne({ sku: id });
+  const bySku = await Product.findOne({ sku: safeId });
+  if (bySku) return bySku;
+
+  const staticItem = staticProducts.find(
+    (p) => String(p.id) === safeId || String(p._id) === safeId || `static_id_${p.id}` === safeId || p.sku === safeId
+  );
+  if (staticItem) {
+    return {
+      _id: staticItem.id ? String(staticItem.id) : (staticItem._id ? String(staticItem._id) : `static_id_${staticItem.id}`),
+      ...staticItem,
+    };
+  }
+
+  const idxMatch = safeId.match(/^static_id_(\d+)$/);
+  if (idxMatch) {
+    const idx = Number(idxMatch[1]);
+    if (staticProducts[idx]) {
+      const p = staticProducts[idx];
+      return {
+        _id: p.id ? String(p.id) : (p._id ? String(p._id) : safeId),
+        ...p,
+      };
+    }
+  }
+
+  return null;
 };
 
 router.get('/reviews/recent', asyncHandler(async (req, res) => {

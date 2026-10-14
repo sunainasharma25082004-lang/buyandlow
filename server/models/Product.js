@@ -23,7 +23,8 @@ const productSchema = new mongoose.Schema({
   colors: [{ type: String }],
   description: { type: String, default: '' },
   keyFeatures: [keyFeatureSchema],
-  tags: [{ type: String }]
+  tags: [{ type: String }],
+  isActive: { type: Boolean, default: true }
 }, {
   timestamps: true
 });

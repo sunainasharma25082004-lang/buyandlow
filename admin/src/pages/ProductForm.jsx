@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   getProducts,
+  getProduct,
   getCategories,
   createProduct,
   updateProduct,
@@ -18,7 +19,7 @@ const emptyForm = {
   oldPrice: '',
   category: '',
   subcategory: '',
-  brand: 'Truemart',
+  brand: 'BuyLow',
   sku: '',
   stock: 10,
   rating: 4.5,
@@ -29,6 +30,7 @@ const emptyForm = {
   badge: '',
   colors: '',
   tags: '',
+  isActive: true,
 };
 
 const ProductForm = () => {
@@ -90,36 +92,45 @@ const ProductForm = () => {
 
   useEffect(() => {
     if (!isEdit) return;
-    getProducts()
+
+    const populateProduct = (product) => {
+      const prodImages = Array.isArray(product.images) && product.images.length > 0
+        ? product.images.filter(Boolean)
+        : (product.image ? [product.image] : []);
+      const mainImg = product.image || (prodImages.length > 0 ? prodImages[0] : '');
+
+      setForm({
+        name: product.name || '',
+        price: product.price ?? '',
+        oldPrice: product.oldPrice ?? '',
+        category: product.category || 'General',
+        subcategory: product.subcategory || '',
+        brand: product.brand || 'BuyLow',
+        sku: product.sku || '',
+        stock: product.stock ?? 10,
+        rating: product.rating ?? 4.5,
+        reviews: product.reviews ?? 0,
+        image: mainImg,
+        images: prodImages,
+        description: product.description || '',
+        badge: product.badge || '',
+        colors: (product.colors || []).join(', '),
+        tags: (product.tags || []).join(', '),
+        isActive: product.isActive !== undefined ? Boolean(product.isActive) : true,
+      });
+    };
+
+    getProduct(id)
       .then((res) => {
-        const product = (res.data || []).find((p) => p._id === id);
-        if (!product) {
-          setError('Product not found');
-          return;
-        }
-
-        const prodImages = Array.isArray(product.images) && product.images.length > 0
-          ? product.images.filter(Boolean)
-          : (product.image ? [product.image] : []);
-        const mainImg = product.image || (prodImages.length > 0 ? prodImages[0] : '');
-
-        setForm({
-          name: product.name || '',
-          price: product.price ?? '',
-          oldPrice: product.oldPrice ?? '',
-          category: product.category || 'General',
-          subcategory: product.subcategory || '',
-          brand: product.brand || 'Truemart',
-          sku: product.sku || '',
-          stock: product.stock ?? 10,
-          rating: product.rating ?? 4.5,
-          reviews: product.reviews ?? 0,
-          image: mainImg,
-          images: prodImages,
-          description: product.description || '',
-          badge: product.badge || '',
-          colors: (product.colors || []).join(', '),
-          tags: (product.tags || []).join(', '),
+        if (res.data) populateProduct(res.data);
+        else throw new Error('Product not found');
+      })
+      .catch(() => {
+        // Fallback to searching product list
+        return getProducts().then((res) => {
+          const product = (res.data || []).find((p) => String(p._id) === id || String(p.id) === id || p.sku === id);
+          if (product) populateProduct(product);
+          else setError('Product not found');
         });
       })
       .catch(() => setError('Failed to load product. Check that the backend server is running.'))
@@ -127,8 +138,11 @@ const ProductForm = () => {
   }, [id, isEdit]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleFilesSelect = async (e) => {
@@ -333,7 +347,7 @@ const ProductForm = () => {
       oldPrice: form.oldPrice && !isNaN(Number(form.oldPrice)) ? Number(form.oldPrice) : null,
       category: finalCat,
       subcategory: form.subcategory ? form.subcategory.trim() : '',
-      brand: form.brand || 'Truemart',
+      brand: form.brand || 'BuyLow',
       sku: form.sku?.trim() || undefined,
       stock: form.stock !== '' && !isNaN(Number(form.stock)) ? Number(form.stock) : 10,
       rating: form.rating !== '' && !isNaN(Number(form.rating)) ? Number(form.rating) : 4.5,
@@ -345,6 +359,7 @@ const ProductForm = () => {
       colors: form.colors ? form.colors.split(',').map((c) => c.trim()).filter(Boolean) : [],
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       keyFeatures: [],
+      isActive: form.isActive !== undefined ? Boolean(form.isActive) : true,
     };
 
     try {
@@ -582,6 +597,28 @@ const ProductForm = () => {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="form-group" style={{ background: 'rgba(212, 175, 55, 0.08)', padding: '14px 18px', borderRadius: '10px', border: '1px solid rgba(212, 175, 55, 0.25)', marginBottom: '16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', margin: 0 }}>
+              <input
+                type="checkbox"
+                name="isActive"
+                checked={form.isActive !== false}
+                onChange={handleChange}
+                style={{ width: '20px', height: '20px', accentColor: '#10b981', cursor: 'pointer' }}
+              />
+              <div>
+                <span style={{ fontWeight: 700, fontSize: '14px', color: form.isActive !== false ? '#10b981' : '#f59e0b' }}>
+                  {form.isActive !== false ? '✓ Product is Published & Active' : '⚠ Product is Hidden / Unpublished'}
+                </span>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#9999aa' }}>
+                  {form.isActive !== false
+                    ? 'Visible to customers across both website and mobile app.'
+                    : 'Hidden from customer store and search results, but visible in admin.'}
+                </p>
+              </div>
+            </label>
           </div>
 
           <div className="form-row">

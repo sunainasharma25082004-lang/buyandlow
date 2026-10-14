@@ -10,11 +10,16 @@ import AdminImage from '../components/AdminImage';
 import './AppBanners.css';
 
 const ROUTE_OPTIONS = [
-  { value: '/(tabs)/categories', label: 'App — Categories tab' },
+  { value: '/(tabs)/categories', label: 'App — Categories tab / Web Store' },
   { value: '/(tabs)/search', label: 'App — Search tab' },
   { value: '/(tabs)/orders', label: 'App — Orders tab' },
-  { value: '/cart', label: 'App — Shopping Cart' },
-  { value: '/wishlist', label: 'App — Wishlist' },
+  { value: '/cart', label: 'Shopping Cart (Web & App)' },
+  { value: '/wishlist', label: 'Wishlist (Web & App)' },
+  { value: '/allproducts', label: 'Website — All Products' },
+  { value: '/allproducts?category=Electronics', label: 'Website — Electronics' },
+  { value: '/allproducts?category=Grocery', label: 'Website — Grocery' },
+  { value: '/allproducts?category=Fashion', label: 'Website — Fashion' },
+  { value: '/allproducts?category=Home', label: 'Website — Home & Living' },
 ];
 
 const emptyForm = {

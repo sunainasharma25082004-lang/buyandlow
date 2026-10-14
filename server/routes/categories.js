@@ -4,6 +4,7 @@ import Category from '../models/Category.js';
 import { defaultCategories } from '../data/categories.js';
 import { products as staticProducts } from '../data/products.js';
 import asyncHandler from '../utils/asyncHandler.js';
+import { normalizeCategoryAliases } from '../utils/validators.js';
 
 const router = express.Router();
 
@@ -17,30 +18,53 @@ global.adminCategories = global.adminCategories || [...defaultCategories.map((c,
 
 const withProductCounts = async (categories) => {
   if (!global.isDbConnected) {
-    const staticMapped = staticProducts.map((p, i) => ({
-      _id: `static_id_${p.id || i}`,
-      ...p,
-    }));
-    const allProducts = [...(global.adminProducts || []), ...staticMapped];
-    return categories.map((cat) => ({
-      ...cat,
-      productCount: allProducts.filter(
-        (p) => String(p.category).toLowerCase() === String(cat.name).toLowerCase()
-      ).length,
-    }));
+    const deletedSet = global.deletedProductIds || new Set();
+    const staticMapped = staticProducts
+      .filter((p, i) => {
+        const id1 = `static_id_${p.id || i}`;
+        const id2 = String(p.id || '');
+        const id3 = String(p._id || '');
+        return !deletedSet.has(id1) && !deletedSet.has(id2) && !deletedSet.has(id3);
+      })
+      .map((p, i) => ({
+        _id: p.id ? String(p.id) : (p._id ? String(p._id) : `static_id_${i}`),
+        ...p,
+      }));
+    const allProducts = [...(global.adminProducts || []).filter((p) => !deletedSet.has(String(p._id))), ...staticMapped]
+      .filter((p) => p.isActive !== false);
+
+    return categories.map((cat) => {
+      const aliases = normalizeCategoryAliases(cat.name || cat.title || '');
+      const count = allProducts.filter((p) => {
+        const pCat = p.category ? String(p.category).trim().toLowerCase() : '';
+        return aliases.includes(pCat);
+      }).length;
+      return {
+        ...cat,
+        productCount: count,
+      };
+    });
   }
 
   const counts = await Product.aggregate([
-    { $group: { _id: '$category', count: { $sum: 1 } } },
+    { $match: { isActive: { $ne: false } } },
+    { $group: { _id: { $toLower: '$category' }, count: { $sum: 1 } } },
   ]);
   const countMap = Object.fromEntries(
     counts.map((row) => [String(row._id).toLowerCase(), row.count])
   );
 
-  return categories.map((cat) => ({
-    ...cat,
-    productCount: countMap[String(cat.name).toLowerCase()] || 0,
-  }));
+  return categories.map((cat) => {
+    const aliases = normalizeCategoryAliases(cat.name || cat.title || '');
+    let count = 0;
+    for (const alias of aliases) {
+      count += countMap[alias.toLowerCase()] || 0;
+    }
+    return {
+      ...cat,
+      productCount: count,
+    };
+  });
 };
 
 const sortCategories = (list) =>

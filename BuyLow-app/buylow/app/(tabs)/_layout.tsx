@@ -3,9 +3,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../constants/colors';
 import { Platform, View, StyleSheet } from 'react-native';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCart } from '../../context/CartContext';
 
 export default function TabLayout() {
   const { t } = useLanguage();
+  const { cartCount } = useCart();
 
   return (
     <Tabs
@@ -17,8 +19,8 @@ export default function TabLayout() {
           backgroundColor: Colors.white,
           borderTopColor: '#E2E8F0',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 88 : 66,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          height: Platform.OS === 'ios' ? 88 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
           paddingTop: 8,
           ...Shadows.medium,
           elevation: 10,
@@ -32,6 +34,12 @@ export default function TabLayout() {
           paddingVertical: 2,
         },
         tabBarShowLabel: true,
+        tabBarBadgeStyle: {
+          backgroundColor: Colors.accent,
+          color: Colors.primaryDark,
+          fontSize: 10,
+          fontWeight: '900',
+        },
       }}
     >
       <Tabs.Screen
@@ -83,13 +91,14 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="orders"
+        name="cart"
         options={{
-          title: t('tabs.orders'),
+          title: t('tabs.cart') || 'Cart',
+          tabBarBadge: cartCount > 0 ? (cartCount > 9 ? '9+' : cartCount) : undefined,
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconWrap : styles.iconWrap}>
               <Ionicons
-                name={focused ? 'bag-handle' : 'bag-handle-outline'}
+                name={focused ? 'cart' : 'cart-outline'}
                 color={focused ? Colors.primary : color}
                 size={22}
               />
@@ -111,6 +120,13 @@ export default function TabLayout() {
               />
             </View>
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="orders"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

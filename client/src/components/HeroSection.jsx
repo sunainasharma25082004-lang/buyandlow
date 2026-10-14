@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import API_URL, { resolveMediaUrl } from '../config/api';
 import heroProductsImg from '../assets/hero_products_composition.png';
 import catElectronicsImg from '../assets/cat_electronics.png';
 import catGroceryImg from '../assets/cat_grocery.png';
@@ -7,7 +9,7 @@ import catFashionImg from '../assets/cat_fashion.png';
 import catHomeImg from '../assets/cat_home.png';
 import './HeroSection.css';
 
-const slides = [
+const DEFAULT_SLIDES = [
   {
     id: 'fresh-collections',
     badge: '★ SPECIAL OFFER',
@@ -97,10 +99,70 @@ const slides = [
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const [slides, setSlides] = useState(DEFAULT_SLIDES);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef(null);
-  const totalSlides = slides.length;
+  const totalSlides = slides.length || 1;
+
+  useEffect(() => {
+    let active = true;
+    axios
+      .get(`${API_URL}/app/banners`)
+      .then((res) => {
+        if (!active) return;
+        const apiBanners = res.data?.banners || [];
+        if (Array.isArray(apiBanners) && apiBanners.length > 0) {
+          const bgGradients = [
+            'linear-gradient(135deg, #0266D6 0%, #0159C7 45%, #086FDF 100%)',
+            'linear-gradient(135deg, #0B192C 0%, #1E3E62 50%, #004085 100%)',
+            'linear-gradient(135deg, #064E3B 0%, #047857 50%, #059669 100%)',
+            'linear-gradient(135deg, #831843 0%, #9F1239 50%, #BE123C 100%)',
+            'linear-gradient(135deg, #78350F 0%, #92400E 50%, #B45309 100%)',
+          ];
+          const defaultBadges = [
+            { icon: '🚚', title: 'Free Shipping', sub: 'Orders over ₹299' },
+            { icon: '🛡️', title: 'Secure Payments', sub: '100% safe & secure' },
+            { icon: '🔄', title: 'Easy Returns', sub: 'Hassle free shopping' },
+          ];
+          const mapped = apiBanners.map((b, idx) => {
+            const parts = (b.title || '').trim().split(/\n| - |: /);
+            const titleFresh = parts[0] || 'Featured';
+            const titleHighlight = parts.slice(1).join(' ') || (parts.length === 1 ? 'Collections' : '');
+            const rawImg = b.image || '';
+            const resolvedImg = resolveMediaUrl(rawImg) || heroProductsImg;
+            let cta = '/allproducts';
+            if (b.route) {
+              if (b.route.includes('categories')) cta = '/allproducts';
+              else if (b.route.includes('search')) cta = '/allproducts';
+              else if (b.route.includes('cart')) cta = '/cart';
+              else if (b.route.startsWith('/')) cta = b.route;
+            }
+            return {
+              id: b._id || `banner-${idx}`,
+              badge: b.label || '★ SPECIAL OFFER',
+              titleFresh,
+              titleHighlight,
+              subtitle: b.subtitle || 'Top brands • Great prices • Everything for your home',
+              ctaText: 'Shop Now',
+              ctaLink: cta,
+              bgGradient: bgGradients[idx % bgGradients.length],
+              image: resolvedImg,
+              imageAlt: b.title || 'BuyLow Banner',
+              trustBadges: defaultBadges,
+            };
+          });
+          setSlides(mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback to DEFAULT_SLIDES
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % totalSlides);
@@ -115,7 +177,7 @@ const HeroSection = () => {
   };
 
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || totalSlides <= 1) return;
 
     timerRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % totalSlides);

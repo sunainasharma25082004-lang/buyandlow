@@ -5,32 +5,38 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
-import { bottomTabPadding, horizontalPadding } from '../../utils/responsive';
+import { bottomTabPadding } from '../../utils/responsive';
 import Screen from '../../components/Screen';
 import { getProducts } from '../../services/api';
 import type { Product } from '../../types/api';
 import ProductCardSkeleton from '../../components/ui/ProductCardSkeleton';
 
 import Header from '../../components/home/Header';
+import FestiveBentoGrid from '../../components/home/FestiveBentoGrid';
+import QuickPicksRail from '../../components/home/QuickPicksRail';
 import BannerSlider from '../../components/home/BannerSlider';
-import Categories from '../../components/home/Categories';
-import CouponBanner from '../../components/home/CouponBanner';
-import TrendyProducts from '../../components/home/TrendyProducts';
-import Deals from '../../components/home/Deals';
-import NewArrivals from '../../components/home/NewArrivals';
-import TopSearches from '../../components/home/TopSearches';
-import SavedPicks from '../../components/home/SavedPicks';
+import PastelCategoryGrid from '../../components/home/PastelCategoryGrid';
+import FeaturedDeals from '../../components/home/FeaturedDeals';
+import BestsellerCollage from '../../components/home/BestsellerCollage';
+import RecommendedProducts from '../../components/home/RecommendedProducts';
+import BestOffers from '../../components/home/BestOffers';
 import Features from '../../components/home/Features';
 import ProductGridCard from '../../components/home/ProductGridCard';
+import FloatingCartBar from '../../components/home/FloatingCartBar';
+import { useLanguage } from '../../context/LanguageContext';
 
-const PAGE_SIZE = 12;
-const INITIAL_SKELETON_ROWS = 4;
+const PAGE_SIZE = 20;
+const INITIAL_SKELETON_ROWS = 3;
 
 export default function HomeScreen() {
+  const { t } = useLanguage();
+  const { width } = useWindowDimensions();
   const [products, setProducts] = useState<Product[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -39,20 +45,38 @@ export default function HomeScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
 
+  // Responsive 2-column calculation
+  const isTablet = width >= 768;
+  const numColumns = isTablet ? 3 : 2;
+  const containerPadding = 16;
+  const cardGap = 12;
+  const totalGaps = cardGap * (numColumns - 1);
+  const maxWidth = Math.min(width, 1100);
+  const availableWidth = maxWidth - (containerPadding * 2) - totalGaps;
+  const cardWidth = Math.floor(availableWidth / numColumns);
+
   const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
     if (append) setLoadingMore(true);
     else setLoading(true);
 
     try {
       const res = await getProducts({ page: pageNum, limit: PAGE_SIZE, sort: 'Newest' });
-      setProducts((prev) => (append ? [...prev, ...(res.products || [])] : res.products || []));
+      setProducts((prev) => {
+        if (!append) return res.products || [];
+        const existingIds = new Set(prev.map((p) => String(p._id || p.id)));
+        const newItems = (res.products || []).filter((p) => {
+          const id = String(p._id || p.id);
+          return id && !existingIds.has(id);
+        });
+        return [...prev, ...newItems];
+      });
       setPage(pageNum);
       setTotalPages(res.pages || 1);
       setError('');
     } catch (err: any) {
       if (!append) {
         setProducts([]);
-        setError(err?.message || 'Could not load products');
+        setError(err?.message || 'Could not load products. Please check your connection.');
       }
     } finally {
       setLoading(false);
@@ -76,89 +100,129 @@ export default function HomeScreen() {
   }, [fetchPage, loading, loadingMore, refreshing, page, totalPages]);
 
   const renderHeader = () => (
-    <View>
+    <View style={styles.headerStack}>
+      {/* 1. Festive / Savings Bento Grid (Screenshot 4) */}
+      <FestiveBentoGrid />
+
+      {/* 2. Quick Picks Circular Story Avatars (Screenshot 4) */}
+      <QuickPicksRail />
+
+      {/* 3. Hero Promotional Carousel */}
       <BannerSlider />
-      <Categories />
-      <CouponBanner />
-      <TrendyProducts />
-      <Deals />
-      <NewArrivals />
-      <TopSearches />
-      <SavedPicks />
+
+      {/* 4. 4-Column Soft Pastel Category Grid (Screenshots 1 & 2) */}
+      <PastelCategoryGrid />
+
+      {/* 5. Top Deals Rail with Instant + ADD */}
+      <FeaturedDeals />
+
+      {/* 6. Bestsellers 4-in-1 Collage Showcase (Screenshot 3) */}
+      <BestsellerCollage />
+
+      {/* 7. Curated Recommendations */}
+      <RecommendedProducts />
+
+      {/* 8. Trust Guarantees & Values */}
+      <BestOffers />
       <Features />
 
-      {/* All Products Section Title */}
-      <View style={styles.allHeader}>
-        <View style={styles.allHeaderLeft}>
-          <View style={styles.sectionBadge}>
-            <Feather name="shopping-bag" size={12} color={Colors.primary} />
-            <Text style={styles.sectionBadgeText}>EXPLORE ALL</Text>
-          </View>
-          <Text style={styles.allTitle}>All Products</Text>
-          <Text style={styles.allSubtitle}>
-            Hand-picked collection with guaranteed low prices
-          </Text>
+      {/* 9. Popular Products Catalog Header */}
+      <View style={styles.catalogHeader}>
+        <View style={styles.catalogBadge}>
+          <Feather name="shopping-bag" size={11} color={Colors.primary} />
+          <Text style={styles.catalogBadgeText}>EXPLORE ALL PRODUCTS</Text>
         </View>
+        <Text style={styles.catalogTitle}>
+          {t('home.trending') || 'Popular Products'}
+        </Text>
+        <Text style={styles.catalogSubtitle}>
+          Complete collection with verified quality and direct mill prices
+        </Text>
       </View>
 
+      {/* Skeleton Loading State for Catalog */}
       {loading && products.length === 0 ? (
-        <View style={styles.skeletonSection}>
-          <Text style={styles.loadingHint}>Loading catalog...</Text>
+        <View style={styles.skeletonWrap}>
           {Array.from({ length: INITIAL_SKELETON_ROWS }).map((_, rowIndex) => (
-            <View key={`product-skeleton-row-${rowIndex}`} style={styles.column}>
-              <ProductCardSkeleton />
-              <ProductCardSkeleton />
+            <View key={`skeleton-row-${rowIndex}`} style={[styles.columnWrapper, { gap: cardGap }]}>
+              <View style={{ width: cardWidth }}>
+                <ProductCardSkeleton />
+              </View>
+              <View style={{ width: cardWidth }}>
+                <ProductCardSkeleton />
+              </View>
             </View>
           ))}
         </View>
       ) : null}
 
+      {/* Error Retry Banner */}
       {error && products.length === 0 ? (
         <View style={styles.errorBox}>
-          <Feather name="alert-circle" size={18} color={Colors.error} />
-          <Text style={styles.errorText}>{error}</Text>
+          <Feather name="alert-circle" size={20} color="#DC2626" />
+          <View style={styles.errorTextWrap}>
+            <Text style={styles.errorTitle}>Could not load catalog</Text>
+            <Text style={styles.errorSub}>{error}</Text>
+          </View>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => fetchPage(1, false)} activeOpacity={0.8}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : null}
     </View>
   );
 
   const renderFooter = () => (
-    <View style={styles.footer}>
+    <View style={styles.footerWrap}>
       {loadingMore ? (
         <View style={styles.footerSkeletonWrap}>
           <Text style={styles.loadingHint}>Loading more products...</Text>
-          <View style={styles.column}>
-            <ProductCardSkeleton />
-            <ProductCardSkeleton />
+          <View style={[styles.columnWrapper, { gap: cardGap }]}>
+            <View style={{ width: cardWidth }}>
+              <ProductCardSkeleton />
+            </View>
+            <View style={{ width: cardWidth }}>
+              <ProductCardSkeleton />
+            </View>
           </View>
         </View>
       ) : page >= totalPages && products.length > 0 ? (
         <View style={styles.endBadge}>
-          <Feather name="check" size={14} color="#059669" />
-          <Text style={styles.endText}>{"You've seen all available products"}</Text>
+          <Feather name="check-circle" size={13} color="#059669" />
+          <Text style={styles.endBadgeText}>
+            You have reached the end of the catalog ({products.length} products)
+          </Text>
         </View>
       ) : null}
-      <View style={styles.bottomPadding} />
+      <View style={styles.bottomSpacer} />
     </View>
   );
 
   return (
     <Screen edges={['top', 'left', 'right']}>
+      {/* Modern Quick Commerce Elevated Header */}
       <Header />
+
+      {/* Main Continuous Scroll */}
       <FlatList
         data={products}
-        keyExtractor={(item) => item._id}
-        numColumns={2}
-        columnWrapperStyle={styles.column}
+        keyExtractor={(item) => String(item._id || item.id)}
+        numColumns={numColumns}
+        key={`home-grid-cols-${numColumns}`}
+        columnWrapperStyle={[styles.columnWrapper, { gap: cardGap, paddingHorizontal: containerPadding }]}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
-        renderItem={({ item }) => <ProductGridCard product={item} />}
+        renderItem={({ item }) => (
+          <View style={{ width: cardWidth }}>
+            <ProductGridCard product={item} />
+          </View>
+        )}
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
         windowSize={5}
         removeClippedSubviews={Platform.OS === 'android'}
         refreshControl={
@@ -170,116 +234,137 @@ export default function HomeScreen() {
           />
         }
       />
+
+      {/* Floating Quick Commerce Cart Pill Overlay (Screenshots 1, 2, 4) */}
+      <FloatingCartBar />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   listContent: {
-    paddingBottom: 8,
-    backgroundColor: '#F3F6FB',
+    backgroundColor: '#F8FAFC',
+    paddingBottom: 24,
   },
-  column: {
-    paddingHorizontal: horizontalPadding - 6,
-    gap: 12,
+  headerStack: {
+    backgroundColor: '#F8FAFC',
+    gap: 8,
   },
-  allHeader: {
+  columnWrapper: {
+    justifyContent: 'flex-start',
+  },
+  catalogHeader: {
     backgroundColor: Colors.white,
-    paddingHorizontal: horizontalPadding,
-    paddingTop: 18,
-    paddingBottom: 14,
-    marginTop: 6,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  allHeaderLeft: {
-    flex: 1,
-  },
-  sectionBadge: {
+  catalogBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     backgroundColor: '#EFF6FF',
-    alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    alignSelf: 'flex-start',
     marginBottom: 6,
   },
-  sectionBadgeText: {
-    fontSize: 10,
+  catalogBadgeText: {
+    fontSize: 9.5,
     fontWeight: '800',
     color: Colors.primary,
     letterSpacing: 0.5,
   },
-  allTitle: {
-    fontSize: 19,
-    fontWeight: '900',
-    color: Colors.text,
-    letterSpacing: 0.2,
+  catalogTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
   },
-  allSubtitle: {
-    fontSize: 12,
-    color: Colors.textLight,
-    marginTop: 3,
+  catalogSubtitle: {
+    fontSize: 11.5,
+    color: '#64748B',
+    marginTop: 2,
   },
-  skeletonSection: {
+  skeletonWrap: {
     backgroundColor: Colors.white,
-    paddingTop: 4,
-    paddingBottom: 8,
-  },
-  loadingHint: {
-    fontSize: 12,
-    color: Colors.textLight,
-    textAlign: 'center',
-    paddingVertical: 10,
-    fontWeight: '600',
-  },
-  footerSkeletonWrap: {
-    width: '100%',
-    paddingBottom: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
   },
   errorBox: {
-    marginHorizontal: horizontalPadding,
-    marginVertical: 16,
-    padding: 16,
-    borderRadius: 14,
-    backgroundColor: '#FFF5F5',
+    marginHorizontal: 16,
+    marginVertical: 12,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: '#FEF2F2',
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: '#FECDD3',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  errorText: {
-    color: Colors.error,
-    fontSize: 13,
-    fontWeight: '500',
+  errorTextWrap: {
     flex: 1,
   },
-  footer: {
-    backgroundColor: Colors.white,
-    paddingTop: 12,
+  errorTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#991B1B',
+  },
+  errorSub: {
+    fontSize: 11.5,
+    color: '#B91C1C',
+    marginTop: 1,
+  },
+  retryBtn: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  retryBtnText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  footerWrap: {
+    paddingTop: 8,
     alignItems: 'center',
+  },
+  footerSkeletonWrap: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  loadingHint: {
+    fontSize: 11.5,
+    color: '#64748B',
+    textAlign: 'center',
+    paddingVertical: 8,
+    fontWeight: '600',
   },
   endBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 16,
     marginVertical: 16,
     borderWidth: 1,
-    borderColor: '#DCFCE7',
+    borderColor: '#A7F3D0',
   },
-  endText: {
-    fontSize: 12,
-    color: '#166534',
+  endBadgeText: {
+    fontSize: 11.5,
+    color: '#065F46',
     fontWeight: '600',
   },
-  bottomPadding: {
-    height: bottomTabPadding,
+  bottomSpacer: {
+    height: bottomTabPadding + 40,
   },
 });

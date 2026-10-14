@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
@@ -45,7 +45,12 @@ const Allproducts = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
-  const perPage = 8;
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState(null);
+  const sentinelRef = useRef(null);
+  const isFetchingRef = useRef(false);
+  const perPage = 20;
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
@@ -99,6 +104,18 @@ const Allproducts = () => {
     if (keyword) {
       setActivePriceRange(null);
       setActiveRating(null);
+    } else {
+      const maxP = searchParams.get('maxPrice') || searchParams.get('priceMax');
+      const minP = searchParams.get('minPrice');
+      if (maxP || minP) {
+        setActivePriceRange({
+          label: maxP ? (minP ? `₹${minP} - ₹${maxP}` : `Under ₹${maxP}`) : `Over ₹${minP}`,
+          min: minP ? Number(minP) : 0,
+          max: maxP ? Number(maxP) : 999999,
+        });
+      } else {
+        setActivePriceRange(null);
+      }
     }
 
     if (title) {
@@ -129,44 +146,65 @@ const Allproducts = () => {
   }, [searchParams]);
 
   // Fetch products from Express backend
-  useEffect(() => {
-    const fetchProducts = async () => {
+  const fetchProducts = useCallback(async (pageToLoad = 1, isAppend = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
+    if (isAppend) {
+      setLoadingMore(true);
+      setLoadMoreError(null);
+    } else {
       setLoading(true);
       setError(null);
-      try {
-        const params = {
-          page: currentPage,
-          limit: perPage,
-          sort: sortBy,
-        };
+    }
 
-        if (activeCategory && activeCategory !== 'All') {
-          params.category = activeCategory;
-        }
+    try {
+      const params = {
+        page: pageToLoad,
+        limit: perPage,
+        sort: sortBy,
+      };
 
-        if (activeSubcategory && activeSubcategory !== 'All') {
-          params.subcategory = activeSubcategory;
-        }
+      if (activeCategory && activeCategory !== 'All') {
+        params.category = activeCategory;
+      }
 
-        if (searchKeyword.trim()) {
-          params.keyword = searchKeyword.trim();
-        }
+      if (activeSubcategory && activeSubcategory !== 'All') {
+        params.subcategory = activeSubcategory;
+      }
 
-        if (activePriceRange) {
-          params.minPrice = activePriceRange.min;
-          params.maxPrice = activePriceRange.max;
-        }
+      if (searchKeyword.trim()) {
+        params.keyword = searchKeyword.trim();
+      }
 
-        if (activeRating) {
-          params.rating = activeRating;
-        }
+      if (activePriceRange) {
+        params.minPrice = activePriceRange.min;
+        params.maxPrice = activePriceRange.max;
+      }
 
-        if (saleOnly) {
-          params.sale = true;
-        }
+      if (activeRating) {
+        params.rating = activeRating;
+      }
 
-        const res = await axios.get(`${API_URL}/products`, { params });
-        const list = res.data.products || [];
+      if (saleOnly) {
+        params.sale = true;
+      }
+
+      const res = await axios.get(`${API_URL}/products`, { params });
+      const list = res.data.products || [];
+      const pages = Number(res.data.pages) || 1;
+      const total = Number(res.data.total) || 0;
+
+      if (isAppend) {
+        setProductsList((prev) => {
+          const existingIds = new Set(prev.map((p) => String(p._id || p.id || '')));
+          const newItems = list.filter((p) => {
+            const id = String(p._id || p.id || '');
+            return id && !existingIds.has(id);
+          });
+          return [...prev, ...newItems];
+        });
+      } else {
         const seen = new Set();
         const unique = list.filter((p) => {
           const id = String(p._id || p.id || '');
@@ -175,18 +213,49 @@ const Allproducts = () => {
           return true;
         });
         setProductsList(unique);
-        setTotalPages(res.data.pages);
-        setTotalProducts(res.data.total);
-      } catch (err) {
-        console.error('Failed to fetch products:', err);
-        setError('Failed to load products. Make sure the backend server is running.');
-      } finally {
-        setLoading(false);
       }
-    };
 
-    fetchProducts();
-  }, [activeCategory, activeSubcategory, sortBy, activePriceRange, activeRating, searchKeyword, currentPage, saleOnly]);
+      setCurrentPage(pageToLoad);
+      setTotalPages(pages);
+      setTotalProducts(total);
+      setHasMore(pageToLoad < pages);
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+      if (isAppend) {
+        setLoadMoreError('Could not load more products. Tap to retry.');
+      } else {
+        setError('Failed to load products. Make sure the backend server is running.');
+      }
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      isFetchingRef.current = false;
+    }
+  }, [activeCategory, activeSubcategory, sortBy, activePriceRange, activeRating, searchKeyword, saleOnly]);
+
+  // Refetch initial batch when filters change
+  useEffect(() => {
+    fetchProducts(1, false);
+  }, [fetchProducts]);
+
+  // Infinite Scroll IntersectionObserver
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && hasMore && !loading && !loadingMore && !isFetchingRef.current) {
+          fetchProducts(currentPage + 1, true);
+        }
+      },
+      { rootMargin: '350px 0px', threshold: 0.05 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadingMore, currentPage, fetchProducts]);
 
   const handleCategorySelect = (cat) => {
     setShowMobileFilters(false);
@@ -268,7 +337,9 @@ const Allproducts = () => {
   };
 
   const currentCatObj = categoryObjects.find(
-    (c) => String(c.name).toLowerCase() === String(activeCategory).toLowerCase()
+    (c) =>
+      String(c.name).toLowerCase() === String(activeCategory).toLowerCase() ||
+      String(c.title).toLowerCase() === String(activeCategory).toLowerCase()
   );
   const activeSubcategories = currentCatObj?.subcategories || [];
 
@@ -506,26 +577,36 @@ const Allproducts = () => {
               </div>
             )}
 
-            {/* Pagination */}
-            {!loading && totalPages > 1 && (
-              <div className="pagination">
+            {/* Infinite Scrolling Sentinel & Indicators */}
+            <div ref={sentinelRef} className="ap-scroll-sentinel" style={{ height: '20px', width: '100%' }} />
+
+            {loadingMore && (
+              <div className="ap-loading-more">
+                <div className="ap-loading-spinner" />
+                <p>Loading more products...</p>
+              </div>
+            )}
+
+            {loadMoreError && (
+              <div className="ap-load-more-retry">
+                <span>{loadMoreError}</span>
                 <button
-                  className="page-btn"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                >‹</button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    className={`page-btn ${currentPage === p ? 'active' : ''}`}
-                    onClick={() => setCurrentPage(p)}
-                  >{p}</button>
-                ))}
-                <button
-                  className="page-btn"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                >›</button>
+                  type="button"
+                  className="btn-retry"
+                  onClick={() => fetchProducts(currentPage + 1, true)}
+                >
+                  ↻ Retry Loading
+                </button>
+              </div>
+            )}
+
+            {!loading && !hasMore && productsList.length > 0 && (
+              <div className="ap-end-of-collection">
+                <div className="ap-end-badge">
+                  <span className="ap-end-check">✓</span>
+                  <span>You've seen all {totalProducts} products</span>
+                </div>
+                <p className="ap-end-subtitle">Check back regularly for new arrivals & exclusive discounts!</p>
               </div>
             )}
           </div>

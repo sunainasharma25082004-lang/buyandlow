@@ -47,7 +47,7 @@ function RailCard({
   const [adding, setAdding] = useState(false);
 
   const isWish = isInWishlist(item._id);
-  const rating = Number(item.rating) || 4.5;
+  const rating = item.rating != null && Number(item.rating) > 0 ? Number(item.rating) : null;
   const reviews = item.reviews || 0;
 
   const handleAddToCart = async () => {
@@ -122,14 +122,16 @@ function RailCard({
         </Text>
 
         <View style={styles.ratingRow}>
-          <View style={styles.starBadge}>
-            <FontAwesome name="star" size={9} color="#F59E0B" />
-            <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-          </View>
+          {rating ? (
+            <View style={styles.starBadge}>
+              <FontAwesome name="star" size={9} color="#F59E0B" />
+              <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+            </View>
+          ) : null}
           {reviews > 0 ? (
             <Text style={styles.reviewsText}>({reviews})</Text>
           ) : (
-            <Text style={styles.freeDeliv}>Free</Text>
+            <Text style={styles.freeDeliv}>In Stock</Text>
           )}
         </View>
 
