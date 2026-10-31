@@ -21,13 +21,14 @@ import HelpHeader from '../../../components/HelpHeader';
 import LocationSelectCard from '../../../components/LocationSelectCard';
 import type { GeocodedAddress } from '../../../utils/location';
 import type { SavedAddress } from '../../../types/api';
+import { isDeliveryAllowed, DELIVERY_CONFIG } from '../../../constants/delivery';
 
 
 
 const emptyForm = (): SavedAddress => ({
   label: 'Home',
   address: '',
-  city: '',
+  city: 'Zirakpur',
   postalCode: '',
   country: 'India',
   phone: '',
@@ -122,6 +123,10 @@ export default function AddressesScreen() {
     }
     if (cleanPostal.length !== 6 || !/^\d{6}$/.test(cleanPostal)) {
       Alert.alert(t('common.error'), 'Please enter a valid 6-digit PIN code.');
+      return;
+    }
+    if (!isDeliveryAllowed(form.city, cleanPostal)) {
+      Alert.alert('Delivery Restricted', DELIVERY_CONFIG.errorMessage);
       return;
     }
     if (digits.length < 10) {

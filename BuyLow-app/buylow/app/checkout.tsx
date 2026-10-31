@@ -24,8 +24,9 @@ import { openRazorpayOnWeb, RazorpaySuccess, supportsWebRazorpay } from '../util
 import type { SavedAddress } from '../types/api';
 import LocationSelectCard, { CURRENT_LOCATION_ID } from '../components/LocationSelectCard';
 import type { GeocodedAddress } from '../utils/location';
+import { isDeliveryAllowed, DELIVERY_CONFIG } from '../constants/delivery';
 
-type PaymentMethod = 'razorpay' | 'cod';
+type PaymentMethod = 'razorpay';
 
 const applyAddress = (
   addr: SavedAddress,
@@ -53,7 +54,7 @@ export default function CheckoutScreen() {
   const [paymentSession, setPaymentSession] = useState<any>(null);
 
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
+  const [city, setCity] = useState('Zirakpur');
   const [postalCode, setPostalCode] = useState('');
   const country = t('checkout.country');
   const [phone, setPhone] = useState('');
@@ -74,9 +75,8 @@ export default function CheckoutScreen() {
   };
 
   useEffect(() => {
-    if (user?.paymentPreference) {
-      setPaymentMethod(user.paymentPreference);
-    }
+    // Only razorpay is supported
+    setPaymentMethod('razorpay');
   }, [user?.paymentPreference]);
 
   useEffect(() => {
@@ -132,7 +132,7 @@ export default function CheckoutScreen() {
         country: country || 'India',
         phone: cleanPhone,
       },
-      paymentMethod: paymentMethod === 'cod' ? 'Cash On Delivery' : 'Razorpay',
+      paymentMethod: 'Razorpay',
       itemsPrice: cartTotal,
       shippingPrice,
       totalPrice: grandTotal,
@@ -182,6 +182,10 @@ export default function CheckoutScreen() {
       Alert.alert(t('common.error'), 'Please fill in a valid full address, a 6-digit PIN code, and a 10-digit mobile number.');
       return;
     }
+    if (!isDeliveryAllowed(city, cleanPostal)) {
+      Alert.alert('Delivery Restricted', DELIVERY_CONFIG.errorMessage);
+      return;
+    }
     if (!token) {
       Alert.alert(t('auth.loginRequired'), t('auth.loginToOrder'), [
         { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
@@ -192,11 +196,6 @@ export default function CheckoutScreen() {
     setLoading(true);
     try {
       const res = await createOrder(buildOrderPayload(), token);
-
-      if (paymentMethod === 'cod') {
-        await finishOrder();
-        return;
-      }
 
       if (res.simulated) {
         const verifyRes = await verifyPayment(
@@ -353,12 +352,15 @@ export default function CheckoutScreen() {
                 <View style={styles.inputContainer}>
                   <TextInput
                     style={styles.input}
-                    placeholder={t('checkout.cityPlaceholder')}
+                    placeholder="Zirakpur"
                     placeholderTextColor={Colors.textLight}
                     value={city}
                     onChangeText={setCity}
                   />
                 </View>
+                <Text style={{ fontSize: 11, color: Colors.primary, marginTop: 4 }}>
+                  📍 Delivery available in Zirakpur only
+                </Text>
               </View>
               <View style={{ width: 12 }} />
               <View style={{ flex: 1 }}>
@@ -366,7 +368,7 @@ export default function CheckoutScreen() {
                 <View style={styles.inputContainer}>
                   <TextInput
                     style={styles.input}
-                    placeholder="110001"
+                    placeholder="140603 or 140604"
                     placeholderTextColor={Colors.textLight}
                     keyboardType="numeric"
                     maxLength={6}
@@ -400,10 +402,8 @@ export default function CheckoutScreen() {
               <Text style={styles.sectionTitle}>{t('checkout.paymentMethod')}</Text>
             </View>
 
-            <TouchableOpacity
-              style={[styles.payOption, paymentMethod === 'razorpay' && styles.payOptionActive]}
-              onPress={() => setPaymentMethod('razorpay')}
-              activeOpacity={0.88}
+            <View
+              style={[styles.payOption, styles.payOptionActive]}
             >
               <View style={styles.payIconBox}>
                 <Ionicons name="card-outline" size={20} color={Colors.primary} />
@@ -413,30 +413,11 @@ export default function CheckoutScreen() {
                 <Text style={styles.payOptionDesc}>Instant & 100% secure encrypted payment</Text>
               </View>
               <Ionicons
-                name={paymentMethod === 'razorpay' ? 'radio-button-on' : 'radio-button-off'}
+                name="checkmark-circle"
                 size={22}
-                color={paymentMethod === 'razorpay' ? Colors.primary : Colors.border}
+                color={Colors.primary}
               />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.payOption, paymentMethod === 'cod' && styles.payOptionActive]}
-              onPress={() => setPaymentMethod('cod')}
-              activeOpacity={0.88}
-            >
-              <View style={styles.payIconBox}>
-                <Ionicons name="cash-outline" size={20} color={Colors.primary} />
-              </View>
-              <View style={styles.payTextWrap}>
-                <Text style={styles.payOptionTitle}>{t('checkout.codTitle')}</Text>
-                <Text style={styles.payOptionDesc}>{t('checkout.codDesc')}</Text>
-              </View>
-              <Ionicons
-                name={paymentMethod === 'cod' ? 'radio-button-on' : 'radio-button-off'}
-                size={22}
-                color={paymentMethod === 'cod' ? Colors.primary : Colors.border}
-              />
-            </TouchableOpacity>
+            </View>
           </View>
 
           {/* Price Summary Section */}
@@ -482,9 +463,7 @@ export default function CheckoutScreen() {
             ) : (
               <>
                 <Text style={styles.buttonText}>
-                  {paymentMethod === 'razorpay'
-                    ? `Pay ₹${formatINR(grandTotal)} with Razorpay`
-                    : `Place Order (₹${formatINR(grandTotal)})`}
+                  {`Pay ₹${formatINR(grandTotal)} with Razorpay`}
                 </Text>
                 <Feather name="lock" size={16} color={Colors.white} style={{ marginLeft: 8 }} />
               </>

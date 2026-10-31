@@ -57,8 +57,15 @@ router.get('/myorders', protect, asyncHandler(async (req, res) => {
 router.post('/', protect, asyncHandler(async (req, res) => {
   const { orderItems, shippingAddress, itemsPrice, shippingPrice, totalPrice, paymentMethod } = req.body;
   const resolvedPaymentMethod = paymentMethod || 'Razorpay';
-  const isCod = resolvedPaymentMethod.toLowerCase().includes('cod') ||
-    resolvedPaymentMethod.toLowerCase().includes('cash');
+
+  // Strictly reject any Cash on Delivery orders
+  const pm = String(resolvedPaymentMethod).trim().toLowerCase();
+  if (pm === 'cod' || pm.includes('cash') || pm.includes('delivery')) {
+    return res.status(400).json({
+      success: false,
+      message: 'Cash on Delivery is no longer available. Please pay online.',
+    });
+  }
 
   const itemsError = validateOrderItems(orderItems);
   if (itemsError) {
@@ -104,12 +111,10 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid order total' });
   }
 
-  const razorpay = isCod ? null : getRazorpayInstance();
+  const razorpay = getRazorpayInstance();
   let razorpayOrderId;
 
-  if (isCod) {
-    razorpayOrderId = undefined;
-  } else if (razorpay) {
+  if (razorpay) {
     const rzpOrder = await razorpay.orders.create({
       amount: Math.round(Number(verifiedTotalPrice) * 100),
       currency: 'INR',
@@ -136,10 +141,10 @@ router.post('/', protect, asyncHandler(async (req, res) => {
       itemsPrice: verifiedItemsPrice,
       shippingPrice: verifiedShippingPrice,
       totalPrice: verifiedTotalPrice,
-      isPaid: false, // COD is only paid upon delivery
+      isPaid: false,
       paidAt: undefined,
       isDelivered: false,
-      orderStatus: isCod ? 'confirmed' : 'placed',
+      orderStatus: 'placed',
       expectedDeliveryDate: computeExpectedDelivery(new Date(createdAt)).toISOString(),
       deliveryNote: '',
       createdAt,
@@ -167,21 +172,11 @@ router.post('/', protect, asyncHandler(async (req, res) => {
     shippingPrice: verifiedShippingPrice,
     totalPrice: verifiedTotalPrice,
     razorpayOrderId,
-    isPaid: false, // COD orders are marked paid by admin/courier on delivery
+    isPaid: false,
     paidAt: undefined,
-    orderStatus: isCod ? 'confirmed' : 'placed',
+    orderStatus: 'placed',
     expectedDeliveryDate: computeExpectedDelivery(),
   });
-
-  // For COD orders, decrement stock immediately and clear user cart
-  if (isCod) {
-    for (const item of orderItems) {
-      await Product.findByIdAndUpdate(item.product, {
-        $inc: { stock: -Number(item.quantity) },
-      });
-    }
-    await User.findByIdAndUpdate(req.user._id, { cart: [] });
-  }
 
   res.status(201).json({
     success: true,
@@ -331,9 +326,7 @@ router.put('/:id/cancel', protect, asyncHandler(async (req, res) => {
   await order.save();
 
   // Restore inventory stock on cancellation only if stock was actually deducted
-  const isCodOrder = (order.paymentMethod || '').toLowerCase().includes('cod') ||
-    (order.paymentMethod || '').toLowerCase().includes('cash');
-  const wasStockDeducted = order.isPaid || isCodOrder;
+  const wasStockDeducted = Boolean(order.isPaid);
 
   if (wasStockDeducted) {
     for (const item of order.orderItems || []) {

@@ -97,8 +97,7 @@ export const pa: TranslationTree = {
     savedAddressesCountPlural: "{{count}} ਸੇਵ ਪਤੇ",
     paymentMethods: "ਭੁਗਤਾਨ ਦੇ ਤਰੀਕੇ",
     paymentRazorpay: "Razorpay · UPI · ਕਾਰਡ",
-    paymentCod: "ਕੈਸ਼ ਔਨ ਡਿਲੀਵਰੀ",
-    paymentDefault: "Razorpay · UPI · ਕਾਰਡ · COD",
+    paymentDefault: "Razorpay · UPI · ਕਾਰਡ",
     helpCenter: "ਹੈਲਪ ਸੈਂਟਰ",
     helpCenterSub: "ਚੈਟ ਕਰੋ ਜਾਂ ਕਾਲਬੈਕ ਮੰਗੋ",
     termsPolicies: "ਨਿਯਮ ਅਤੇ ਨੀਤੀਆਂ",
@@ -207,8 +206,6 @@ export const pa: TranslationTree = {
     paymentMethod: "ਭੁਗਤਾਨ ਦਾ ਤਰੀਕਾ",
     razorpayTitle: "Razorpay (UPI / ਕਾਰਡ / ਨੈਟਬੈਂਕਿੰਗ)",
     razorpayDesc: "ਵੈਬਸਾਈਟ ਵਾਂਗ ਸੁਰੱਖਿਅਤ ਚੈਕਆਉਟ",
-    codTitle: "ਕੈਸ਼ ਔਨ ਡਿਲੀਵਰੀ",
-    codDesc: "ਡਿਲੀਵਰੀ ਤੇ ਭੁਗਤਾਨ ਕਰੋ",
     placeOrder: "ਆਰਡਰ ਦਿਓ",
     payNow: "ਹੁਣੇ ₹{{amount}} ਭੁਗਤਾਨ ਕਰੋ",
     detailsMissing: "ਕਿਰਪਾ ਕਰਕੇ ਸਾਰੇ ਸ਼ਿਪਿੰਗ ਵਿਵਰਣ ਭਰੋ।",
@@ -218,10 +215,9 @@ export const pa: TranslationTree = {
     checkoutFailed: "ਚੈਕਆਉਟ ਅਸਫਲ",
     country: "ਭਾਰਤ",
     payWithRazorpay: "Razorpay ਨਾਲ ਭੁਗਤਾਨ ਕਰੋ",
-    placeCodOrder: "COD ਆਰਡਰ ਦਿਓ",
     sessionExpired: "ਸੈਸ਼ਨ ਖਤਮ। ਫਿਰ ਲੌਗਇਨ ਕਰੋ।",
     paymentVerificationFailed: "ਭੁਗਤਾਨ ਪੁਸ਼ਟੀ ਅਸਫਲ",
-    razorpayNotConfigured: "ਸਰਵਰ ਤੇ Razorpay ਕੌਨਫਿਗਰ ਨਹੀਂ। COD ਅਜ਼ਮਾਓ।",
+    razorpayNotConfigured: "ਪੇਮੈਂਟ ਗੇਟਵੇ ਵਰਤਮਾਨ ਵਿੱਚ ਅਣਉਪਲਬਧ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਬਾਅਦ ਵਿੱਚ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     cityPlaceholder: "ਸ਼ਹਿਰ",
   },
   orders: {
@@ -410,7 +406,7 @@ export const pa: TranslationTree = {
         "ਡਿਲੀਵਰੀ ਦੇ 7 ਦਿਨਾਂ ਵਿੱਚ, ਬਿਨਾਂ ਵਰਤੋਂ ਅਤੇ ਮੂਲ ਪੈਕੇਜਿੰਗ ਵਿੱਚ ਰਿਟਰਨ ਮੰਗ ਸਕਦੇ ਹੋ। ਆਰਡਰ ID ਨਾਲ ਸਪੋਰਟ ਨਾਲ ਸੰਪਰਕ ਕਰੋ।",
       paymentMethodsQ: "ਕਿਹੜੇ ਭੁਗਤਾਨ ਤਰੀਕੇ ਸਵੀਕਾਰ ਹਨ?",
       paymentMethodsA:
-        "Razorpay ਰਾਹੀਂ UPI, ਡੈਬਿਟ/ਕ੍ਰੈਡਿਟ ਕਾਰਡ, ਨੈਟਬੈਂਕਿੰਗ ਅਤੇ ਵਾਲਿਟ। ਚੁਣਿੰਦਾ ਆਰਡਰ ਤੇ COD ਵੀ।",
+        "Razorpay ਰਾਹੀਂ UPI, ਡੈਬਿਟ/ਕ੍ਰੈਡਿਟ ਕਾਰਡ, ਨੈਟਬੈਂਕਿੰਗ ਅਤੇ ਵਾਲਿਟ ਰਾਹੀਂ 100% ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ।",
       cancelOrderQ: "ਕੀ ਆਰਡਰ ਰੱਦ ਕਰ ਸਕਦੇ ਹਾਂ?",
       cancelOrderA:
         "ਹਾਂ, ਸ਼ਿਪ ਹੋਣ ਤੋਂ ਪਹਿਲਾਂ। ਮੇਰੇ ਆਰਡਰ ਵਿੱਚ ਜਾਓ ਅਤੇ Cancel ਵਿਕਲਪ ਟੈਪ ਕਰੋ (ਜੇ ਉਪਲਬਧ)।",
@@ -474,11 +470,9 @@ export const pa: TranslationTree = {
     title: "ਭੁਗਤਾਨ ਦੇ ਤਰੀਕੇ",
     subtitle: "ਚੈਕਆਉਟ ਲਈ ਡਿਫ਼ਾਲਟ ਭੁਗਤਾਨ ਤਰੀਕਾ ਚੁਣੋ",
     razorpay: "Razorpay (UPI / ਕਾਰਡ / ਨੈਟਬੈਂਕਿੰਗ)",
-    cod: "ਕੈਸ਼ ਔਨ ਡਿਲੀਵਰੀ",
     saved: "ਭੁਗਤਾਨ ਤਰਜੀਹ ਸੇਵ ਹੋ ਗਈ",
     razorpayDesc:
       "UPI, ਡੈਬਿਟ/ਕ੍ਰੈਡਿਟ ਕਾਰਡ ਅਤੇ ਨੈਟਬੈਂਕਿੰਗ ਰਾਹੀਂ ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ",
-    codDesc: "ਆਰਡਰ ਆਉਣ ਤੇ ਭੁਗਤਾਨ ਕਰੋ",
     secureTitle: "ਸੁਰੱਖਿਅਤ ਭੁਗਤਾਨ",
     secureDesc:
       "Razorpay UPI, ਸਾਰੇ ਮੁੱਖ ਕਾਰਡ ਅਤੇ ਨੈਟਬੈਂਕਿੰਗ ਸਪੋਰਟ ਕਰਦਾ ਹੈ। ਕਾਰਡ ਵਿਵਰਣ ਐਪ ਵਿੱਚ ਸੇਵ ਨਹੀਂ ਹੁੰਦੇ।",

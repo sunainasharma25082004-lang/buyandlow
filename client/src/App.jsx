@@ -11,7 +11,6 @@ import Footer from "./components/Footer";
 import AnnouncementBar from "./components/AnnouncementBar";
 import CategoryStoryBar from "./components/CategoryStoryBar";
 import HeroSection from "./components/HeroSection";
-import BankOffersBanner from "./components/BankOffersBanner";
 import ShopCategories from "./components/ShopCategories";
 import FlashDeals from "./components/FlashDeals";
 import FeaturedProducts from "./components/FeaturedProducts";
@@ -45,7 +44,6 @@ const HomePage = () => {
       <AnnouncementBar />
       <CategoryStoryBar />
       <HeroSection />
-      <BankOffersBanner />
       <ShopCategories />
       <FlashDeals />
       <FeaturedProducts />

@@ -5,6 +5,7 @@ import { CartContext } from "../context/CartContext";
 import { AuthContext } from "../context/AuthContext";
 import API_URL, { resolveMediaUrl } from '../config/api';
 import ProductRating from './ProductRating';
+import ProductDetailSkeleton from './ProductDetailSkeleton';
 import { formatINR, formatINRPlain, FREE_SHIPPING_MIN } from '../utils/currency';
 import "./ProductDetail.css";
 
@@ -84,20 +85,21 @@ const ProductDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div className="pd-loading-container">
-        <div className="spinner"></div>
-        <p>Loading product details...</p>
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (error || !product) {
     return (
-      <div className="pd-wrap pd-error-container">
-        <h2>⚠️ {error || 'Product not found'}</h2>
-        <button className="btn-dark back-btn" onClick={() => navigate('/allproducts')}>
-          Back to Shop
+      <div className="pd-wrap pd-error-container" style={{ padding: '60px 20px', textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>📦</div>
+        <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>
+          {error || 'Product Not Found'}
+        </h2>
+        <p style={{ color: 'var(--text-light)', maxWidth: '420px', marginBottom: '24px' }}>
+          The item you are looking for might have been moved, sold out, or is temporarily unavailable.
+        </p>
+        <button className="btn-primary" onClick={() => navigate('/allproducts')}>
+          Explore Products
         </button>
       </div>
     );

@@ -12,7 +12,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Colors, Shadows, Gradients } from '../../constants/colors';
@@ -34,11 +34,14 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
 
   const router = useRouter();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
   const { login, loginWithGoogle } = useAuth();
   const { t } = useLanguage();
 
   const goAfterAuth = () => {
-    if (router.canGoBack()) {
+    if (returnTo) {
+      router.replace(decodeURIComponent(returnTo) as any);
+    } else if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/(tabs)');
@@ -211,7 +214,14 @@ export default function LoginScreen() {
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>{t('auth.noAccount')} </Text>
-              <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+              <TouchableOpacity
+                onPress={() =>
+                  router.push({
+                    pathname: '/(auth)/register',
+                    params: returnTo ? { returnTo } : undefined,
+                  })
+                }
+              >
                 <Text style={styles.footerLink}>{t('common.signUp')}</Text>
               </TouchableOpacity>
             </View>

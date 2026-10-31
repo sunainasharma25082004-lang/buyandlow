@@ -1,0 +1,67 @@
+.product-card-skeleton {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.product-card-skeleton .skeleton-media {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: #f1f5f9;
+}
+
+.product-card-skeleton .skeleton-content {
+  padding: 12px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-card-skeleton .skeleton-line {
+  border-radius: 4px;
+}
+
+.product-card-skeleton .skeleton-cat {
+  width: 35%;
+  height: 10px;
+}
+
+.product-card-skeleton .skeleton-title {
+  width: 90%;
+  height: 14px;
+}
+
+.product-card-skeleton .skeleton-title-short {
+  width: 60%;
+  height: 14px;
+}
+
+.product-card-skeleton .skeleton-rating {
+  width: 45%;
+  height: 12px;
+  margin-top: 2px;
+}
+
+.product-card-skeleton .skeleton-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.product-card-skeleton .skeleton-price {
+  width: 40%;
+  height: 18px;
+}
+
+.product-card-skeleton .skeleton-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}

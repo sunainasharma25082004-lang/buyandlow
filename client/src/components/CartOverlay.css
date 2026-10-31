@@ -137,7 +137,7 @@
 }
 
 .cart-item-name {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: var(--brown-dark);

@@ -60,7 +60,7 @@ export default function CartScreen() {
     if (!user) {
       Alert.alert(t('auth.loginRequired'), t('auth.loginToCheckout'), [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
+        { text: t('common.login'), onPress: () => router.push({ pathname: '/(auth)/login', params: { returnTo: '/checkout' } }) },
       ]);
       return;
     }

@@ -85,9 +85,9 @@ export default function BestOffers() {
             <Feather name="lock" size={18} color="#D97706" />
           </View>
 
-          <Text style={styles.cardTitle}>UPI, Cards & COD</Text>
+          <Text style={styles.cardTitle}>UPI & Online Cards</Text>
           <Text style={styles.cardSubtitle}>
-            Pay securely with Razorpay UPI, Debit/Credit Cards, or choose Cash on Delivery at doorstep.
+            Pay securely with Razorpay UPI, Debit/Credit Cards, and Netbanking.
           </Text>
 
           <TouchableOpacity

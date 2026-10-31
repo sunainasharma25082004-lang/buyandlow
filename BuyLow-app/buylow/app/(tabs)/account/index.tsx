@@ -4,6 +4,7 @@ import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
 import { Colors, Shadows, Gradients } from '../../../constants/colors';
 import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../context/LanguageContext';
@@ -27,8 +28,7 @@ export default function AccountScreen() {
   };
 
   const addressCount = user?.addresses?.length || 0;
-  const paymentLabel =
-    user?.paymentPreference === 'cod' ? t('account.paymentCod') : t('account.paymentRazorpay');
+  const paymentLabel = t('account.paymentRazorpay');
 
   const addressSubtitle =
     user && addressCount > 0
@@ -259,7 +259,16 @@ export default function AccountScreen() {
               'Fast assistance for orders & queries',
               () => router.push('/help/chat' as any)
             )}
-            {renderMenuItem('document-text-outline', t('account.termsPolicies'), 'Privacy policy & usage terms')}
+            {renderMenuItem(
+              'document-text-outline',
+              t('account.termsPolicies'),
+              'Privacy policy & usage terms',
+              () => {
+                WebBrowser.openBrowserAsync('https://buylowindia.com/privacy.html').catch(() => {
+                  Alert.alert('Privacy Policy', 'Please visit https://buylowindia.com/privacy.html');
+                });
+              }
+            )}
           </View>
         </View>
 

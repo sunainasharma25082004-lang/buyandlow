@@ -34,12 +34,6 @@ export default function PaymentScreen() {
       desc: t('payment.razorpayDesc'),
       icon: 'card-outline',
     },
-    {
-      id: 'cod',
-      title: t('payment.cod'),
-      desc: t('payment.codDesc'),
-      icon: 'cash-outline',
-    },
   ];
   const [selected, setSelected] = useState<PaymentPreference>('razorpay');
   const [saving, setSaving] = useState(false);

@@ -17,6 +17,7 @@ const emptyForm = {
   name: '',
   price: '',
   oldPrice: '',
+  categoryId: '',
   category: '',
   subcategory: '',
   brand: 'BuyLow',
@@ -77,7 +78,14 @@ const ProductForm = () => {
         const active = (res.data || []).filter((c) => c.isActive !== false);
         setCategories(active);
         if (!isEdit && active.length > 0) {
-          setForm((prev) => ({ ...prev, category: prev.category || active[0].name }));
+          setForm((prev) => {
+            if (prev.categoryId || prev.category) return prev;
+            return {
+              ...prev,
+              categoryId: String(active[0]._id),
+              category: active[0].name,
+            };
+          });
         }
       })
       .catch(() => setError('Failed to load categories. Add categories first.'))
@@ -103,6 +111,7 @@ const ProductForm = () => {
         name: product.name || '',
         price: product.price ?? '',
         oldPrice: product.oldPrice ?? '',
+        categoryId: product.categoryId || '',
         category: product.category || 'General',
         subcategory: product.subcategory || '',
         brand: product.brand || 'BuyLow',
@@ -136,6 +145,17 @@ const ProductForm = () => {
       .catch(() => setError('Failed to load product. Check that the backend server is running.'))
       .finally(() => setLoading(false));
   }, [id, isEdit]);
+
+  useEffect(() => {
+    if (categories.length > 0 && form.category && !form.categoryId) {
+      const match = categories.find(
+        (c) => c.name.toLowerCase() === form.category.toLowerCase()
+      );
+      if (match) {
+        setForm((prev) => ({ ...prev, categoryId: String(match._id) }));
+      }
+    }
+  }, [categories, form.category, form.categoryId]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -339,12 +359,20 @@ const ProductForm = () => {
     const cleanImages = (form.images || []).map((img) => String(img).trim()).filter(Boolean);
     const finalMainImg = form.image?.trim() || (cleanImages.length > 0 ? cleanImages[0] : defaultImg);
     const finalImages = cleanImages.length > 0 ? cleanImages : [finalMainImg];
-    const finalCat = form.category || (categories.length > 0 ? categories[0].name : 'General');
+    
+    const resolvedCatObj = categories.find(
+      (c) =>
+        (form.categoryId && String(c._id) === String(form.categoryId)) ||
+        (form.category && String(c.name).toLowerCase() === String(form.category).toLowerCase())
+    );
+    const finalCatId = resolvedCatObj ? String(resolvedCatObj._id) : (form.categoryId || '');
+    const finalCat = resolvedCatObj ? resolvedCatObj.name : (form.category || (categories.length > 0 ? categories[0].name : 'General'));
 
     const payload = {
       name: form.name.trim(),
       price: form.price !== '' && !isNaN(Number(form.price)) ? Math.max(0, Number(form.price)) : 0,
       oldPrice: form.oldPrice && !isNaN(Number(form.oldPrice)) ? Number(form.oldPrice) : null,
+      categoryId: finalCatId,
       category: finalCat,
       subcategory: form.subcategory ? form.subcategory.trim() : '',
       brand: form.brand || 'BuyLow',
@@ -387,7 +415,9 @@ const ProductForm = () => {
   if (loading) return <div className="loading-state">Loading product...</div>;
 
   const selectedCat = categories.find(
-    (c) => String(c.name).toLowerCase() === String(form.category || '').toLowerCase()
+    (c) =>
+      (form.categoryId && String(c._id) === String(form.categoryId)) ||
+      (form.category && String(c.name).toLowerCase() === String(form.category).toLowerCase())
   );
   const categorySubcategories = selectedCat?.subcategories || [];
 
@@ -395,7 +425,10 @@ const ProductForm = () => {
   const productSubcategories = Array.from(
     new Set(
       allExistingProducts
-        .filter((p) => String(p.category || '').toLowerCase() === String(form.category || '').toLowerCase())
+        .filter((p) =>
+          (selectedCat?._id && String(p.categoryId) === String(selectedCat._id)) ||
+          String(p.category || '').toLowerCase() === String(form.category || '').toLowerCase()
+        )
         .map((p) => p.subcategory?.trim())
         .filter(Boolean)
     )
@@ -466,17 +499,23 @@ const ProductForm = () => {
             <div className="form-group">
               <label>Category *</label>
               <select
-                name="category"
-                value={form.category}
+                name="categoryId"
+                value={form.categoryId || (selectedCat ? selectedCat._id : '')}
                 onChange={(e) => {
-                  handleChange(e);
+                  const selectedId = e.target.value;
+                  const catObj = categories.find((c) => String(c._id) === String(selectedId));
+                  setForm((prev) => ({
+                    ...prev,
+                    categoryId: selectedId,
+                    category: catObj ? catObj.name : '',
+                  }));
                   setCustomSubcategoryMode(false);
                 }}
                 disabled={categoriesLoading}
               >
                 <option value="">{categoriesLoading ? 'Loading...' : 'Select category'}</option>
                 {categories.map((c) => (
-                  <option key={c._id || c.name} value={c.name}>
+                  <option key={c._id || c.name} value={c._id}>
                     {c.title || c.name}
                   </option>
                 ))}

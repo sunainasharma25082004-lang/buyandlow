@@ -58,6 +58,8 @@ const orderSchema = new mongoose.Schema({
   expectedDeliveryDate: { type: Date },
   deliveryNote: { type: String, default: '' },
   cancelledAt: { type: Date },
+  stockDeducted: { type: Boolean, default: false },
+  idempotencyKey: { type: String, index: true, sparse: true },
 }, {
   timestamps: true
 });

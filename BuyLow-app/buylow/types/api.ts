@@ -24,6 +24,7 @@ export type Product = {
   images?: string[];
   badge?: string | null;
   category: string;
+  categoryId?: string;
   brand?: string;
   description?: string;
 };
@@ -39,7 +40,7 @@ export type SavedAddress = {
   isDefault: boolean;
 };
 
-export type PaymentPreference = 'razorpay' | 'cod';
+export type PaymentPreference = 'razorpay';
 
 export type User = {
   _id: string;

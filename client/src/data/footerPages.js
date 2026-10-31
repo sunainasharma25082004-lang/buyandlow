@@ -206,11 +206,11 @@ const footerPages = {
   },
   'privacy-policy': {
     title: 'Privacy Policy',
-    subtitle: 'Effective Date: August 27, 2026 | App Package: com.buylowindia.app',
+    subtitle: 'Effective Date: August 27, 2026 | App Package: com.buylowindia.ecommerce',
     sections: [
       {
         heading: '1. Introduction',
-        body: 'Welcome to BuyLow ("we", "our", or "us"). We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (https://buylowindia.com) and mobile application (com.buylowindia.app).',
+        body: 'Welcome to BuyLow ("we", "our", or "us"). We respect your privacy and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website (https://buylowindia.com) and mobile application (com.buylowindia.ecommerce).',
       },
       {
         heading: '2. Information We Collect',
@@ -224,7 +224,7 @@ const footerPages = {
       },
       {
         heading: '3. Payment & Billing Information',
-        body: 'We support online payments via Razorpay and Cash on Delivery (COD). All online transaction details are handled securely by Razorpay. We do NOT store your bank details, credit/debit card numbers, or UPI PINs on our servers.',
+        body: 'We support secure online payments via Razorpay (UPI, Debit/Credit Cards, and Netbanking). All online transaction details are handled securely by Razorpay. We do NOT store your bank details, credit/debit card numbers, or UPI PINs on our servers.',
       },
       {
         heading: '4. How We Use Your Information',
@@ -256,11 +256,11 @@ const footerPages = {
       },
       {
         heading: '8. Account Deletion & Data Rights',
-        body: 'You have the right to access, update, or request deletion of your personal account data at any time. To request account or data deletion, email our support team at support@buylow.store.',
+        body: 'You have the right to access, update, or request deletion of your personal account data at any time. To request account or data deletion, email our support team at support@buylowindia.com.',
       },
       {
         heading: '9. Contact Us',
-        body: 'If you have any questions or concerns about this Privacy Policy, please contact us at:\n\nEmail: support@buylowindia.com\nApp Package: com.buylowindia.app\nWebsite: https://buylowindia.com',
+        body: 'If you have any questions or concerns about this Privacy Policy, please contact us at:\n\nEmail: support@buylowindia.com\nApp Package: com.buylowindia.ecommerce\nWebsite: https://buylowindia.com',
       },
     ],
   },

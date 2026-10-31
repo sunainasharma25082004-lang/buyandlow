@@ -331,7 +331,7 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
 
   const {
     name, price, oldPrice, rating, reviews, image, images,
-    badge, category, subcategory, brand, sku, stock, colors, description, keyFeatures, tags, isActive,
+    badge, category, categoryId, subcategory, brand, sku, stock, colors, description, keyFeatures, tags, isActive,
   } = req.body;
 
   if (!name || !String(name).trim()) {
@@ -347,62 +347,98 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
   const finalImages = cleanImages.length > 0 ? cleanImages : [finalImage];
 
   let resolvedCategory = (category && String(category).trim()) || '';
+  let resolvedCategoryId = (categoryId && String(categoryId).trim()) || '';
   const resolvedSubcategory = (subcategory && String(subcategory).trim()) || '';
 
+  // Resolve category by ID or name
+  let targetCat = null;
+  const rawId = resolvedCategoryId || (resolvedCategory.match(/^[0-9a-fA-F]{24}$/) || resolvedCategory.startsWith('cat_') ? resolvedCategory : null);
+
   if (global.isDbConnected) {
-    if (resolvedCategory) {
-      const categoryExists = await Category.findOne({
-        name: new RegExp(`^${escapeRegex(resolvedCategory)}$`, 'i'),
-        isActive: true,
+    if (rawId && mongoose.isValidObjectId(rawId)) {
+      targetCat = await Category.findById(rawId);
+    }
+    if (!targetCat && rawId) {
+      targetCat = await Category.findOne({ _id: rawId });
+    }
+    if (!targetCat && resolvedCategory) {
+      targetCat = await Category.findOne({
+        $or: [
+          { name: new RegExp(`^${escapeRegex(resolvedCategory)}$`, 'i') },
+          { title: new RegExp(`^${escapeRegex(resolvedCategory)}$`, 'i') },
+        ],
       });
-      if (!categoryExists) {
-        // Auto-create category if it does not exist so admin is never blocked
-        await Category.create({
-          name: resolvedCategory,
-          title: resolvedCategory,
-          image: defaultImage,
-          subcategories: resolvedSubcategory ? [resolvedSubcategory] : [],
-          isActive: true,
-        });
-      } else if (resolvedSubcategory) {
+    }
+
+    if (targetCat) {
+      resolvedCategoryId = String(targetCat._id);
+      resolvedCategory = targetCat.name;
+      if (resolvedSubcategory) {
         await Category.updateOne(
-          { _id: categoryExists._id },
+          { _id: targetCat._id },
           { $addToSet: { subcategories: resolvedSubcategory } }
         ).catch(() => {});
       }
     } else {
-      const firstCat = await Category.findOne({ isActive: true });
-      if (firstCat) {
-        resolvedCategory = firstCat.name;
-        if (resolvedSubcategory) {
-          await Category.updateOne(
-            { _id: firstCat._id },
-            { $addToSet: { subcategories: resolvedSubcategory } }
-          ).catch(() => {});
+      // Auto-create category if a name was provided, or fallback to first active category
+      let catToUse = resolvedCategory;
+      if (!catToUse) {
+        const firstCat = await Category.findOne({ isActive: true });
+        if (firstCat) {
+          targetCat = firstCat;
+          resolvedCategoryId = String(firstCat._id);
+          resolvedCategory = firstCat.name;
+        } else {
+          catToUse = 'General';
         }
-      } else {
-        resolvedCategory = 'General';
-        await Category.create({
-          name: 'General',
-          title: 'General',
+      }
+
+      if (!targetCat) {
+        const created = await Category.create({
+          name: catToUse,
+          title: catToUse,
           image: defaultImage,
           subcategories: resolvedSubcategory ? [resolvedSubcategory] : [],
           isActive: true,
         });
+        resolvedCategoryId = String(created._id);
+        resolvedCategory = created.name;
       }
     }
   } else {
-    if (!resolvedCategory) {
-      resolvedCategory = (global.adminCategories && global.adminCategories[0]?.name) || 'General';
-    }
-    if (resolvedSubcategory) {
-      const catObj = (global.adminCategories || []).find((c) => c.name.toLowerCase() === resolvedCategory.toLowerCase());
-      if (catObj) {
-        catObj.subcategories = catObj.subcategories || [];
-        if (!catObj.subcategories.includes(resolvedSubcategory)) {
-          catObj.subcategories.push(resolvedSubcategory);
+    // In-memory offline
+    targetCat = (global.adminCategories || []).find(
+      (c) =>
+        (rawId && String(c._id) === String(rawId)) ||
+        (resolvedCategory && c.name.toLowerCase() === resolvedCategory.toLowerCase()) ||
+        (resolvedCategory && c.title?.toLowerCase() === resolvedCategory.toLowerCase())
+    );
+
+    if (targetCat) {
+      resolvedCategoryId = String(targetCat._id);
+      resolvedCategory = targetCat.name;
+      if (resolvedSubcategory) {
+        targetCat.subcategories = targetCat.subcategories || [];
+        if (!targetCat.subcategories.includes(resolvedSubcategory)) {
+          targetCat.subcategories.push(resolvedSubcategory);
         }
       }
+    } else {
+      const catToUse = resolvedCategory || (global.adminCategories && global.adminCategories[0]?.name) || 'General';
+      const created = {
+        _id: `cat_${Date.now()}`,
+        name: catToUse,
+        title: catToUse,
+        image: defaultImage,
+        subcategories: resolvedSubcategory ? [resolvedSubcategory] : [],
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      global.adminCategories = global.adminCategories || [];
+      global.adminCategories.push(created);
+      resolvedCategoryId = created._id;
+      resolvedCategory = created.name;
     }
   }
 
@@ -420,6 +456,7 @@ router.post('/products', protect, admin, asyncHandler(async (req, res) => {
     images: finalImages,
     badge: badge || null,
     category: resolvedCategory,
+    categoryId: resolvedCategoryId,
     subcategory: resolvedSubcategory,
     brand: brand || 'BuyLow',
     sku: generatedSku,
@@ -475,9 +512,28 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
       ? (Array.isArray(req.body.images) ? req.body.images.filter(Boolean) : [])
       : global.adminProducts[idx].images || [];
 
+    let resolvedCategory = req.body.category !== undefined ? String(req.body.category).trim() : global.adminProducts[idx].category;
+    let resolvedCategoryId = req.body.categoryId !== undefined ? String(req.body.categoryId).trim() : (global.adminProducts[idx].categoryId || '');
+
+    if (req.body.categoryId || req.body.category) {
+      const matchCat = (global.adminCategories || []).find((c) =>
+        (req.body.categoryId && String(c._id) === String(req.body.categoryId)) ||
+        (req.body.category && (
+          c.name.toLowerCase() === String(req.body.category).trim().toLowerCase() ||
+          String(c._id) === String(req.body.category).trim()
+        ))
+      );
+      if (matchCat) {
+        resolvedCategory = matchCat.name;
+        resolvedCategoryId = String(matchCat._id);
+      }
+    }
+
     global.adminProducts[idx] = {
       ...global.adminProducts[idx],
       ...req.body,
+      category: resolvedCategory,
+      categoryId: resolvedCategoryId,
       images: cleanImgs.length > 0 ? cleanImgs : (req.body.image ? [req.body.image] : global.adminProducts[idx].images),
       image: req.body.image || (cleanImgs.length > 0 ? cleanImgs[0] : global.adminProducts[idx].image),
       price: req.body.price !== undefined ? Number(req.body.price) : global.adminProducts[idx].price,
@@ -490,7 +546,9 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
 
     if (global.adminProducts[idx].subcategory && global.adminProducts[idx].category) {
       const catObj = (global.adminCategories || []).find(
-        (c) => c.name.toLowerCase() === global.adminProducts[idx].category.toLowerCase()
+        (c) =>
+          (global.adminProducts[idx].categoryId && String(c._id) === String(global.adminProducts[idx].categoryId)) ||
+          c.name.toLowerCase() === global.adminProducts[idx].category.toLowerCase()
       );
       if (catObj) {
         catObj.subcategories = catObj.subcategories || [];
@@ -544,12 +602,38 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
 
   const fields = [
     'name', 'price', 'oldPrice', 'rating', 'reviews', 'image', 'images',
-    'badge', 'category', 'subcategory', 'brand', 'stock', 'colors', 'description', 'keyFeatures', 'tags', 'isActive',
+    'badge', 'category', 'categoryId', 'subcategory', 'brand', 'stock', 'colors', 'description', 'keyFeatures', 'tags', 'isActive',
   ];
 
   fields.forEach((field) => {
     if (req.body[field] !== undefined) product[field] = req.body[field];
   });
+
+  if (req.body.categoryId !== undefined || req.body.category !== undefined) {
+    let targetCat = null;
+    const catIdToCheck = req.body.categoryId || (mongoose.Types.ObjectId.isValid(req.body.category) ? req.body.category : null);
+    if (catIdToCheck) {
+      if (mongoose.Types.ObjectId.isValid(catIdToCheck)) {
+        targetCat = await Category.findById(catIdToCheck);
+      }
+      if (!targetCat) {
+        targetCat = await Category.findOne({ _id: catIdToCheck });
+      }
+    }
+    if (!targetCat && req.body.category) {
+      targetCat = await Category.findOne({
+        name: new RegExp(`^${escapeRegex(String(req.body.category).trim())}$`, 'i'),
+      });
+    }
+
+    if (targetCat) {
+      product.categoryId = String(targetCat._id);
+      product.category = targetCat.name;
+    } else {
+      if (req.body.categoryId !== undefined) product.categoryId = String(req.body.categoryId).trim();
+      if (req.body.category !== undefined) product.category = String(req.body.category).trim();
+    }
+  }
 
   // Sanitize SKU: empty string causes MongoDB E11000 sparse unique index collision
   if (req.body.sku !== undefined) {
@@ -594,7 +678,12 @@ router.put('/products/:id', protect, admin, asyncHandler(async (req, res) => {
 
   if (product.subcategory && product.category) {
     await Category.updateOne(
-      { name: new RegExp(`^${escapeRegex(product.category)}$`, 'i') },
+      {
+        $or: [
+          ...(product.categoryId && mongoose.Types.ObjectId.isValid(product.categoryId) ? [{ _id: product.categoryId }] : []),
+          { name: new RegExp(`^${escapeRegex(product.category)}$`, 'i') },
+        ],
+      },
       { $addToSet: { subcategories: product.subcategory.trim() } }
     ).catch(() => {});
   }

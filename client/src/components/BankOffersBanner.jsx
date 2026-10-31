@@ -15,10 +15,10 @@ const offers = [
     sub: 'On PhonePe, GPay & Paytm',
   },
   {
-    icon: '📦',
-    bank: 'ZERO RISK',
-    title: 'Pay on Delivery',
-    sub: 'Cash on Delivery Available',
+    icon: '⚡',
+    bank: 'INSTANT PAY',
+    title: 'Online Payment',
+    sub: '100% Secure Razorpay Gateway',
   },
   {
     icon: '⚡',

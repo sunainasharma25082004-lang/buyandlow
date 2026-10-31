@@ -35,8 +35,10 @@ const CartOverlay = () => {
       <div className="cart-drawer" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="cart-drawer-header">
-          <h2 className="cart-drawer-title">🏺 Your Cart</h2>
-          <button className="cart-drawer-close" onClick={() => setCartOpen(false)}>
+          <h2 className="cart-drawer-title">
+            🛒 Your Cart {cartItems.length > 0 && `(${cartItems.reduce((acc, i) => acc + (i.quantity || 1), 0)})`}
+          </h2>
+          <button className="cart-drawer-close" onClick={() => setCartOpen(false)} aria-label="Close cart">
             &times;
           </button>
         </div>
@@ -47,28 +49,37 @@ const CartOverlay = () => {
             <div className="cart-empty-state">
               <span className="empty-cart-icon">🛒</span>
               <h3>Your cart is empty</h3>
-              <p>Add some beautiful handcrafted items to your cart to see them here.</p>
+              <p>Explore our best deals on appliances, crockery, and home essentials.</p>
               <button
-                className="btn-dark shop-now-btn"
+                className="btn-primary shop-now-btn"
                 onClick={() => {
                   setCartOpen(false);
                   navigate('/allproducts');
                 }}
               >
-                Shop Now
+                Explore Products
               </button>
             </div>
           ) : (
             <div className="cart-items-list">
               {cartItems.map((item, idx) => {
-                const prod = item.product;
+                const prod = item.product || {};
                 const prodId = prod._id || prod.id;
                 const color = item.color;
                 const price = prod.price || 0;
 
                 return (
                   <div key={`${prodId}-${color}-${idx}`} className="cart-item-card">
-                    <img src={resolveMediaUrl(prod.image)} alt={prod.name} className="cart-item-img" />
+                    <img
+                      src={resolveMediaUrl(prod.image) || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&q=80'}
+                      alt={prod.name || 'Product'}
+                      className="cart-item-img"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&q=80';
+                      }}
+                    />
                     <div className="cart-item-info">
                       <h4 className="cart-item-name">{prod.name}</h4>
                       {color && (

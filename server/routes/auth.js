@@ -319,8 +319,8 @@ router.put('/profile', protect, asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'Please enter a valid 10-digit phone number' });
   }
 
-  if (paymentPreference !== undefined && !['razorpay', 'cod'].includes(paymentPreference)) {
-    return res.status(400).json({ success: false, message: 'Invalid payment preference' });
+  if (paymentPreference !== undefined && paymentPreference !== 'razorpay') {
+    return res.status(400).json({ success: false, message: 'Only online payment (Razorpay) is supported' });
   }
 
   if (!global.isDbConnected) {

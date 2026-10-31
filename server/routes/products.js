@@ -1,6 +1,8 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import Product from '../models/Product.js';
+import Category from '../models/Category.js';
 import Review from '../models/Review.js';
 import User from '../models/User.js';
 import { products as staticProducts } from '../data/products.js';
@@ -48,14 +50,33 @@ const filterStaticProducts = (queryOptions) => {
     );
   }
 
-  if (category && category !== 'All') {
-    const aliases = normalizeCategoryAliases(category);
-    if (aliases.length > 0) {
-      list = list.filter((p) => {
-        const pCat = p.category ? p.category.trim().toLowerCase() : '';
-        return aliases.includes(pCat);
-      });
-    }
+  const queryCat = queryOptions.category;
+  const queryCatId = queryOptions.categoryId;
+
+  if ((queryCat && queryCat !== 'All') || queryCatId) {
+    const rawVal = queryCatId || queryCat;
+    const catObj = (global.adminCategories || []).find(
+      (c) =>
+        String(c._id) === String(rawVal) ||
+        (queryCat && c.name.toLowerCase() === String(queryCat).toLowerCase()) ||
+        (queryCat && c.title?.toLowerCase() === String(queryCat).toLowerCase())
+    );
+    const catName = catObj ? catObj.name : queryCat;
+    const catIdStr = catObj ? String(catObj._id) : (rawVal ? String(rawVal) : null);
+    const aliases = normalizeCategoryAliases(catName).map((a) => a.toLowerCase());
+
+    list = list.filter((p) => {
+      const pCat = p.category ? String(p.category).trim().toLowerCase() : '';
+      const pCatId = p.categoryId ? String(p.categoryId).trim() : '';
+
+      if (catIdStr && (pCatId === catIdStr || pCat === catIdStr.toLowerCase())) return true;
+      if (aliases.includes(pCat)) return true;
+      if (catObj) {
+        if (pCat === catObj.name.toLowerCase()) return true;
+        if (catObj.title && pCat === catObj.title.toLowerCase()) return true;
+      }
+      return false;
+    });
   }
 
   if (subcategory && subcategory !== 'All') {
@@ -96,7 +117,7 @@ router.get('/', asyncHandler(async (req, res) => {
     return res.json(filterStaticProducts(req.query));
   }
 
-  const { keyword, category, subcategory, minPrice, maxPrice, rating, sort, sale } = req.query;
+  const { keyword, category, categoryId, subcategory, minPrice, maxPrice, rating, sort, sale } = req.query;
   const { page, limit } = clampPagination(req.query.page, req.query.limit);
   const query = { isActive: { $ne: false } };
 
@@ -110,12 +131,50 @@ router.get('/', asyncHandler(async (req, res) => {
     ];
   }
 
-  if (category && category !== 'All') {
-    const aliases = normalizeCategoryAliases(category);
+  if ((category && category !== 'All') || categoryId) {
+    const rawVal = categoryId || category;
+    let catDoc = null;
+    if (rawVal && mongoose.isValidObjectId(rawVal)) {
+      catDoc = await Category.findById(rawVal);
+    }
+    if (!catDoc && rawVal) {
+      catDoc = await Category.findOne({
+        $or: [
+          { _id: rawVal },
+          { name: new RegExp(`^${escapeRegex(rawVal)}$`, 'i') },
+          { title: new RegExp(`^${escapeRegex(rawVal)}$`, 'i') },
+        ],
+      });
+    }
+
+    const catName = catDoc ? catDoc.name : category;
+    const catIdStr = catDoc ? String(catDoc._id) : (rawVal && (mongoose.isValidObjectId(rawVal) || String(rawVal).startsWith('cat_')) ? String(rawVal) : null);
+    const aliases = normalizeCategoryAliases(catName);
+
+    const catOrClauses = [];
     if (aliases.length > 0) {
-      query.category = {
-        $in: aliases.map((a) => new RegExp(`^${escapeRegex(a)}$`, 'i')),
-      };
+      catOrClauses.push({
+        category: { $in: aliases.map((a) => new RegExp(`^${escapeRegex(a)}$`, 'i')) },
+      });
+    }
+    if (catIdStr) {
+      catOrClauses.push({ categoryId: catIdStr });
+      catOrClauses.push({ category: catIdStr });
+    }
+    if (catDoc) {
+      catOrClauses.push({ category: new RegExp(`^${escapeRegex(catDoc.name)}$`, 'i') });
+      if (catDoc.title) {
+        catOrClauses.push({ category: new RegExp(`^${escapeRegex(catDoc.title)}$`, 'i') });
+      }
+    }
+
+    if (catOrClauses.length > 0) {
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: catOrClauses }];
+        delete query.$or;
+      } else {
+        query.$or = catOrClauses;
+      }
     }
   }
 

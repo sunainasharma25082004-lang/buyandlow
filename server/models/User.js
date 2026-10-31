@@ -82,7 +82,7 @@ const userSchema = new mongoose.Schema({
   addresses: [addressSchema],
   paymentPreference: {
     type: String,
-    enum: ['razorpay', 'cod'],
+    enum: ['razorpay'],
     default: 'razorpay',
   },
   role: {

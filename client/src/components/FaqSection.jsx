@@ -3,12 +3,12 @@ import './FaqSection.css';
 
 const faqs = [
   {
-    q: 'How fast is delivery across India?',
-    a: 'We dispatch all orders within 24 business hours from our nearest distribution hub. Metro cities receive deliveries in 2–3 days, while rest of India is delivered within 4–6 business days with live SMS and tracking updates.',
+    q: 'Where do you deliver and how fast is it?',
+    a: 'We currently deliver exclusively in Zirakpur (pincodes 140603 and 140604). Orders are dispatched rapidly and delivered within 24 to 48 hours right to your doorstep.',
   },
   {
-    q: 'Is Cash on Delivery (COD) supported?',
-    a: 'Yes! We support Cash on Delivery (COD) across 19,000+ pin codes in India. You can choose COD during checkout and pay securely when the courier arrives at your doorstep.',
+    q: 'What payment methods are supported?',
+    a: 'We accept 100% secure online payment options powered by Razorpay, including UPI (Google Pay, PhonePe, Paytm), Debit/Credit Cards, and Netbanking. Please note that Cash on Delivery is not supported.',
   },
   {
     q: 'Are all products on BuyLow India 100% genuine?',

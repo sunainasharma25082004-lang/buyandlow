@@ -32,9 +32,9 @@
 }
 
 .footer-logo-text {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--brown-dark);
 }
 
@@ -76,7 +76,7 @@
 }
 
 .footer-heading {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 15px;
   font-weight: 700;
   color: var(--brown-dark);

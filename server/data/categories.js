@@ -2,50 +2,63 @@
 export const defaultCategories = [
   {
     "name": "Electronics",
-    "title": "Electronics",
-    "image": "https://2.imimg.com/data2/UP/MK/MY-3812101/electronics-500x500.jpg",
-    "description": "",
+    "title": "Electronics & Appliances",
+    "displayName": "Electronics & Appliances",
+    "image": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500&q=80",
+    "description": "Smart air fans, kettles, massagers & lifestyle appliances",
     "subcategories": [
       "Electric Kettle",
+      "Air Circulation Fan",
       "Massager",
-      "hand blandder",
-      "fan"
+      "Hand Blender"
     ],
-    "sortOrder": 0,
-    "isActive": true,
-    "showOnHome": true
-  },
-  {
-    "name": "Kitchen Appliance",
-    "title": "Kitchen Appliance",
-    "image": "/uploads/products/1791436841763-668084002.jpg",
-    "description": "",
-    "subcategories": [
-      "juicer"
-    ],
-    "sortOrder": 0,
+    "sortOrder": 1,
     "isActive": true,
     "showOnHome": true
   },
   {
     "name": "crockry",
-    "title": "crocry",
-    "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80",
-    "description": "",
-    "subcategories": [],
-    "sortOrder": 0,
+    "title": "Crockery & Dining",
+    "displayName": "Crockery & Dining",
+    "image": "https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?w=500&q=80",
+    "description": "Premium dinner sets, mesh colanders, fruit bowls & tableware",
+    "subcategories": [
+      "Dinner Sets",
+      "Colanders & Bowls",
+      "Fruit Baskets",
+      "Tableware"
+    ],
+    "sortOrder": 2,
+    "isActive": true,
+    "showOnHome": true
+  },
+  {
+    "name": "Kitchen Appliance",
+    "title": "Kitchen Appliances",
+    "displayName": "Kitchen Appliances",
+    "image": "https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&q=80",
+    "description": "Electric kettles, blenders, juicers & food preparation",
+    "subcategories": [
+      "Electric Kettle",
+      "Hand Blender",
+      "Juicers & Mixers"
+    ],
+    "sortOrder": 3,
     "isActive": true,
     "showOnHome": true
   },
   {
     "name": "home & living",
-    "title": "home & living",
-    "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80",
-    "description": "",
+    "title": "Home & Living",
+    "displayName": "Home & Living",
+    "image": "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=500&q=80",
+    "description": "Storage baskets, napkin stands, organizers & decorative utility",
     "subcategories": [
-      "home decor"
+      "Storage Baskets",
+      "Napkin Stands",
+      "Home Utility"
     ],
-    "sortOrder": 0,
+    "sortOrder": 4,
     "isActive": true,
     "showOnHome": true
   }

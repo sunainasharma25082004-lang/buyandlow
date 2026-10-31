@@ -106,6 +106,13 @@ app.use(['/uploads', '/api/uploads'], (req, res, next) => {
   maxAge: isProduction ? '7d' : 0,
 }));
 
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 app.use('/api', apiLimiter);
 
 app.use('/auth', googleAuthPageRoutes);

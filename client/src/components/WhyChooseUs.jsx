@@ -11,8 +11,8 @@ const features = [
         <circle cx="18.5" cy="18.5" r="2.5" />
       </svg>
     ),
-    title: 'Fast Pan-India Delivery',
-    description: 'Quick dispatch and real-time order tracking to your doorstep.',
+    title: 'Fast Zirakpur Delivery',
+    description: 'Quick dispatch and real-time order tracking right to your doorstep in Zirakpur.',
   },
   {
     icon: (
@@ -33,7 +33,7 @@ const features = [
       </svg>
     ),
     title: '100% Secure Checkout',
-    description: 'Bank-grade encryption for UPI, Cards, Netbanking and COD.',
+    description: 'Bank-grade encryption for UPI, Cards, and Netbanking via Razorpay.',
   },
   {
     icon: (

@@ -36,6 +36,7 @@ import { Product } from '../../types/api';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { isDeliveryAllowed, DELIVERY_CONFIG } from '../../constants/delivery';
 
 const CAROUSEL_HEIGHT = Math.min(SCREEN_WIDTH * 0.9, 380);
 
@@ -180,7 +181,11 @@ export default function ProductDetailScreen() {
   const handleBuyNow = async () => {
     if (product) {
       await addToCart(product, 1);
-      router.push('/cart');
+      if (!user) {
+        router.push({ pathname: '/(auth)/login', params: { returnTo: '/checkout' } });
+      } else {
+        router.push('/checkout');
+      }
     }
   };
 
@@ -201,7 +206,14 @@ export default function ProductDetailScreen() {
     if (!user) {
       Alert.alert(t('auth.loginRequired'), t('auth.loginToWishlist'), [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
+        {
+          text: t('common.login'),
+          onPress: () =>
+            router.push({
+              pathname: '/(auth)/login',
+              params: { returnTo: `/product/${product?._id}` },
+            }),
+        },
       ]);
       return;
     }
@@ -216,15 +228,20 @@ export default function ProductDetailScreen() {
   };
 
   const handleCheckPincode = () => {
-    if (pincode.trim().length === 6 && /^\d+$/.test(pincode.trim())) {
-      const deliveryDate = new Date();
-      deliveryDate.setDate(deliveryDate.getDate() + 3);
-      const formattedDate = deliveryDate.toLocaleDateString('en-IN', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      });
-      setPincodeStatus(`Fast delivery by ${formattedDate} | Cash on Delivery available`);
+    const cleanPin = pincode.trim();
+    if (cleanPin.length === 6 && /^\d+$/.test(cleanPin)) {
+      if (isDeliveryAllowed('zirakpur', cleanPin)) {
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 2);
+        const formattedDate = deliveryDate.toLocaleDateString('en-IN', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        });
+        setPincodeStatus(`Fast delivery to Zirakpur by ${formattedDate}`);
+      } else {
+        setPincodeStatus(DELIVERY_CONFIG.errorMessage);
+      }
     } else {
       setPincodeStatus('Please enter a valid 6-digit Indian PIN code');
     }
@@ -262,7 +279,14 @@ export default function ProductDetailScreen() {
     if (!user || !token) {
       Alert.alert(t('auth.loginRequired'), t('auth.loginToReview'), [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
+        {
+          text: t('common.login'),
+          onPress: () =>
+            router.push({
+              pathname: '/(auth)/login',
+              params: { returnTo: `/product/${product?._id}` },
+            }),
+        },
       ]);
       return;
     }
@@ -282,7 +306,14 @@ export default function ProductDetailScreen() {
     if (!token) {
       Alert.alert(t('auth.loginRequired'), t('product.loginToPostReview'), [
         { text: t('common.cancel'), style: 'cancel' },
-        { text: t('common.login'), onPress: () => router.push('/(auth)/login') },
+        {
+          text: t('common.login'),
+          onPress: () =>
+            router.push({
+              pathname: '/(auth)/login',
+              params: { returnTo: `/product/${product?._id}` },
+            }),
+        },
       ]);
       return;
     }
@@ -548,7 +579,7 @@ export default function ProductDetailScreen() {
           <View style={styles.pincodeCard}>
             <View style={styles.pincodeHeader}>
               <Ionicons name="location-outline" size={18} color={Colors.primary} />
-              <Text style={styles.pincodeTitle}>Check Delivery & Cash on Delivery</Text>
+              <Text style={styles.pincodeTitle}>Check Delivery (Zirakpur)</Text>
             </View>
             <View style={styles.pincodeInputRow}>
               <TextInput

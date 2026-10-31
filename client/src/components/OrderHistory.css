@@ -5,8 +5,9 @@
 }
 
 .orders-page-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 28px;
+  font-weight: 700;
   color: var(--brown-dark);
   margin: 32px 0 24px;
 }
@@ -28,8 +29,9 @@
 }
 
 .order-success-banner h3 {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 19px;
+  font-weight: 700;
   color: var(--brown-mid);
   margin-bottom: 6px;
 }
@@ -371,8 +373,8 @@
 }
 
 .order-item-details .item-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 14.5px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 14px;
   font-weight: 600;
   color: var(--brown-dark);
 }

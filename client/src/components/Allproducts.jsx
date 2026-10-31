@@ -4,6 +4,7 @@ import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 import API_URL from '../config/api';
 import ProductCard from './ProductCard';
+import ProductCardSkeleton from './ProductCardSkeleton';
 import './Allproducts.css';
 
 const StarRating = ({ rating, size = 12 }) => (
@@ -32,16 +33,46 @@ const Allproducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [activeSubcategory, setActiveSubcategory] = useState('All');
-  const [sortBy, setSortBy] = useState('Featured');
-  const [activePriceRange, setActivePriceRange] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(() => searchParams.get('category') || 'All');
+  const [activeSubcategory, setActiveSubcategory] = useState(() => searchParams.get('subcategory') || 'All');
+  const [sortBy, setSortBy] = useState(() => {
+    const s = searchParams.get('sort');
+    return s && sortOptions.includes(s) ? s : 'Featured';
+  });
+  const [activePriceRange, setActivePriceRange] = useState(() => {
+    const kw = searchParams.get('keyword')?.trim() || '';
+    if (kw) return null;
+    const maxP = searchParams.get('maxPrice') || searchParams.get('priceMax');
+    const minP = searchParams.get('minPrice');
+    if (maxP || minP) {
+      return {
+        label: maxP ? (minP ? `₹${minP} - ₹${maxP}` : `Under ₹${maxP}`) : `Over ₹${minP}`,
+        min: minP ? Number(minP) : 0,
+        max: maxP ? Number(maxP) : 999999,
+      };
+    }
+    return null;
+  });
   const [activeRating, setActiveRating] = useState(null);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchField, setSearchField] = useState('');
-  const [saleOnly, setSaleOnly] = useState(false);
-  const [pageTitle, setPageTitle] = useState('Shop All Products');
-  const [pageDesc, setPageDesc] = useState('Explore our complete collection of premium handcrafted products');
+  const [searchKeyword, setSearchKeyword] = useState(() => searchParams.get('keyword')?.trim() || '');
+  const [searchField, setSearchField] = useState(() => searchParams.get('keyword')?.trim() || '');
+  const [saleOnly, setSaleOnly] = useState(() => searchParams.get('sale') === 'true');
+  const [pageTitle, setPageTitle] = useState(() => {
+    const title = searchParams.get('title');
+    if (title) return title;
+    const cat = searchParams.get('category');
+    const sub = searchParams.get('subcategory');
+    if (cat && sub && sub !== 'All') return `${cat} — ${sub}`;
+    if (cat) return cat;
+    return 'Shop All Products';
+  });
+  const [pageDesc, setPageDesc] = useState(() => {
+    const desc = searchParams.get('desc');
+    if (desc) return desc;
+    const cat = searchParams.get('category');
+    if (cat) return `Browse our ${cat} collection`;
+    return 'Explore our complete collection of premium handcrafted products';
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -50,6 +81,7 @@ const Allproducts = () => {
   const [loadMoreError, setLoadMoreError] = useState(null);
   const sentinelRef = useRef(null);
   const isFetchingRef = useRef(false);
+  const latestRequestIdRef = useRef(0);
   const perPage = 20;
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -147,8 +179,9 @@ const Allproducts = () => {
 
   // Fetch products from Express backend
   const fetchProducts = useCallback(async (pageToLoad = 1, isAppend = false) => {
-    if (isFetchingRef.current) return;
+    if (isAppend && isFetchingRef.current) return;
     isFetchingRef.current = true;
+    const reqId = ++latestRequestIdRef.current;
 
     if (isAppend) {
       setLoadingMore(true);
@@ -191,6 +224,8 @@ const Allproducts = () => {
       }
 
       const res = await axios.get(`${API_URL}/products`, { params });
+      if (reqId !== latestRequestIdRef.current) return;
+
       const list = res.data.products || [];
       const pages = Number(res.data.pages) || 1;
       const total = Number(res.data.total) || 0;
@@ -220,6 +255,7 @@ const Allproducts = () => {
       setTotalProducts(total);
       setHasMore(pageToLoad < pages);
     } catch (err) {
+      if (reqId !== latestRequestIdRef.current) return;
       console.error('Failed to fetch products:', err);
       if (isAppend) {
         setLoadMoreError('Could not load more products. Tap to retry.');
@@ -227,9 +263,11 @@ const Allproducts = () => {
         setError('Failed to load products. Make sure the backend server is running.');
       }
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
-      isFetchingRef.current = false;
+      if (reqId === latestRequestIdRef.current) {
+        setLoading(false);
+        setLoadingMore(false);
+        isFetchingRef.current = false;
+      }
     }
   }, [activeCategory, activeSubcategory, sortBy, activePriceRange, activeRating, searchKeyword, saleOnly]);
 
@@ -338,6 +376,7 @@ const Allproducts = () => {
 
   const currentCatObj = categoryObjects.find(
     (c) =>
+      String(c._id) === String(activeCategory) ||
       String(c.name).toLowerCase() === String(activeCategory).toLowerCase() ||
       String(c.title).toLowerCase() === String(activeCategory).toLowerCase()
   );
@@ -552,21 +591,26 @@ const Allproducts = () => {
               </div>
             </div>
 
-            {/* Loading / Error States */}
+            {/* Loading / Error / Empty States */}
             {loading ? (
-              <div className="ap-loading-container">
-                <div className="spinner"></div>
-                <p>Loading artisanal collection...</p>
+              <div className="ap-grid" aria-label="Loading products">
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <ProductCardSkeleton key={`skeleton-${idx}`} />
+                ))}
               </div>
             ) : error ? (
               <div className="ap-error-container">
-                <p>{error}</p>
-                <button className="btn-dark" onClick={handleClearFilters}>Reset Filters</button>
+                <div style={{ fontSize: '36px', marginBottom: '8px' }}>⚠️</div>
+                <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '6px' }}>Unable to Load Products</h3>
+                <p style={{ color: 'var(--text-light)', marginBottom: '16px' }}>{error}</p>
+                <button className="btn-primary" onClick={() => fetchProducts(1, false)}>Retry Connection</button>
               </div>
             ) : productsList.length === 0 ? (
               <div className="ap-empty-container">
-                <p>No products found matching your filter criteria.</p>
-                <button className="btn-dark" onClick={handleClearFilters}>View All Products</button>
+                <div style={{ fontSize: '40px', marginBottom: '8px' }}>🔍</div>
+                <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '6px' }}>No Matching Products Found</h3>
+                <p style={{ color: 'var(--text-light)', marginBottom: '16px' }}>We couldn't find any items matching your selected criteria. Try adjusting or clearing your filters.</p>
+                <button className="btn-primary" onClick={handleClearFilters}>View All Products</button>
               </div>
             ) : (
               /* Products Grid */

@@ -1,0 +1,127 @@
+.pd-skeleton-page {
+  padding: 30px 0 60px;
+  background-color: #f8fafc;
+  min-height: 80vh;
+}
+
+.pd-skel-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.pd-skel-bc-item {
+  height: 14px;
+  width: 60px;
+  border-radius: 4px;
+}
+
+.pd-skel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.pd-skel-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pd-skel-main-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+}
+
+.pd-skel-thumbs {
+  display: flex;
+  gap: 12px;
+}
+
+.pd-skel-thumb {
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.pd-skel-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pd-skel-badge {
+  width: 90px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+.pd-skel-title {
+  width: 85%;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.pd-skel-title-2 {
+  width: 60%;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.pd-skel-rating {
+  width: 140px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+.pd-skel-price {
+  width: 180px;
+  height: 36px;
+  border-radius: 6px;
+  margin: 6px 0;
+}
+
+.pd-skel-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.pd-skel-btn {
+  height: 48px;
+  border-radius: 8px;
+}
+
+.pd-skel-trust-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.pd-skel-trust-item {
+  height: 60px;
+  border-radius: 10px;
+}
+
+@media (max-width: 992px) {
+  .pd-skel-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pd-skel-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-skel-trust-grid {
+    grid-template-columns: 1fr;
+  }
+}

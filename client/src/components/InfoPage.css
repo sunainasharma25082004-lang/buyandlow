@@ -35,8 +35,9 @@
 }
 
 .info-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 32px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 30px;
+  font-weight: 700;
   color: var(--white);
   margin-bottom: 8px;
 }
@@ -71,8 +72,9 @@
 }
 
 .info-section h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 20px;
+  font-weight: 700;
   color: var(--brown-dark);
   margin-bottom: 12px;
 }

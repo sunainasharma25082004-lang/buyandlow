@@ -66,17 +66,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const saveCart = async (newCart: CartItem[]) => {
     setCart(newCart);
+    try {
+      await storage.setItem('localCart', JSON.stringify(newCart));
+    } catch (e) {
+      console.error('Failed to save cart to local storage', e);
+    }
+
     if (token) {
       try {
         const syncedCart = await api.syncCart(newCart, token);
         if (Array.isArray(syncedCart)) {
           setCart(syncedCart);
+          await storage.setItem('localCart', JSON.stringify(syncedCart)).catch(() => {});
         }
       } catch (e) {
-        console.error('Failed to sync cart', e);
+        console.error('Failed to sync cart to server', e);
       }
-    } else {
-      await storage.setItem('localCart', JSON.stringify(newCart));
     }
   };
 

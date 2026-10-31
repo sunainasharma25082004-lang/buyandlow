@@ -470,7 +470,7 @@
 }
 
 .pd-sidebar-title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 14px;
   font-weight: 700;
   color: var(--brown-dark);
@@ -666,8 +666,8 @@
 }
 
 .pd-reviews-panel-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 22px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 20px;
   font-weight: 700;
   color: var(--brown-dark);
   margin: 0 0 4px;
@@ -706,9 +706,9 @@
 }
 
 .avg-number {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   font-size: 36px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--brown-dark);
   margin: 0;
   line-height: 1;

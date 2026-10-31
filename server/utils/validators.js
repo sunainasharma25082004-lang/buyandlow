@@ -1,3 +1,5 @@
+import { isDeliveryAllowed, DELIVERY_CONFIG } from '../config/deliveryConfig.js';
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
@@ -35,6 +37,9 @@ export const validateShippingAddress = (address) => {
   }
   if (!/^\d{6,15}$/.test(String(phone).replace(/[\s\-+]/g, ''))) {
     return 'A valid phone number is required';
+  }
+  if (!isDeliveryAllowed(city, postalCode)) {
+    return DELIVERY_CONFIG.errorMessage;
   }
   return null;
 };
@@ -76,4 +81,4 @@ export const normalizeCategoryAliases = (cat) => {
     return ['home & living', 'home and living', 'home'];
   }
   return [clean];
-};
+};

@@ -97,8 +97,7 @@ export const en: TranslationTree = {
     savedAddressesCountPlural: "{{count}} saved addresses",
     paymentMethods: "Payment Methods",
     paymentRazorpay: "Razorpay · UPI · Cards",
-    paymentCod: "Cash on Delivery",
-    paymentDefault: "Razorpay · UPI · Cards · COD",
+    paymentDefault: "Razorpay · UPI · Cards",
     helpCenter: "Help Center",
     helpCenterSub: "Chat with us or request a callback",
     termsPolicies: "Terms & Policies",
@@ -210,8 +209,6 @@ export const en: TranslationTree = {
     paymentMethod: "Payment Method",
     razorpayTitle: "Razorpay (UPI / Card / NetBanking)",
     razorpayDesc: "Same secure checkout as website",
-    codTitle: "Cash on Delivery",
-    codDesc: "Pay when your order arrives",
     placeOrder: "Place Order",
     payNow: "Pay ₹{{amount}} Now",
     detailsMissing: "Please fill in all shipping details.",
@@ -221,11 +218,10 @@ export const en: TranslationTree = {
     checkoutFailed: "Checkout Failed",
     country: "India",
     payWithRazorpay: "Pay with Razorpay",
-    placeCodOrder: "Place COD Order",
     sessionExpired: "Session expired. Please login again.",
     paymentVerificationFailed: "Payment verification failed",
     razorpayNotConfigured:
-      "Razorpay is not configured on the server. Try Cash on Delivery.",
+      "Payment gateway is currently unavailable. Please try again later.",
     cityPlaceholder: "City",
   },
   orders: {
@@ -420,7 +416,7 @@ export const en: TranslationTree = {
         "You can request a return within 7 days of delivery for unused items in original packaging. Contact support with your order ID.",
       paymentMethodsQ: "Which payment methods do you accept?",
       paymentMethodsA:
-        "We accept UPI, debit/credit cards, net banking and wallets through Razorpay. Cash on delivery is available on select orders.",
+        "We accept UPI, debit/credit cards, net banking and wallets securely through Razorpay. Cash on delivery is not supported.",
       cancelOrderQ: "Can I cancel my order?",
       cancelOrderA:
         "Yes, before your order is shipped. Open My Orders, select the order and tap Cancel if the option is available.",
@@ -484,11 +480,9 @@ export const en: TranslationTree = {
     title: "Payment Methods",
     subtitle: "Choose your default payment method for checkout",
     razorpay: "Razorpay (UPI / Cards / NetBanking)",
-    cod: "Cash on Delivery",
     saved: "Payment preference saved",
     razorpayDesc:
       "Secure online payments via UPI, debit/credit cards, and net banking",
-    codDesc: "Pay when your order arrives at your doorstep",
     secureTitle: "Secure Payments",
     secureDesc:
       "Razorpay supports UPI apps, all major cards, and net banking. Card details are never stored in the app.",

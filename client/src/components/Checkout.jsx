@@ -5,6 +5,7 @@ import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
 import API_URL, { resolveMediaUrl } from '../config/api';
 import { formatINR, FREE_SHIPPING_MIN, SHIPPING_FEE } from '../utils/currency';
+import { isDeliveryAllowed, DELIVERY_CONFIG } from '../config/deliveryConfig';
 import './Checkout.css';
 
 const Checkout = () => {
@@ -13,7 +14,7 @@ const Checkout = () => {
   const { cartItems, getCartTotal, clearCart, setAuthModalOpen } = useContext(CartContext);
 
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
+  const [city, setCity] = useState('Zirakpur');
   const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('India');
   const [phone, setPhone] = useState('');
@@ -22,7 +23,7 @@ const Checkout = () => {
   const [error, setError] = useState(null);
   const [paymentStep, setPaymentStep] = useState(false); // For checkout summary/mock choice
   const [createdOrderData, setCreatedOrderData] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
+  const paymentMethod = 'Razorpay';
 
   // Dynamic script loading for Razorpay SDK
   const loadRazorpayScript = () => {
@@ -43,15 +44,28 @@ const Checkout = () => {
       navigate('/allproducts', { state: { message: 'Please sign in to complete checkout' } });
       return;
     }
-
-    if (cartItems.length === 0 && !loading) {
-      navigate('/allproducts');
-    }
-  }, [cartItems, navigate, user, authLoading, loading, setAuthModalOpen]);
+  }, [navigate, user, authLoading, setAuthModalOpen]);
 
   const itemsPrice = getCartTotal();
   const shippingPrice = itemsPrice >= FREE_SHIPPING_MIN ? 0 : SHIPPING_FEE;
   const totalPrice = itemsPrice + shippingPrice;
+
+  if (cartItems.length === 0 && !createdOrderData) {
+    return (
+      <div className="checkout-page">
+        <div className="container" style={{ padding: '80px 20px', textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛒</div>
+          <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-dark)', marginBottom: '8px' }}>Your Cart is Empty</h2>
+          <p style={{ color: 'var(--text-light)', maxWidth: '400px', marginBottom: '24px' }}>
+            You don't have any items in your cart to checkout. Add items from our catalogue to proceed.
+          </p>
+          <button className="btn-primary" onClick={() => navigate('/allproducts')}>
+            Browse Products
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
@@ -60,6 +74,12 @@ const Checkout = () => {
 
     if (!address || !city || !postalCode || !phone) {
       setError('Please fill in all shipping details');
+      setLoading(false);
+      return;
+    }
+
+    if (!isDeliveryAllowed(city, postalCode)) {
+      setError(DELIVERY_CONFIG.errorMessage);
       setLoading(false);
       return;
     }
@@ -74,7 +94,7 @@ const Checkout = () => {
         quantity: item.quantity
       }));
 
-      const shippingAddress = { address, city, postalCode, country, phone };
+      const shippingAddress = { address, city: city.trim(), postalCode: postalCode.trim(), country, phone: phone.trim() };
 
       // 1. Create order on backend
       const res = await axios.post(`${API_URL}/orders`, {
@@ -83,18 +103,8 @@ const Checkout = () => {
         itemsPrice,
         shippingPrice,
         totalPrice,
-        paymentMethod,
+        paymentMethod: 'Razorpay',
       });
-
-      if (paymentMethod === 'COD') {
-        clearCart();
-        navigate('/orders', {
-          state: {
-            successMessage: 'Your Cash on Delivery order has been placed successfully! Pay upon delivery.',
-          },
-        });
-        return;
-      }
 
       setCreatedOrderData(res.data);
       setPaymentStep(true);
@@ -145,9 +155,9 @@ const Checkout = () => {
         key: key_id,
         amount: amount,
         currency: currency,
-        name: 'buylowindia Crafts',
-        description: 'E-commerce Purchase',
-        image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=200&q=80',
+        name: 'BuyLow India',
+        description: 'Secure Order Payment',
+        image: '/assets/logo.png',
         order_id: razorpayOrderId,
         handler: async function (response) {
           try {
@@ -161,10 +171,20 @@ const Checkout = () => {
             if (verifyRes.data.success) {
               clearCart();
               navigate('/orders', { state: { successMessage: 'Order Placed and Paid Successfully!' } });
+            } else {
+              setError(verifyRes.data.message || 'Payment verification failed.');
             }
           } catch (verifyErr) {
             console.error('Verification error:', verifyErr);
-            setError(verifyErr.response?.data?.message || 'Payment verification failed.');
+            setError(verifyErr.response?.data?.message || 'Payment verification failed. If money was deducted, our team will verify and confirm your order shortly.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+            setError('Payment window was closed before completion. Tap "Proceed to Online Payment" to try again.');
           }
         },
         prefill: {
@@ -173,11 +193,15 @@ const Checkout = () => {
           contact: phone
         },
         theme: {
-          color: '#0F3460'
+          color: '#E50914'
         }
       };
 
       const paymentObject = new window.Razorpay(options);
+      paymentObject.on('payment.failed', function (response) {
+        setLoading(false);
+        setError(`Payment Failed: ${response.error?.description || 'Transaction declined by bank/gateway.'}`);
+      });
       paymentObject.open();
 
     } catch (err) {
@@ -215,12 +239,13 @@ const Checkout = () => {
                 <div className="form-group-row">
                   <div className="form-group">
                     <label>Country</label>
-                    <select value={country} onChange={(e) => setCountry(e.target.value)}>
-                      <option value="India">India</option>
-                      <option value="United States">United States</option>
-                      <option value="United Kingdom">United Kingdom</option>
-                      <option value="Canada">Canada</option>
-                    </select>
+                    <input
+                      type="text"
+                      value="India"
+                      readOnly
+                      disabled
+                      style={{ background: 'var(--surface-soft)', color: 'var(--text-mid)', cursor: 'not-allowed' }}
+                    />
                   </div>
                   <div className="form-group">
                     <label>Phone Number</label>
@@ -250,17 +275,20 @@ const Checkout = () => {
                     <label>Town / City</label>
                     <input
                       type="text"
-                      placeholder="City Name"
+                      placeholder="Zirakpur"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       required
                     />
+                    <small style={{ fontSize: '11px', color: '#b8860b', marginTop: '4px', display: 'block' }}>
+                      📍 Delivery is currently available exclusively in Zirakpur.
+                    </small>
                   </div>
                   <div className="form-group">
                     <label>Postal Code / ZIP</label>
                     <input
                       type="text"
-                      placeholder="e.g. 110001"
+                      placeholder="140603 or 140604"
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
                       required
@@ -270,71 +298,29 @@ const Checkout = () => {
 
                 <div className="form-group payment-method-selector-group">
                   <label>Payment Method</label>
-                  <div className="payment-options-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '4px' }}>
+                  <div className="payment-options-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginTop: '4px' }}>
                     <div
-                      className={`payment-option-card ${paymentMethod === 'Razorpay' ? 'selected' : ''}`}
-                      onClick={() => setPaymentMethod('Razorpay')}
+                      className="payment-option-card selected"
                       style={{
-                        border: paymentMethod === 'Razorpay' ? '2px solid #b8860b' : '1.5px solid var(--border)',
-                        background: paymentMethod === 'Razorpay' ? 'rgba(184, 134, 11, 0.06)' : 'var(--white)',
+                        border: '2px solid #b8860b',
+                        background: 'rgba(184, 134, 11, 0.06)',
                         padding: '14px',
                         borderRadius: '10px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '13.5px', color: 'var(--brown-dark)' }}>
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="Razorpay"
-                          checked={paymentMethod === 'Razorpay'}
-                          onChange={() => setPaymentMethod('Razorpay')}
-                          style={{ margin: 0 }}
-                        />
-                        <span>💳 Online Payment</span>
+                        <span style={{ color: '#10b981', fontSize: '16px' }}>✓</span>
+                        <span>💳 Online Payment (Razorpay Secure Gateway)</span>
                       </div>
                       <p style={{ margin: '6px 0 0 24px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                        UPI, Cards, Netbanking
-                      </p>
-                    </div>
-
-                    <div
-                      className={`payment-option-card ${paymentMethod === 'COD' ? 'selected' : ''}`}
-                      onClick={() => setPaymentMethod('COD')}
-                      style={{
-                        border: paymentMethod === 'COD' ? '2px solid #b8860b' : '1.5px solid var(--border)',
-                        background: paymentMethod === 'COD' ? 'rgba(184, 134, 11, 0.06)' : 'var(--white)',
-                        padding: '14px',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '13.5px', color: 'var(--brown-dark)' }}>
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="COD"
-                          checked={paymentMethod === 'COD'}
-                          onChange={() => setPaymentMethod('COD')}
-                          style={{ margin: 0 }}
-                        />
-                        <span>💵 Cash on Delivery</span>
-                      </div>
-                      <p style={{ margin: '6px 0 0 24px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                        Pay cash or UPI at delivery
+                        UPI (GPay, PhonePe, Paytm), Credit/Debit Cards, Netbanking
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <button type="submit" className="place-order-btn btn-dark" disabled={loading}>
-                  {loading
-                    ? 'Processing...'
-                    : paymentMethod === 'COD'
-                      ? 'Place Cash on Delivery Order 📦'
-                      : 'Proceed to Online Payment →'}
+                  {loading ? 'Processing...' : 'Proceed to Online Payment →'}
                 </button>
               </form>
             ) : (

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import './AnnouncementBar.css';
 
 const announcements = [
-  '🚚 Free Express Delivery on orders over ₹299 across India • No hidden charges',
-  '⚡ Lowest Price Guarantee in India • Direct from verified manufacturers',
-  '🔒 100% Safe & Secure Checkout • UPI, Cards & Cash on Delivery Available',
+  '🚚 Free Express Delivery on orders over ₹299 in Zirakpur • Fast doorstep delivery',
+  '⚡ Lowest Price Guarantee • Direct from verified manufacturers',
+  '🔒 100% Safe & Secure Online Checkout • UPI & Cards accepted',
   '🔄 Easy 7-Day Replacement & Prompt Customer Support Guarantee',
 ];
 

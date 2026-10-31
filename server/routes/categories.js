@@ -16,6 +16,9 @@ global.adminCategories = global.adminCategories || [...defaultCategories.map((c,
   updatedAt: new Date().toISOString(),
 }))];
 
+const escapeRegex = (string) =>
+  string ? String(string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+
 const withProductCounts = async (categories) => {
   if (!global.isDbConnected) {
     const deletedSet = global.deletedProductIds || new Set();
@@ -34,10 +37,16 @@ const withProductCounts = async (categories) => {
       .filter((p) => p.isActive !== false);
 
     return categories.map((cat) => {
-      const aliases = normalizeCategoryAliases(cat.name || cat.title || '');
+      const aliases = normalizeCategoryAliases(cat.name || cat.title || '').map((a) => a.toLowerCase());
+      const catId = String(cat._id || '');
+      const catName = String(cat.name || '').toLowerCase();
       const count = allProducts.filter((p) => {
         const pCat = p.category ? String(p.category).trim().toLowerCase() : '';
-        return aliases.includes(pCat);
+        const pCatId = p.categoryId ? String(p.categoryId).trim() : '';
+        if (catId && (pCatId === catId || pCat === catId.toLowerCase())) return true;
+        if (aliases.includes(pCat)) return true;
+        if (catName && pCat === catName) return true;
+        return false;
       }).length;
       return {
         ...cat,
@@ -46,25 +55,35 @@ const withProductCounts = async (categories) => {
     });
   }
 
-  const counts = await Product.aggregate([
-    { $match: { isActive: { $ne: false } } },
-    { $group: { _id: { $toLower: '$category' }, count: { $sum: 1 } } },
-  ]);
-  const countMap = Object.fromEntries(
-    counts.map((row) => [String(row._id).toLowerCase(), row.count])
+  // Count products for each active category in MongoDB matching either categoryId or category name/aliases
+  const categoriesWithCounts = await Promise.all(
+    categories.map(async (cat) => {
+      const aliases = normalizeCategoryAliases(cat.name || cat.title || '');
+      const catId = String(cat._id || '');
+      const orClauses = [
+        { category: { $in: aliases.map((a) => new RegExp(`^${escapeRegex(a)}$`, 'i')) } },
+      ];
+      if (catId) {
+        orClauses.push({ categoryId: catId });
+        orClauses.push({ category: catId });
+      }
+      if (cat.name) {
+        orClauses.push({ category: new RegExp(`^${escapeRegex(cat.name)}$`, 'i') });
+      }
+
+      const count = await Product.countDocuments({
+        isActive: { $ne: false },
+        $or: orClauses,
+      });
+
+      return {
+        ...cat,
+        productCount: count,
+      };
+    })
   );
 
-  return categories.map((cat) => {
-    const aliases = normalizeCategoryAliases(cat.name || cat.title || '');
-    let count = 0;
-    for (const alias of aliases) {
-      count += countMap[alias.toLowerCase()] || 0;
-    }
-    return {
-      ...cat,
-      productCount: count,
-    };
-  });
+  return categoriesWithCounts;
 };
 
 const sortCategories = (list) =>

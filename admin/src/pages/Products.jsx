@@ -6,9 +6,17 @@ import AdminImage from '../components/AdminImage';
 import Pagination from '../components/Pagination';
 import { usePagination } from '../hooks/usePagination';
 
-const matchesProductSearch = (product, query, selectedCat, selectedSubcat) => {
+const matchesProductSearch = (product, query, selectedCat, selectedSubcat, categories = []) => {
   if (selectedCat && selectedCat !== 'All') {
-    if (String(product.category || '').toLowerCase() !== selectedCat.toLowerCase()) {
+    const matchedCategoryObj = categories.find(
+      (c) => String(c._id) === selectedCat || c.name.toLowerCase() === selectedCat.toLowerCase()
+    );
+    const catId = matchedCategoryObj ? String(matchedCategoryObj._id) : selectedCat;
+    const catName = matchedCategoryObj ? matchedCategoryObj.name.toLowerCase() : selectedCat.toLowerCase();
+
+    const matchesId = product.categoryId && String(product.categoryId) === catId;
+    const matchesName = String(product.category || '').toLowerCase() === catName;
+    if (!matchesId && !matchesName) {
       return false;
     }
   }
@@ -73,11 +81,15 @@ const Products = () => {
     }
 
     const matchedCat = categories.find(
-      (c) => String(c.name).toLowerCase() === selectedCategory.toLowerCase()
+      (c) => String(c._id) === selectedCategory || String(c.name).toLowerCase() === selectedCategory.toLowerCase()
     );
     const catSubs = matchedCat?.subcategories || [];
     const prodSubs = products
-      .filter((p) => String(p.category || '').toLowerCase() === selectedCategory.toLowerCase())
+      .filter((p) =>
+        (matchedCat && p.categoryId && String(p.categoryId) === String(matchedCat._id)) ||
+        (matchedCat && String(p.category || '').toLowerCase() === matchedCat.name.toLowerCase()) ||
+        String(p.category || '').toLowerCase() === selectedCategory.toLowerCase()
+      )
       .map((p) => p.subcategory?.trim())
       .filter(Boolean);
 
@@ -85,8 +97,8 @@ const Products = () => {
   }, [selectedCategory, categories, products]);
 
   const filteredProducts = useMemo(
-    () => products.filter((p) => matchesProductSearch(p, search, selectedCategory, selectedSubcategory)),
-    [products, search, selectedCategory, selectedSubcategory]
+    () => products.filter((p) => matchesProductSearch(p, search, selectedCategory, selectedSubcategory, categories)),
+    [products, search, selectedCategory, selectedSubcategory, categories]
   );
 
   const {
@@ -168,7 +180,7 @@ const Products = () => {
           >
             <option value="All">All Categories</option>
             {categories.map((c) => (
-              <option key={c._id || c.name} value={c.name}>
+              <option key={c._id || c.name} value={c._id || c.name}>
                 {c.title || c.name}
               </option>
             ))}
@@ -320,7 +332,9 @@ const Products = () => {
                           </div>
                         </td>
                         <td data-label="Category & Subcategory">
-                          <span className="badge badge-gold">{p.category}</span>
+                          <span className="badge badge-gold">
+                            {p.category || categories.find((c) => String(c._id) === String(p.categoryId))?.name || 'Uncategorized'}
+                          </span>
                           {p.subcategory ? (
                             <div style={{ marginTop: '4px' }}>
                               <span
