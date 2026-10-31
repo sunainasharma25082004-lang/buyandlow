@@ -22,7 +22,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as WebBrowser from 'expo-web-browser';
 
 const { width } = Dimensions.get('window');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -208,17 +207,6 @@ export default function RegisterScreen() {
                 <Ionicons name="logo-apple" size={20} color="#FFFFFF" />
                 <Text style={styles.appleButtonText}>Continue with Apple</Text>
               </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => WebBrowser.openBrowserAsync('https://buylowindia.com/privacy.html')}
-              style={styles.termsWrap}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.termsText}>
-                By signing up, you agree to our{' '}
-                <Text style={styles.termsLink}>Privacy Policy &amp; Terms</Text>
-              </Text>
-            </TouchableOpacity>
             )}
 
             <View style={styles.dividerRow}>
@@ -264,17 +252,6 @@ export default function RegisterScreen() {
                 >
                   <Text style={styles.showHide}>{showPassword ? t('auth.hide') : t('auth.show')}</Text>
                 </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => WebBrowser.openBrowserAsync('https://buylowindia.com/privacy.html')}
-              style={styles.termsWrap}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.termsText}>
-                By signing up, you agree to our{' '}
-                <Text style={styles.termsLink}>Privacy Policy &amp; Terms</Text>
-              </Text>
-            </TouchableOpacity>
               }
             />
 
@@ -297,34 +274,12 @@ export default function RegisterScreen() {
                 )}
               </LinearGradient>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => WebBrowser.openBrowserAsync('https://buylowindia.com/privacy.html')}
-              style={styles.termsWrap}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.termsText}>
-                By signing up, you agree to our{' '}
-                <Text style={styles.termsLink}>Privacy Policy &amp; Terms</Text>
-              </Text>
-            </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.hasAccount')}</Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
               <Text style={styles.footerLink}>{t('auth.logIn')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => WebBrowser.openBrowserAsync('https://buylowindia.com/privacy.html')}
-              style={styles.termsWrap}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.termsText}>
-                By signing up, you agree to our{' '}
-                <Text style={styles.termsLink}>Privacy Policy &amp; Terms</Text>
-              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
